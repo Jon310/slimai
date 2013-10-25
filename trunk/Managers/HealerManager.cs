@@ -426,7 +426,7 @@ namespace SlimAI.Managers
                             orderby SwiftmendPriority(unit) ascending
                             select unit).FirstOrDefault();
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Logging.WriteDiagnostic("GetSwiftmentTarget error");
                     return null;
@@ -450,7 +450,7 @@ namespace SlimAI.Managers
                             orderby unit.HealthPercent descending
                             select unit).FirstOrDefault();
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Logging.WriteDiagnostic("GetSwiftmentTarget error");
                     return null;

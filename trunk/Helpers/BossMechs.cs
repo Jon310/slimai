@@ -83,41 +83,35 @@ namespace SlimAI.Helpers
                         Spell.Cast("Howling Blast", on => Me.FocusedUnit),
                         Spell.Cast("Death Coil", on => Me.FocusedUnit),
                         Spell.Cast("Icy Touch", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Druid:
                     return new PrioritySelector(
                             new Decorator(ret => Me.FocusedUnitGuid == 0,
                                 SetFocusDino()),
                             Spell.Cast("Growl", on => Me.FocusedUnit),
                             Spell.Cast("Faerie Fire", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Hunter:
                     return new PrioritySelector(
                             new Decorator(ret => Me.FocusedUnitGuid == 0,
                                 SetFocusDino()),
                             Spell.Cast("Arcane Shot", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Mage:
                     return new Throttle(1, 1,
                         new PrioritySelector(
                             new Decorator(ret => Me.FocusedUnitGuid == 0,
                                 SetFocusDino()),
                             Spell.Cast("Ice Lance", on => Me.FocusedUnit)));
-                    break;
                 case WoWClass.Monk:
                     return new PrioritySelector(
                             new Decorator(ret => Me.FocusedUnitGuid == 0,
                                 SetFocusDino()),
                             Spell.Cast("Provoke", on => Me.FocusedUnit),
                             Spell.Cast("Chi Wave", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Paladin:
                     return new PrioritySelector(
                             new Decorator(ret => Me.FocusedUnitGuid == 0,
                                 SetFocusDino()),
                             Spell.Cast("Judgement", on => Me.FocusedUnit),
                             Spell.Cast("Avenger's Shield", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Priest:
                     return new PrioritySelector(
                             new Decorator(ret => Me.FocusedUnitGuid == 0,
@@ -128,13 +122,11 @@ namespace SlimAI.Helpers
                             Spell.Cast("Power Word: Solace", on => Me.FocusedUnit),
                             Spell.Cast("Smite", on => Me.FocusedUnit),
                             Spell.Cast("Chi Wave", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Rogue:
                     return new PrioritySelector(
                             new Decorator(ret => Me.FocusedUnitGuid == 0,
                                 SetFocusDino()),
                             Spell.Cast("Throw", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Shaman:
                     return new PrioritySelector(
                             new Decorator(ret => Me.FocusedUnitGuid == 0,
@@ -142,19 +134,16 @@ namespace SlimAI.Helpers
                             Spell.Cast("Purge", on => Me.FocusedUnit),
                             Spell.Cast("Unleashed Elements", on => Me.FocusedUnit),
                             Spell.Cast("Lightning Bolt", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Warlock:
                     return new PrioritySelector(
                         new Decorator(ret => Me.FocusedUnitGuid == 0,
                             SetFocusDino()),
                         Spell.Cast("Fel Flame", on => Me.FocusedUnit));
-                    break;
                 case WoWClass.Warrior:
                     return new PrioritySelector(
                         new Decorator(ret => Me.FocusedUnitGuid == 0,
                             SetFocusDino()),
                         Spell.Cast("Throw", on => Me.FocusedUnit));
-                    break;
             }
             return null;
         }

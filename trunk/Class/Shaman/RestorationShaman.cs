@@ -525,7 +525,7 @@ namespace SlimAI.Class.Shaman
             return average;
         }
 
-        private float _healingWave = 0; //drdamage holds the key
+        //drdamage holds the key
         //ave base = 8345 [+ 75.6% of Spell power].
         //8345 * (33314(sp) * .756(75.6%) = 33530
         //33530 * 1.25(125%) = 41912 (wow tool tip number - ave hit)

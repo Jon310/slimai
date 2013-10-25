@@ -102,28 +102,17 @@ namespace SlimAI
         {
             delegate RunStatus TickDelegate(object context);
 
-            TickDelegate _TickSelectedByUser;
+            readonly TickDelegate _TickSelectedByUser;
 
             public LockSelector(params Composite[] children)
                 : base(children)
             {
-                if (false)// Option to use framelock goes here
-                    _TickSelectedByUser = TickWithFrameLock;
-                else
                     _TickSelectedByUser = TickNoFrameLock;
             }
 
             public override RunStatus Tick(object context)
             {
                 return _TickSelectedByUser(context);
-            }
-
-            private RunStatus TickWithFrameLock(object context)
-            {
-                using (StyxWoW.Memory.AcquireFrame())
-                {
-                    return base.Tick(context);
-                }
             }
 
             private RunStatus TickNoFrameLock(object context)

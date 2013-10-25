@@ -72,18 +72,6 @@ namespace SlimAI.Class.Paladin
                 return null;
             }
         }
-
-        private static int _SecTarAudit = 0;
-
-        private static void setSecTar()
-        {
-            _SecTarAudit = 1;
-        }
-
-        private static void resetSecTar()
-        {
-            _SecTarAudit = 0;
-        }
         #endregion
 
         #region PaladinTalents
