@@ -287,7 +287,7 @@ namespace SlimAI.Helpers
             // Ignore friendlies!
             if (p.IsFriendly)
                 return false;
-
+            
             // Dummies/bosses are valid by default. Period.
             if (p.IsTrainingDummy() || p.IsBoss())
                 return true;
@@ -369,7 +369,7 @@ namespace SlimAI.Helpers
         }
 
         /// <summary>
-        ///   Gets the nearby unfriendly units that we are facing within *distance* yards.
+        ///   Gets the nearby unfriendly units that we are facing within *distance* yards of the target.
         /// </summary>
         /// <param name="distance"> The distance to check from current target</param>
         /// <value>The nearby unfriendly units.</value>
@@ -378,7 +378,7 @@ namespace SlimAI.Helpers
             var dist = distance * distance;
             var curTarLocation = StyxWoW.Me.CurrentTarget.Location;
             return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
-                        p => ValidUnit(p) && StyxWoW.Me.IsSafelyFacing(p) && p.Location.DistanceSqr(curTarLocation) <= dist).ToList();
+                        p => ValidUnit(p) && !p.IsCritter && !p.IsPetBattleCritter && StyxWoW.Me.IsSafelyFacing(p) && p.Location.DistanceSqr(curTarLocation) <= dist).ToList();
         }
 
         /// <summary>

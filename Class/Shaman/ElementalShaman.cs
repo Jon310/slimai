@@ -43,7 +43,11 @@ namespace SlimAI.Class.Shaman
                 Spell.Cast(ElementalBlast),
                 Spell.Cast(EarthShock, ret => Me.HasAura("Lightning Shield", Unit.UnfriendlyUnitsNearTargetFacing(10).Count() > 2 ? 7 : 6)),
                 Spell.Cast(SearingTotem, ret => !Totems.ExistInRange(Me.CurrentTarget.Location, WoWTotem.Searing)),
-                Spell.Cast(Unit.UnfriendlyUnitsNearTargetFacing(10).Count() > 1 ? "Chain Lightning" : "Lightning Bolt"));
+                new Decorator(ret => Unit.UnfriendlyUnitsNearTargetFacing(10).Count()> 1,
+                    new PrioritySelector(
+                        Spell.Cast(ChainLightning),
+                        new ActionAlwaysSucceed())),
+                Spell.Cast(LightningBolt));
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental)]

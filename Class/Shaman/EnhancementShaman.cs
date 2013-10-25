@@ -251,5 +251,37 @@ namespace SlimAI.Class.Shaman
             ElementalBlast
         }
         #endregion
+
+        #region Shaman Spells
+        private const int AncestralSwiftness = 16188,
+                          Ascendance = 114049,
+                          ChainHeal = 1064,
+                          ChainLightning = 421,
+                          EarthElementalTotem = 2062,
+                          EarthShield = 974,
+                          EarthShock = 8042,
+                          ElementalBlast = 117014,
+                          ElementalMastery = 16166,
+                          FireElementalTotem = 2894,
+                          FlameShock = 8050,
+                          GreaterHealingWave = 77472,
+                          HealingRain = 73920,
+                          HealingStreamTotem = 5394,
+                          HealingSurge = 8004,
+                          HealingTideTotem = 108280,
+                          HealingWave = 331,
+                          LavaBurst = 51505,
+                          LightningBolt = 403,
+                          LightningShield = 324,
+                          ManaTideTotem = 16190,
+                          Riptide = 61295,
+                          SearingTotem = 3599,
+                          SpiritLinkTotem = 98008,
+                          SpiritWalkersGrace = 79206,
+                          StormlashTotem = 120668,
+                          Thunderstorm = 51490,
+                          UnleashedElements = 73680,
+                          WaterShield = 52127;
+        #endregion
     }
 }
