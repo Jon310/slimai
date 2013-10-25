@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{FDE279CA-192A-45DA-9A04-8892EE475B86}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SlimAI</RootNamespace>
+    <AssemblyName>SlimAI</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="GreyMagic">
+      <HintPath>..\..\..\GreyMagic.dll</HintPath>
+    </Reference>
+    <Reference Include="Honorbuddy">
+      <HintPath>..\..\..\Honorbuddy.exe</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Class\DeathKnight\BloodDeathknight.cs" />
+    <Compile Include="Class\DeathKnight\FrostDeathknight.cs" />
+    <Compile Include="Class\DeathKnight\UnholyDeathknight.cs" />
+    <Compile Include="Class\Druid\FeralDruid.cs" />
+    <Compile Include="Class\Druid\GuardianDruid.cs" />
+    <Compile Include="Class\Monk\BrewmasterMonk.cs" />
+    <Compile Include="Class\Monk\MistweaverMonk.cs" />
+    <Compile Include="Class\Monk\WindwalkerMonk.cs" />
+    <Compile Include="Class\Paladin\ProtectionPaladin.cs" />
+    <Compile Include="Class\Paladin\RetributionPaladin.cs" />
+    <Compile Include="Class\Shaman\ElementalShaman.cs" />
+    <Compile Include="Class\Shaman\EnhancementShaman.cs" />
+    <Compile Include="Class\Shaman\RestorationShaman.cs" />
+    <Compile Include="Class\Warrior\ArmsWarrior.cs" />
+    <Compile Include="Class\Warrior\FuryWarrior.cs" />
+    <Compile Include="Class\Warrior\ProtectionWarrior.cs" />
+    <Compile Include="GUI\SlimAIGUI.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\SlimAIGUI.Designer.cs">
+      <DependentUpon>SlimAIGUI.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Helpers\BossMechs.cs" />
+    <Compile Include="Helpers\Clusters.cs" />
+    <Compile Include="Helpers\CombatLog.cs" />
+    <Compile Include="Helpers\Common.cs" />
+    <Compile Include="Helpers\CompositeBuilder.cs" />
+    <Compile Include="Helpers\DeadlyBossMods.cs" />
+    <Compile Include="Helpers\Death.cs" />
+    <Compile Include="Helpers\Dispelling.cs" />
+    <Compile Include="Helpers\Enumeration.cs" />
+    <Compile Include="Helpers\EventHandlers.cs" />
+    <Compile Include="Helpers\Extensions.cs" />
+    <Compile Include="Helpers\Group.cs" />
+    <Compile Include="Helpers\Item.cs" />
+    <Compile Include="Helpers\KeyboardPolling.cs" />
+    <Compile Include="Helpers\LuaCore.cs" />
+    <Compile Include="Helpers\Party.cs" />
+    <Compile Include="Helpers\Spell.cs" />
+    <Compile Include="Helpers\Throttle.cs" />
+    <Compile Include="Helpers\Totems.cs" />
+    <Compile Include="Helpers\Unit.cs" />
+    <Compile Include="Lists\BossList.cs" />
+    <Compile Include="Lists\SpellList.CleanseBlacklist.cs" />
+    <Compile Include="Lists\SpellList.cs" />
+    <Compile Include="Lists\SpellList.PurgeWhitelist.cs" />
+    <Compile Include="Managers\HealerManager.cs" />
+    <Compile Include="Managers\PetManager.cs" />
+    <Compile Include="Managers\SpellImmunityManager.cs" />
+    <Compile Include="Managers\TalentManager.cs" />
+    <Compile Include="Settings\DeathKnightSettings.cs" />
+    <Compile Include="Settings\DruidSettings.cs" />
+    <Compile Include="Settings\GeneralSettings.cs" />
+    <Compile Include="Settings\HotkeySettings.cs" />
+    <Compile Include="Settings\HunterSettings.cs" />
+    <Compile Include="Settings\MageSettings.cs" />
+    <Compile Include="Settings\MonkSettings.cs" />
+    <Compile Include="Settings\PaladinSettings.cs" />
+    <Compile Include="Settings\PriestSettings.cs" />
+    <Compile Include="Settings\RogueSettings.cs" />
+    <Compile Include="Settings\ShamanSettings.cs" />
+    <Compile Include="Settings\WarlockSettings.cs" />
+    <Compile Include="Settings\WarriorSettings.cs" />
+    <Compile Include="SlimAI.Behaviors.cs" />
+    <Compile Include="SlimAI.Context.cs" />
+    <Compile Include="SlimAI.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SlimAI.Hotkeys.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="GUI\SlimAIGUI.resx">
+      <DependentUpon>SlimAIGUI.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
