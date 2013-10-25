@@ -90,7 +90,7 @@ namespace SlimAI
             Burst = true;
 
             HotkeysManager.Register("AOE Toggle",
-            Keys.NumPad2,
+            Keys.NumPad4,
             ModifierKeys.Control,
             o =>
             {
@@ -112,7 +112,7 @@ namespace SlimAI
             Weave = true;
 
             HotkeysManager.Register("Dispell Toggle",
-            Keys.NumPad4,
+            Keys.NumPad5,
             ModifierKeys.Control,
             o =>
             {

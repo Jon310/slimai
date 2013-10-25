@@ -83,7 +83,7 @@ namespace SlimAI.Class.Monk
                 Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 2 && !Me.HasAura("Shuffle") || Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds < 6),
                 Spell.Cast(TigerPalm, ret => Me.CurrentChi >= 2 && !Me.HasAura("Power Guard") || !Me.HasAura("Tiger Power")),
                 Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 35),
-                Spell.Cast(BreathofFire, ret => Me.CurrentChi >= 3 && Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds > 6.5 && Me.CurrentTarget.HasAura("Dizzying Haze")),
+                Spell.Cast(BreathofFire, ret => Me.CurrentChi >= 3 && Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds > 6.5 && Me.CurrentTarget.HasAura("Dizzying Haze") && SlimAI.AOE),
 
                 //Detox
                 CreateDispelBehavior(),
@@ -116,7 +116,8 @@ namespace SlimAI.Class.Monk
 
                 //dont like using this in auto to many probs with it
                 //Spell.Cast("Invoke Xuen, the White Tiger", ret => Me.CurrentTarget.IsBoss && IsCurrentTank()),
-                Spell.Cast(TigerPalm, ret => Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 1 && Me.CurrentChi < 3 && Me.CurrentEnergy < 80));
+                new Throttle(
+                Spell.Cast(TigerPalm, ret => Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 1 && Me.CurrentChi < 3 && Me.CurrentEnergy < 80)));
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
@@ -190,7 +191,7 @@ namespace SlimAI.Class.Monk
         #region OxStatue
         private static Composite OxStatue()
         {
-            return new Decorator(ret => !Me.HasAura("Sanctuary of the Ox") && Me.IsInGroup() && SlimAI.AFK,
+            return new Decorator(ret => !Me.HasAura("Sanctuary of the Ox") && Me.IsInGroup() && SlimAI.Weave,
                 new Action(ret =>
                 {
                     var tpos = Me.CurrentTarget.Location;
