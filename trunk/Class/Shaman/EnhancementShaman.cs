@@ -32,42 +32,43 @@ namespace SlimAI.Class.Shaman
         #region Combat
         [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanEnhancement)]
         public static Composite EnhancementCombat()
-            {
-                return new PrioritySelector(
-                    Spell.Cast("Healing Stream Totem", ret => Me.HealthPercent < 80 && !Totems.Exist(WoWTotemType.Water)),
-                    Spell.Cast("Healing Tide Totem", ret => HealerManager.GetCountWithHealth(55) > 6 && !Totems.Exist(WoWTotemType.Water)),
-                    new Decorator(ret => SlimAI.Burst,
-                        new PrioritySelector(
-                            Spell.Cast("Stormlash Totem", ret => !Me.HasAura("Stormlash Totem")),
-                            Spell.Cast("Elemental Mastery"),
-                            Spell.Cast("Fire Elemental Totem"),
-                            Spell.Cast("Feral Spirit"),
-                            Spell.Cast("Ascendance", ret => !Me.HasAura("Ascendance")))),
-                    new Decorator(ret => Unit.UnfriendlyUnits(10).Count() >= 3,
-                        CreateAoe()),
-                    Spell.Cast("Searing Totem", ret => Me.GotTarget && Me.CurrentTarget.SpellDistance() <Totems.GetTotemRange(WoWTotem.Searing) - 2f && !Totems.Exist(WoWTotemType.Fire)),
-                    Spell.Cast("Unleash Elements", ret => SpellManager.HasSpell("Unleashed Fury")),
-                    Spell.Cast("Elemental Blast", ret => Me.HasAura("Maelstrom Weapon", 1)),
-                    new Decorator(ret => Me.HasAura("Maelstrom Weapon", 5),
-                        new PrioritySelector(
-                            Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
-                            Spell.Cast("Lightning Bolt"))),
-                    //StormBlast
-                    new Decorator(ret => (Me.HasAura("Ascendance") && !WoWSpell.FromId(115356).Cooldown),
-                        new Action(ret => Lua.DoString("RunMacroText('/cast Stormblast')"))),
-                    Spell.Cast("Stormstrike"),
-                    Spell.Cast("Flame Shock", ret => Me.HasAura("Unleash Flame") && !Me.CurrentTarget.HasMyAura("Flame Shock")),
-                    Spell.Cast("Lava Lash"),
-                    Spell.Cast("Flame Shock", ret => (Me.HasAura("Unleash Flame") && Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds < 10) || !Me.CurrentTarget.HasMyAura("Flame Shock")),
-                    Spell.Cast("Unleash Elements"),
-                    new Decorator(ret => Me.HasAura("Maelstrom Weapon", 3) && !Me.HasAura("Ascendance"),
-                        new PrioritySelector(
-                            Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
-                            Spell.Cast("Lightning Bolt"))),
-                    Spell.Cast("Ancestral Swiftness", ret => !Me.HasAura("Maelstrom Weapon")),
-                    Spell.Cast("Lighting Bolt", ret => Me.HasAura("Ancestral Swiftness")),
-                    Spell.Cast("Earth Shock"),
-                    Spell.Cast("Earth Elemental Totem", ret => Me.CurrentTarget.IsBoss && SpellManager.Spells["Fire Elemental Totem"].CooldownTimeLeft.Seconds >= 50));
+        {
+            HealerManager.NeedHealTargeting = true;
+            return new PrioritySelector(
+                Spell.Cast(HealingStreamTotem, ret => Me.HealthPercent < 80 && !Totems.Exist(WoWTotemType.Water)),
+                Spell.Cast(HealingTideTotem, ret => HealerManager.GetCountWithHealth(55) > 6 && !Totems.Exist(WoWTotemType.Water)),
+                new Decorator(ret => SlimAI.Burst,
+                    new PrioritySelector(
+                        Spell.Cast(StormlashTotem, ret => !Me.HasAura("Stormlash Totem")),
+                        Spell.Cast(ElementalMastery),
+                        Spell.Cast(FireElementalTotem),
+                        Spell.Cast(FeralSpirit),
+                        Spell.Cast(Ascendance, ret => !Me.HasAura("Ascendance")))),
+                new Decorator(ret => Unit.UnfriendlyUnits(10).Count() >= 3,
+                    CreateAoe()),
+                Spell.Cast(SearingTotem, ret => Me.GotTarget && Me.CurrentTarget.SpellDistance() <Totems.GetTotemRange(WoWTotem.Searing) - 2f && !Totems.Exist(WoWTotemType.Fire)),
+                Spell.Cast(UnleashedElements, ret => SpellManager.HasSpell("Unleashed Fury")),
+                Spell.Cast(ElementalBlast, ret => Me.HasAura("Maelstrom Weapon", 1)),
+                new Decorator(ret => Me.HasAura("Maelstrom Weapon", 5),
+                    new PrioritySelector(
+                        Spell.Cast(ChainLightning, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                        Spell.Cast(LightningBolt))),
+                //StormBlast
+                new Decorator(ret => (Me.HasAura("Ascendance") && !WoWSpell.FromId(115356).Cooldown),
+                    new Action(ret => Lua.DoString("RunMacroText('/cast Stormblast')"))),
+                Spell.Cast(StormStrike),
+                Spell.Cast(FlameShock, ret => Me.HasAura("Unleash Flame") && !Me.CurrentTarget.HasMyAura("Flame Shock")),
+                Spell.Cast(LavaLash),
+                Spell.Cast(FlameShock, ret => (Me.HasAura("Unleash Flame") && Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds < 10) || !Me.CurrentTarget.HasMyAura("Flame Shock")),
+                Spell.Cast(UnleashedElements),
+                new Decorator(ret => Me.HasAura("Maelstrom Weapon", 3) && !Me.HasAura("Ascendance"),
+                    new PrioritySelector(
+                        Spell.Cast(ChainLightning, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                        Spell.Cast(LightningBolt))),
+                Spell.Cast(AncestralSwiftness, ret => !Me.HasAura("Maelstrom Weapon")),
+                Spell.Cast(LightningBolt, ret => Me.HasAura("Ancestral Swiftness")),
+                Spell.Cast(EarthShock),
+                Spell.Cast(EarthElementalTotem, ret => Me.CurrentTarget.IsBoss && SpellManager.Spells["Fire Elemental Totem"].CooldownTimeLeft.Seconds >= 50));
             }
         
         #endregion
@@ -253,8 +254,10 @@ namespace SlimAI.Class.Shaman
         #endregion
 
         #region Shaman Spells
-        private const int AncestralSwiftness = 16188,
+        private const int AncestralGuidance = 108281,
+                          AncestralSwiftness = 16188,
                           Ascendance = 114049,
+                          AstralShift = 108271,
                           ChainHeal = 1064,
                           ChainLightning = 421,
                           EarthElementalTotem = 2062,
@@ -262,7 +265,9 @@ namespace SlimAI.Class.Shaman
                           EarthShock = 8042,
                           ElementalBlast = 117014,
                           ElementalMastery = 16166,
+                          FeralSpirit = 51533,
                           FireElementalTotem = 2894,
+                          FireNova = 1535,
                           FlameShock = 8050,
                           GreaterHealingWave = 77472,
                           HealingRain = 73920,
@@ -271,17 +276,24 @@ namespace SlimAI.Class.Shaman
                           HealingTideTotem = 108280,
                           HealingWave = 331,
                           LavaBurst = 51505,
+                          LavaLash = 60103,
                           LightningBolt = 403,
                           LightningShield = 324,
                           ManaTideTotem = 16190,
+                          Purge = 370,
                           Riptide = 61295,
                           SearingTotem = 3599,
+                          ShamanisticRage = 30823,
                           SpiritLinkTotem = 98008,
                           SpiritWalkersGrace = 79206,
+                          StoneBulwarkTotem = 108270,
                           StormlashTotem = 120668,
+                          StormStrike = 17364,
                           Thunderstorm = 51490,
+                          TotemicRecall = 36936,
                           UnleashedElements = 73680,
-                          WaterShield = 52127;
+                          WaterShield = 52127,
+                          WindwalkTotem = 108273;
         #endregion
     }
 }
