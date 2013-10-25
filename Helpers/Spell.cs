@@ -904,7 +904,7 @@ namespace SlimAI.Helpers
                             WoWSpell sp = WoWSpell.FromId(spellId(ret));
                             string sname = sp != null ? sp.Name : "#" + spellId(ret).ToString();
                             //LogCast(sname, _castOnUnit);
-                            Logging.Write("Casting " + sname + _castOnUnit);
+                            Logging.Write("Casting " + sname + " on " + _castOnUnit);
                             SpellManager.Cast(spellId(ret), _castOnUnit);
                             _castOnUnit = null;
                             return returnFailure ? RunStatus.Failure : RunStatus.Success;
@@ -1660,8 +1660,6 @@ namespace SlimAI.Helpers
                         && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), onLocation(ret)),
                     new Sequence(
                         new Action(ret => Logging.Write("Casting {0} {1}at location {2} at {3:F1} yds", spell, targetDesc == null ? "" : "on " + targetDesc(ret) + " ", onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location))),
-                            //Logger.Write("Casting {0} {1}at location {2} at {3:F1} yds", spell, targetDesc == null ? "" : "on " + targetDesc(ret) + " ", onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location))),
-
                         new Action(ret => { return SpellManager.Cast(spell) ? RunStatus.Success : RunStatus.Failure; }),
 
                         new DecoratorContinue(
@@ -1674,7 +1672,6 @@ namespace SlimAI.Helpers
                                 new Action(r =>
                                 {
                                     Logging.WriteDiagnostic("error: spell {0} not seen as pending on cursor after 1 second", spell);
-                                    //Logger.WriteDebug("error: spell {0} not seen as pending on cursor after 1 second", spell);
                                     return RunStatus.Failure;
                                 })
                                 )
@@ -1684,7 +1681,7 @@ namespace SlimAI.Helpers
 
                         // check for we are done status
                         new PrioritySelector(
-                // done if cursor doesn't have spell anymore
+                            // done if cursor doesn't have spell anymore
                             new Decorator(
                                 ret => !waitForSpell,
                                 new Action(r => Lua.DoString("SpellStopTargeting()"))   //just in case
