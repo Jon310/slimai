@@ -598,23 +598,46 @@ namespace SlimAI.Class.Shaman
         #endregion
 
         #region Shaman Spells
-        private const int AncestralSwiftness = 16188,
+        private const int AncestralGuidance = 108281,
+                          AncestralSwiftness = 16188,
                           Ascendance = 114049,
+                          AstralShift = 108271,
                           ChainHeal = 1064,
+                          ChainLightning = 421,
+                          EarthElementalTotem = 2062,
                           EarthShield = 974,
+                          EarthShock = 8042,
                           ElementalBlast = 117014,
+                          ElementalMastery = 16166,
+                          FeralSpirit = 51533,
+                          FireElementalTotem = 2894,
+                          FireNova = 1535,
+                          FlameShock = 8050,
                           GreaterHealingWave = 77472,
                           HealingRain = 73920,
                           HealingStreamTotem = 5394,
                           HealingSurge = 8004,
                           HealingTideTotem = 108280,
                           HealingWave = 331,
+                          LavaBurst = 51505,
+                          LavaLash = 60103,
                           LightningBolt = 403,
+                          LightningShield = 324,
                           ManaTideTotem = 16190,
+                          Purge = 370,
                           Riptide = 61295,
+                          SearingTotem = 3599,
+                          ShamanisticRage = 30823,
                           SpiritLinkTotem = 98008,
+                          SpiritWalkersGrace = 79206,
+                          StoneBulwarkTotem = 108270,
+                          StormlashTotem = 120668,
+                          StormStrike = 17364,
+                          Thunderstorm = 51490,
+                          TotemicRecall = 36936,
                           UnleashedElements = 73680,
-                          WaterShield = 52127;
+                          WaterShield = 52127,
+                          WindwalkTotem = 108273;
         #endregion
     }
 }
