@@ -231,15 +231,14 @@ namespace SlimAI.Helpers
                 return false;
 
             if (!u.CanInterruptCurrentSpellCast)
-                ;   // Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but CanInterruptCurrentSpellCast == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
-            else if (!u.InLineOfSpellSight)
-                ;   // Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but LoSS == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
-            else if (u.CurrentCastTimeLeft.TotalMilliseconds < 250)
-                ;
-            else
-                return true;
-
-            return false;
+            {
+                return false;
+            }
+            if (!u.InLineOfSpellSight)
+            {
+                return false;
+            }
+            return !(u.CurrentCastTimeLeft.TotalMilliseconds < 250);
         }
 
 

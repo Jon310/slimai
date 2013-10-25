@@ -954,18 +954,9 @@ namespace SlimAI.Helpers
 
         private static int ConvDate2Timestam(DateTime time)
         {
-#if PREV
-                DateTime baseLine = new DateTime(1970, 1, 1); // Refernzdatum (festgelegt)
-                DateTime date2 = time; // jetztiges Datum / Uhrzeit
-                var ts = new TimeSpan(date2.Ticks - baseLine.Ticks); // das Delta ermitteln
-                // Das Delta als gesammtzahl der sekunden ist der Timestamp
-                return (Convert.ToInt32(ts.TotalSeconds));
-#else
             return (int)(time - timeOrigin).TotalSeconds;
-#endif
         }
-
-        private static long lastReportedTime = -111;
+        
 
     }
 
