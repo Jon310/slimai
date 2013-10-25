@@ -34,7 +34,7 @@
       <HintPath>..\..\..\GreyMagic.dll</HintPath>
     </Reference>
     <Reference Include="Honorbuddy">
-      <HintPath>..\..\..\Honorbuddy.exe</HintPath>
+      <HintPath>..\..\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -45,6 +45,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Tripper.Tools">
+      <HintPath>..\..\Tripper.Tools.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class\DeathKnight\BloodDeathknight.cs" />

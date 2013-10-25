@@ -62,19 +62,26 @@ namespace SlimAI.Class.Warrior
                     Spell.Cast(ShieldBlock, ret => !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave),
                     Spell.Cast(ShieldBarrier, ret => Me.CurrentRage > 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave),
                     Spell.Cast(ShieldBarrier, ret => Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70),
+
                     Spell.Cast(ShatteringThrow, ret => Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust && !Me.IsMoving),
+
                     Spell.Cast(ShieldSlam),
                     Spell.Cast(Revenge, ret => Me.CurrentRage < 90),
+
+                    new Decorator(ret => Spell.GetSpellCooldown("Shield Slam").TotalSeconds >= 1 && Spell.GetSpellCooldown("Revenge").TotalSeconds >= 1/*SpellManager.Spells["Shield Slam"].Cooldown && SpellManager.Spells["Revenge"].Cooldown*/,
+                        new PrioritySelector(
                     Spell.Cast(StormBolt),
                     Spell.Cast(DragonRoar, ret => Me.CurrentTarget.Distance <= 8),
                     Spell.Cast(Execute),
                     Spell.Cast(ThunderClap, ret => !Me.CurrentTarget.HasAura("Weakened Blows") && Me.CurrentTarget.Distance <= 8),
+
                     new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >=2 && SlimAI.AOE, CreateAoe()),
+
                     Spell.Cast(CommandingShout, ret => Me.HasPartyBuff(PartyBuffType.AttackPower)),
                     Spell.Cast(BattleShout),
                     Spell.Cast(HeroicStrike, ret => Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss)),
                     Spell.Cast(HeroicThrow, ret => Me.CurrentTarget.Distance >= 10),
-                    Spell.Cast(Devastate));
+                    Spell.Cast(Devastate, ret => Me.CurrentTarget.HasAura("Weakened Blows")))));
         }
 
         private static Composite CreateAoe()
