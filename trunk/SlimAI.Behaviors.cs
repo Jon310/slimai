@@ -107,7 +107,7 @@ namespace SlimAI
             public LockSelector(params Composite[] children)
                 : base(children)
             {
-                if (true)// Option to use framelock goes here
+                if (false)// Option to use framelock goes here
                     _TickSelectedByUser = TickWithFrameLock;
                 else
                     _TickSelectedByUser = TickNoFrameLock;
