@@ -24,8 +24,8 @@ namespace SlimAI.Class.Druid
                 Common.CreateInterruptBehavior(),
                 CreateCooldowns(),
                 Spell.Cast(Maul, ret => Me.RagePercent > 90 && Me.HasAura("Tooth and Claw")),
-                Spell.Cast("Mangle"),
-                Spell.Cast("Thrash"),
+                Spell.Cast(Mangle),
+                Spell.Cast(Thrash),
                 Spell.Cast(Lacerate),
                 CreateAoe(),
                 Spell.Cast(FaerieFire),
@@ -57,7 +57,8 @@ namespace SlimAI.Class.Druid
         {
             return new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE,
                 new PrioritySelector(
-                    Spell.Cast("Swipe")));
+                    Spell.Cast(Swipe)
+                    ));
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian)]
@@ -110,6 +111,7 @@ namespace SlimAI.Class.Druid
                           HealingTouch = 5185,
                           Lacerate = 33745,
                           MarkoftheWild = 1126,
+                          Mangle = 33917,
                           Maul = 6807,
                           MightofUrsoc = 106922,
                           NaturesSwiftness = 132158,
@@ -121,6 +123,8 @@ namespace SlimAI.Class.Druid
                           Shred = 5221,
                           SkullBash = 106839,
                           SurvivalInstincts = 61336,
+                          Swipe = 106785,
+                          Thrash = 106832,
                           TigersFury = 5217;
         #endregion
     }
