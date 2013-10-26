@@ -32,60 +32,64 @@ namespace SlimAI.Class.Paladin
                             Spell.Cast( s => SealSpell(_seal), on => Me, ret => !Me.HasAura(SealSpell(_seal)))))),
 
                 //Staying alive
-                Spell.Cast("Sacred Shield", on => Me, ret => !Me.HasAura("Sacred Shield") && SpellManager.HasSpell("Sacred Shield")),
-                Spell.Cast("Lay on Hands", on => Me, ret => Me.HealthPercent <= 10 && !Me.HasAura("Forbearance")),
-                Spell.Cast("Ardent Defender", ret => Me.HealthPercent <= 15 && Me.HasAura("Forbearance")),
-                Spell.Cast("Divine Protection", ret => Me.HealthPercent <= 80 && !Me.HasAura("Shield of the Righteous")),
+                Spell.Cast(SacredShield, on => Me, ret => !Me.HasAura("Sacred Shield") && SpellManager.HasSpell("Sacred Shield")),
+                Spell.Cast(LayonHands, on => Me, ret => Me.HealthPercent <= 10 && !Me.HasAura("Forbearance")),
+                Spell.Cast(ArdentDefender, ret => Me.HealthPercent <= 15 && Me.HasAura("Forbearance")),
+                Spell.Cast(DivineProtection, ret => Me.HealthPercent <= 80 && !Me.HasAura("Shield of the Righteous")),
 
-                Spell.Cast("Word of Glory", ret => Me.HealthPercent < 50 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))),
-                Spell.Cast("Word of Glory", ret => Me.HealthPercent < 25 && (Me.CurrentHolyPower >= 2 || Me.HasAura("Divine Purpose"))),
-                Spell.Cast("Word of Glory", ret => Me.HealthPercent < 15 && (Me.CurrentHolyPower >= 1 || Me.HasAura("Divine Purpose"))),
+                Spell.Cast(WordofGlory, ret => Me.HealthPercent < 50 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))),
+                Spell.Cast(WordofGlory, ret => Me.HealthPercent < 25 && (Me.CurrentHolyPower >= 2 || Me.HasAura("Divine Purpose"))),
+                Spell.Cast(WordofGlory, ret => Me.HealthPercent < 15 && (Me.CurrentHolyPower >= 1 || Me.HasAura("Divine Purpose"))),
 
                 //Prot T15 2pc 
                 new Decorator(ret => SlimAI.AFK && !Me.HasAura("Shield of Glory"),
                     new PrioritySelector(
-                        Spell.Cast("Word of Glory", ret => Me.HealthPercent < 90 && Me.CurrentHolyPower == 1),
-                        Spell.Cast("Word of Glory", ret => Me.HealthPercent < 75 && Me.CurrentHolyPower <= 2),
-                        Spell.Cast("Word of Glory", ret => Me.HealthPercent < 50 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))))),
+                        Spell.Cast(WordofGlory, ret => Me.HealthPercent < 90 && Me.CurrentHolyPower == 1),
+                        Spell.Cast(WordofGlory, ret => Me.HealthPercent < 75 && Me.CurrentHolyPower <= 2),
+                        Spell.Cast(WordofGlory, ret => Me.HealthPercent < 50 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))))),
 
                 CreateDispelBehavior(),
 
                 new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2,
                     CreateAoe()),
 
-                Spell.Cast("Shield of the Righteous", ret => (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose")) && SlimAI.Burst),
-                Spell.Cast("Hammer of the Righteous", ret => !Me.CurrentTarget.HasAura("Weakened Blows")),
-                Spell.Cast("Judgment", ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
-                Spell.Cast("Avenger's Shield", ret => Me.HasAura("Grand Crusader")),
-                Spell.Cast("Crusader Strike"),
-                Spell.Cast("Judgment"),
-                LightsHammer(),
-                Spell.Cast("Holy Prism", on => Unit.UnfriendlyUnits(15).Count() >= 2 ? Me : Me.CurrentTarget),
-                Spell.Cast("Execution Sentence"),
-                Spell.Cast("Hammer of Wrath"),
-                Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 && SlimAI.Burst),
-                Spell.Cast("Avenger's Shield"),
-                Spell.Cast("Consecration", ret => !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange),
-                Spell.Cast("Holy Wrath", ret => Me.CurrentTarget.IsWithinMeleeRange));
+                Spell.Cast(ShieldoftheRighteous, ret => (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose")) && SlimAI.Burst),
+                Spell.Cast(HammeroftheRighteous, ret => !Me.CurrentTarget.HasAura("Weakened Blows")),
+                Spell.Cast(Judgment, ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
+                Spell.Cast(AvengersShield, ret => Me.HasAura(GrandCrusader)),
+                Spell.Cast(CrusaderStrike),
+                Spell.Cast(Judgment),
+                new Decorator(ret => Spell.GetSpellCooldown("Judgment").TotalSeconds >= 1 && Spell.GetSpellCooldown("Crusader Strike").TotalSeconds >= 1 && !Me.HasAura(GrandCrusader),
+                    new PrioritySelector(
+                        LightsHammer(),
+                        Spell.Cast(HolyPrism, on => Unit.UnfriendlyUnits(15).Count() >= 2 ? Me : Me.CurrentTarget),
+                        Spell.Cast(ExecutionSentence),
+                        Spell.Cast(HammerofWrath),
+                        Spell.Cast(ShieldoftheRighteous, ret => Me.CurrentHolyPower >= 3 && SlimAI.Burst),
+                        Spell.Cast(AvengersShield),
+                        Spell.Cast(Consecration, ret => !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange),
+                        Spell.Cast(HolyWrath, ret => Me.CurrentTarget.IsWithinMeleeRange))));
         }
         
         private static Composite CreateAoe()
         {
             return new PrioritySelector(
-                Spell.Cast("Shield of the Righteous", ret => (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose")) && SlimAI.Burst),
-                Spell.Cast("Judgment", ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
-                Spell.Cast("Hammer of the Righteous"),
-                Spell.Cast("Judgment"),
-                Spell.Cast("Avenger's Shield", ret => Me.HasAura("Grand Crusader")),
-                LightsHammer(),
-                Spell.Cast("Holy Prism", on => Me, ret => Me.HealthPercent <= 90),
-                Spell.Cast("Execution Sentence"),
-                Spell.Cast("Hammer of Wrath"),
-                Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 && SlimAI.Burst),
-                Spell.Cast("Consecration", ret => !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange),
-                Spell.Cast("Avenger's Shield"),
-                Spell.Cast("Holy Wrath", ret => Me.CurrentTarget.IsWithinMeleeRange),
-                new ActionAlwaysSucceed());
+                Spell.Cast(ShieldoftheRighteous, ret => (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose")) && SlimAI.Burst),
+                Spell.Cast(Judgment, ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
+                Spell.Cast(HammeroftheRighteous),
+                Spell.Cast(Judgment),
+                Spell.Cast(AvengersShield, ret => Me.HasAura(GrandCrusader)),
+                new Decorator(ret => Spell.GetSpellCooldown("Judgment").TotalSeconds >= 1 && Spell.GetSpellCooldown("Crusader Strike").TotalSeconds >= 1 && !Me.HasAura(GrandCrusader),
+                    new PrioritySelector(
+                        LightsHammer(),
+                        Spell.Cast(HolyPrism, on => Me, ret => Me.HealthPercent <= 90),
+                        Spell.Cast(ExecutionSentence),
+                        Spell.Cast(HammerofWrath),
+                        Spell.Cast(ShieldoftheRighteous, ret => Me.CurrentHolyPower >= 3 && SlimAI.Burst),
+                        Spell.Cast(Consecration, ret => !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange),
+                        Spell.Cast(AvengersShield),
+                        Spell.Cast(HolyWrath, ret => Me.CurrentTarget.IsWithinMeleeRange),
+                        new ActionAlwaysSucceed())));
         }
 
         private static WoWUnit dispeltar
@@ -103,8 +107,8 @@ namespace SlimAI.Class.Paladin
         private static Composite CreateDispelBehavior()
         {
             return new PrioritySelector(
-                Spell.Cast("Cleanse", on => Me, ret => Dispelling.CanDispel(Me)),
-                Spell.Cast("Cleanse", on => dispeltar, ret => Dispelling.CanDispel(dispeltar)));
+                Spell.Cast(Cleanse, on => Me, ret => Dispelling.CanDispel(Me)),
+                Spell.Cast(Cleanse, on => dispeltar, ret => Dispelling.CanDispel(dispeltar)));
         }
 
         private static PaladinSeal GetBestSeal()
@@ -180,5 +184,54 @@ namespace SlimAI.Class.Paladin
             ExecutionSentence
         }
         #endregion
+
+        #region Paladian Spells
+        private const int
+            ArdentDefender = 31850,
+            AvengersShield = 31935,
+            AvengingWrath =31884,
+            BlessingofKings = 20217,
+            BlessingofMight = 19740,
+            BlindingLight = 115750,
+            Cleanse = 4987,
+            Consecration = 26573,
+            CrusaderStrike = 35395,
+            DevotionAura = 31821,
+            DivineProtection = 498,
+            DivineShield = 642,
+            EternalFlame = 114163,
+            ExecutionSentence = 114157,
+            FistofJustice = 105593,
+            FlashofLight = 19750,
+            GrandCrusader = 85416,
+            GuardianofAncientKings = 86659,
+            HammeroftheRighteous = 53595,
+            HammerofWrath = 24275,
+            HandofFreedom = 1044,
+            HandofProtection = 1022,
+            HandofPurity = 114039,
+            HandofSacrifice = 6940,
+            HandofSalvation = 1038,
+            HolyAvenger = 105809,
+            HolyPrism = 114165,
+            HolyWrath = 119072,
+            Judgment = 20271,
+            LayonHands = 633,
+            //LightsHammer = 114158,
+            Rebuke = 96231,
+            Reckoning = 62124,
+            Redemption = 7328,
+            Repentance = 20066,
+            RighteousFury = 25780,
+            SacredShield = 20925,
+            SealofInsight = 20165,
+            SealofRighteousness = 20154,
+            SealofTruth = 31801,
+            ShieldoftheRighteous = 53600,
+            SpeedofLight = 85499,
+            TurnEvil = 10326,
+            WordofGlory = 85673;
+        #endregion
+
     }
 }
