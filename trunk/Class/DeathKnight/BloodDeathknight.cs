@@ -11,48 +11,52 @@ using System.Linq;
 
 namespace SlimAI.Class.Deathknight
 {
-    static class BloodDeathknight
+    class BloodDeathknight
     {
         static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static int BloodRuneSlotsActive { get { return Me.BloodRuneCount; } }
-        private static int FrostRuneSlotsActive { get { return Me.FrostRuneCount; } }
-        private static int UnholyRuneSlotsActive { get { return Me.UnholyRuneCount; } }
-        private static int DeathRuneSlotsActive { get { return Me.DeathRuneCount; } }
+        private static int BloodRuneSlotsActive { get { return Me.GetRuneCount(0) + Me.GetRuneCount(1); } }
+        private static int FrostRuneSlotsActive { get { return Me.GetRuneCount(2) + Me.GetRuneCount(3); } }
+        private static int UnholyRuneSlotsActive { get { return Me.GetRuneCount(4) + Me.GetRuneCount(5); } }
         private static DeathKnightSettings Settings { get { return GeneralSettings.Instance.DeathKnight(); } }
 
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
-        public static Composite BloodCombat()
+        public static Composite BloodDKCombat()
         {
             return new PrioritySelector(
                 Common.CreateInterruptBehavior(),
-                new Decorator(ret => Me.CurrentTarget != null && (Me.IsCasting || Me.IsChanneling),
-                    new ActionAlwaysSucceed()),
-                CreateApplyDiseases(),
-                BloodCombatBuffs(),
-                new Decorator(ret => SlimAI.AFK,
-                    CreateAFK()),
-                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                new Decorator(ret =>!Me.Combat || Me.Mounted || Me.IsCasting || Me.IsChanneling,
+                              new ActionAlwaysSucceed()),
+            CreateApplyDiseases(),
+            BloodCombatBuffs(),
+            new Decorator(ret => SlimAI.AFK,
+                CreateAFK()),
+            new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
 
-                new Throttle(1, 2,
-                    new Decorator(ret => Unit.UnfriendlyUnits(12).Count() >= 2 && !Me.HasAura("Unholy Blight") && SlimAI.AOE && ShouldSpreadDiseases,
-                        new PrioritySelector(
-                            Spell.Cast(BloodBoil, ret => SpellManager.HasSpell("Roiling Blood")),
-                            Spell.Cast(Pestilence, ret => !SpellManager.HasSpell("Roiling Blood"))))),
-               
-                Spell.Cast(DeathStrike, ret => ShouldDeathStrike),
-                DnD(),
-                Spell.Cast(BloodBoil, ret => Me.HasAura(81141) && SlimAI.AOE && !SpellManager.CanCast("Death and Decay")),
-                Spell.Cast(RuneTap, ret => Me.HealthPercent <= 80 && Me.BloodRuneCount >= 1, true),
-                new Decorator(ret => Me.CurrentRunicPower >= 30 && !Me.HasAura("Lichborne"),
-                    Spell.Cast(RuneStrike, ret => (Me.CurrentRunicPower >= 60 || Me.HealthPercent > 90) && NoRunes)),
-                Spell.Cast("Soul Reaper", ret => Me.BloodRuneCount > 0 && Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent <= 35),
-                Spell.Cast(BloodBoil, ret => SlimAI.AOE && !SpellManager.CanCast("Death and Decay") && Unit.UnfriendlyUnits(10).Count() >= 3 && Me.BloodRuneCount > 0),
-                Spell.Cast(HeartStrike, ret => Me.BloodRuneCount > 0),
-                Spell.Cast(HornofWinter, ret => Me.CurrentRunicPower < 90));
+            Spell.Cast(DeathStrike, ret => ShouldDeathStrike),
+
+            new Throttle(1, 2,
+                new Decorator(ret => Unit.UnfriendlyUnits(12).Count() >= 2 && !Me.HasAura("Unholy Blight") && SlimAI.AOE && ShouldSpreadDiseases,
+                    new PrioritySelector(
+                        Spell.Cast(BloodBoil, ret => SpellManager.HasSpell("Roiling Blood")),
+                        Spell.Cast(Pestilence, ret => !SpellManager.HasSpell("Roiling Blood"))))),
+
+            new Decorator(ret => !ShouldDeathStrike,
+                new PrioritySelector(
+                    DnD(),
+                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && (Me.CurrentTarget.HasAuraExpired("Blood Plague", 3) && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3 ||
+                                                 Me.HasAura(81141) && !SpellManager.CanCast("Death and Decay"))),
+                    Spell.Cast(RuneTap, ret => Me.HealthPercent <= 80 && Me.BloodRuneCount >= 1),
+                    new Decorator(ret => Me.CurrentRunicPower >= 30 && !Me.HasAura("Lichborne"),
+                        Spell.Cast(RuneStrike, ret => (Me.CurrentRunicPower >= 60 || Me.HealthPercent > 90) && NoRunes)),
+                    Spell.Cast(SoulReaper, ret => Me.BloodRuneCount > 0 && Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent <= 35),
+                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && !SpellManager.CanCast("Death and Decay") && Unit.UnfriendlyUnits(10).Count() >= 3 && Me.BloodRuneCount > 0),
+                    Spell.Cast(HeartStrike, ret => Me.BloodRuneCount > 0),
+                    Spell.Cast(HornofWinter, ret => Me.CurrentRunicPower < 90))));
+
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
-        public static Composite BloodPreCombatBuffs()
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
+        public static Composite BloodDKPreCombatBuffs()
         {
             return new PrioritySelector(
                 Spell.Cast(BoneShield, ret => !Me.HasAura("Bone Shield")),
@@ -62,14 +66,14 @@ namespace SlimAI.Class.Deathknight
         private static Composite BloodCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.Cast(DancingRuneWeapon, ret => IsCurrentTank(), true),
+                Spell.Cast(DancingRuneWeapon, ret => IsCurrentTank()),
                 Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 5) && Me.HealthPercent < 90 && !SpellManager.CanCast("Death Strike") && NoRunes),
-                Spell.Cast(BoneShield, ret => !Me.HasAura("Bone Shield"), true),
+                Spell.Cast(BoneShield, ret => !Me.HasAura("Bone Shield")),
                 Spell.Cast(Conversion, ret => Me.HealthPercent < 60 && Me.RunicPowerPercent > 20 && !Me.HasAura("Conversion")),
                 Spell.Cast(Conversion, ret => Me.HealthPercent > 90 && Me.HasAura("Conversion")),
                 new Decorator(ret => !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"),
                     new PrioritySelector(
-                        Spell.Cast(VampiricBlood, ret => Me.HealthPercent < 60, true),
+                        Spell.Cast(VampiricBlood, ret => Me.HealthPercent < 60),
                         Spell.Cast(IceboundFortitude, ret => Me.HealthPercent < 30))),
                 Spell.Cast(MightofUrsoc, ret => Me.HealthPercent < 60),
                 new Decorator(ret => Me.HealthPercent < 45,
@@ -97,8 +101,11 @@ namespace SlimAI.Class.Deathknight
                     Spell.Cast(UnholyBlight, ret => SlimAI.AOE && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss()) &&
                                                        u.Distance < 10 && u.HasAuraExpired("Blood Plague"))),
                     Spell.Cast(Outbreak, ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague")),
+                    new Decorator(ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3,
+                        new PrioritySelector(
                     Spell.Cast(IcyTouch, ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentTarget.HasAuraExpired("Frost Fever")),
-                    Spell.Cast(PlagueStrike, ret => Me.CurrentTarget.HasAuraExpired("Blood Plague"))));
+                    Spell.Cast(PlagueStrike, ret => Me.CurrentTarget.HasAuraExpired("Blood Plague"))))
+                    ));
         }
 
         private static bool ShouldSpreadDiseases
@@ -191,43 +198,45 @@ namespace SlimAI.Class.Deathknight
         #endregion
 
         #region DeathKnight Spells
-        private const int AntiMagicShell = 48707,
-                          Asphyxiate = 108194,
-                          BloodBoil = 48721,
-                          BloodTap = 45529,
-                          BoneShield = 49222,
-                          Conversion = 119975,
-                          DancingRuneWeapon = 49028,
-                          DarkTransformation = 63560,
-                          DeathandDecay = 43265,
-                          DeathCoil = 47541,
-                          DeathPact = 48743,
-                          DeathSiphon = 108196,
-                          DeathStrike = 49998,
-                          DesecratedGround = 108201,
-                          EmpowerRuneWeapon = 47568,
-                          FrostStrike = 49143,
-                          HeartStrike = 55050,
-                          HornofWinter = 57330,
-                          HowlingBlast = 49184,
-                          IceboundFortitude = 48792,
-                          IcyTouch = 45477,
-                          Lichborne = 49039,
-                          MightofUrsoc = 106922,
-                          Obliterate = 49020,
-                          Outbreak = 77575,
-                          Pestilence = 50842,
-                          PillarofFrost = 51271,
-                          PlagueLeech = 123693,
-                          PlagueStrike = 45462,
-                          RaiseDead = 46584,
-                          RemorselessWinter = 108200,
-                          RuneStrike = 56815,
-                          RuneTap = 48982,
-                          ScourgeStrike = 55090,
-                          SummonGargoyle = 49206,
-                          UnholyBlight = 115989,
-                          VampiricBlood = 55233;
+        private const int 
+            AntiMagicShell = 48707,
+            Asphyxiate = 108194,
+            BloodBoil = 48721,
+            BloodTap = 45529,
+            BoneShield = 49222,
+            Conversion = 119975,
+            DancingRuneWeapon = 49028,
+            DarkTransformation = 63560,
+            DeathandDecay = 43265,
+            DeathCoil = 47541,
+            DeathPact = 48743,
+            DeathSiphon = 108196,
+            DeathStrike = 49998,
+            DesecratedGround = 108201,
+            EmpowerRuneWeapon = 47568,
+            FrostStrike = 49143,
+            HeartStrike = 55050,
+            HornofWinter = 57330,
+            HowlingBlast = 49184,
+            IceboundFortitude = 48792,
+            IcyTouch = 45477,
+            Lichborne = 49039,
+            MightofUrsoc = 106922,
+            Obliterate = 49020,
+            Outbreak = 77575,
+            Pestilence = 50842,
+            PillarofFrost = 51271,
+            PlagueLeech = 123693,
+            PlagueStrike = 45462,
+            RaiseDead = 46584,
+            RemorselessWinter = 108200,
+            RuneStrike = 56815,
+            RuneTap = 48982,
+            ScourgeStrike = 55090,
+            SoulReaper = 114866,
+            SummonGargoyle = 49206,
+            UnholyBlight = 115989,
+            VampiricBlood = 55233;
         #endregion
     }
 }
