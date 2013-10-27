@@ -26,7 +26,8 @@ namespace SlimAI.Class.Deathknight
                 Common.CreateInterruptBehavior(),
                 new Decorator(ret =>!Me.Combat || Me.Mounted || Me.IsCasting || Me.IsChanneling,
                               new ActionAlwaysSucceed()),
-            CreateApplyDiseases(),
+            new Decorator(ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague"), 
+                CreateApplyDiseases()),
             BloodCombatBuffs(),
             new Decorator(ret => SlimAI.AFK,
                 CreateAFK()),
@@ -43,7 +44,7 @@ namespace SlimAI.Class.Deathknight
             new Decorator(ret => !ShouldDeathStrike,
                 new PrioritySelector(
                     DnD(),
-                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && (Me.CurrentTarget.HasAuraExpired("Blood Plague", 3) && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3 ||
+                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && ((Me.CurrentTarget.HasAuraExpired("Blood Plague", 3) && Me.CurrentTarget.HasAura("Blood Plague")) && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3 ||
                                                  Me.HasAura(81141) && !SpellManager.CanCast("Death and Decay"))),
                     Spell.Cast(RuneTap, ret => Me.HealthPercent <= 80 && Me.BloodRuneCount >= 1),
                     new Decorator(ret => Me.CurrentRunicPower >= 30 && !Me.HasAura("Lichborne"),
@@ -100,7 +101,7 @@ namespace SlimAI.Class.Deathknight
                 new PrioritySelector(
                     Spell.Cast(UnholyBlight, ret => SlimAI.AOE && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss()) &&
                                                        u.Distance < 10 && u.HasAuraExpired("Blood Plague"))),
-                    Spell.Cast(Outbreak, ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague")),
+                    Spell.Cast(Outbreak),
                     new Decorator(ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3,
                         new PrioritySelector(
                     Spell.Cast(IcyTouch, ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentTarget.HasAuraExpired("Frost Fever")),
