@@ -30,6 +30,10 @@ namespace SlimAI.Class.Shaman
                 Spell.WaitForCastOrChannel(),
                 new Decorator(ret => (Me.Combat || healtarget.Combat) && !Me.Mounted,
                     new PrioritySelector(
+
+                        //new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                        new Decorator(ret => Me.ManaPercent <= 85,
+                            new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; })),
                         RollRiptide(),
                         TidalWaves(),
                         new Decorator(ret => SlimAI.Dispell,
@@ -54,6 +58,19 @@ namespace SlimAI.Class.Shaman
                             ret => Me.Combat && !Totems.Exist(WoWTotemType.Water) && HealerManager.Instance.TargetList.Any(p => p.GetPredictedHealthPercent() < 95 && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
                         Spell.Cast(ManaTideTotem, 
                             ret => !Totems.Exist(WoWTotemType.Water) && Me.ManaPercent < 80),
+                        new Decorator(ret => Me.ManaPercent > 85 && healtarget.HealthPercent > 75,
+                            new PrioritySelector(
+                                Spell.Cast(SearingTotem,
+                                    ret => !Totems.Exist(WoWTotemType.Fire) && Me.CurrentTarget.SpellDistance() < Totems.GetTotemRange(WoWTotem.Searing) - 2f),
+                                Spell.Cast(FlameShock,
+                                    on => FlameShockTar,
+                                    ret => FlameShockTar.HasAuraExpired("Flame Shock", 3)),
+                                Spell.Cast(LavaBurst,
+                                    on => LvBShockTar))),
+                        Spell.Cast("Elemental Blast",
+                            on => BoltTar(),
+                            ret => true,
+                            cancel => healtarget.HealthPercent < 50),
                         HealingRainCast(),
                         ChainHealCast(),
                         Spell.Cast("Greater Healing Wave", 
@@ -75,14 +92,10 @@ namespace SlimAI.Class.Shaman
                             ret => HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 50) >= 4 && !Me.HasAura("Ascendance") && SlimAI.Burst),
                         RiptideCast(),
                         Common.CreateInterruptBehavior(),
-                        Spell.Cast("Elemental Blast",
-                            on => BoltTar(),
-                            ret => true,
-                            cancel => healtarget.HealthPercent < 70),
                         Spell.Cast("Lightning Bolt",
                             on => BoltTar(), 
-                            ret => TalentManager.HasGlyph("Telluric Currents"), 
-                            cancel => healtarget.HealthPercent < 70))));
+                            reet => TalentManager.HasGlyph("Telluric Currents"), 
+                            cancel => healtarget.HealthPercent < 70 && Me.ManaPercent > 10))));
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
@@ -93,6 +106,39 @@ namespace SlimAI.Class.Shaman
                 CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue));
         }
 
+        #region Lava Burst Target
+        private static WoWUnit LvBShockTar
+        {
+            get
+            {
+                var besttar = (from unit in ObjectManager.GetObjectsOfType<WoWUnit>(false)
+                               where unit.IsAlive
+                               where unit.IsTargetingMyPartyMember || unit.IsTargetingMyRaidMember
+                               where unit.HasMyAura("Flame Shock")
+                               where unit.InLineOfSight
+                               select unit).FirstOrDefault();
+                return besttar;
+            }
+        }
+        #endregion
+
+        #region Flame Shock Target
+        private static WoWUnit FlameShockTar
+        {
+            get
+            {
+                var besttar = (from unit in ObjectManager.GetObjectsOfType<WoWUnit>(false)
+                               where unit.IsAlive
+                               where unit.IsTargetingMyPartyMember || unit.IsTargetingMyRaidMember
+                               where unit.HasAuraExpired("Flame Shock", 3)
+                               where unit.InLineOfSight
+                               select unit).FirstOrDefault();
+                return besttar;
+            }
+        }
+        #endregion
+
+        #region Earth Shield
         private static ulong guidLastEarthShield = 0;
         private static WoWUnit GetBestEarthShieldTargetInstance()
         {
@@ -115,7 +161,9 @@ namespace SlimAI.Class.Shaman
             guidLastEarthShield = target != null ? target.Guid : 0;
             return target;
         }
+        #endregion
 
+        #region Imbue
         private enum Imbue
         {
             None = 0,
@@ -224,7 +272,9 @@ namespace SlimAI.Class.Shaman
         {
             return GetImbue(item) == Imbue.Earthliving;
         }
+        #endregion
 
+        #region Heal Stuff
         private static bool IsValidEarthShieldTarget(WoWUnit unit)
         {
             if (unit == null || !unit.IsValid || !unit.IsAlive || Unit.GroupMembers.All(g => g.Guid != unit.Guid) || unit.Distance > 99)
@@ -473,12 +523,15 @@ namespace SlimAI.Class.Shaman
             WoWUnit ripTarget = Group.Tanks.Where(u => !u.HasAura("Reshape Life") && !u.HasAura("Parasitic Growth") && u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && !u.HasAura("Riptide") && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
             return ripTarget;
         }
+        #endregion
 
+        #region Bolt Tar
         private static WoWUnit BoltTar()
         {
             var bolttarget = Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsTargetingUs() && u.IsHostile && Me.IsSafelyFacing(u));
             return bolttarget;
         }
+        #endregion
 
         #region Spell math
 
