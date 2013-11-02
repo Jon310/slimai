@@ -96,8 +96,9 @@ namespace SlimAI.Class.Monk
                 //Spell.Cast("Chi Wave", on => Me, ret => Me.HealthPercent <= 85),
                 Spell.Cast(ZenSphere, on => Tanking),
                 
-                Spell.Cast(ExpelHarm, on => EHtar, ret => Me.HealthPercent > 70 && TalentManager.HasGlyph("Targeted Expulsion")),
-                Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 70 && TalentManager.HasGlyph("Targeted Expulsion") || Me.HealthPercent < 85 && !TalentManager.HasGlyph("Targeted Expulsion")),
+                //Spell.Cast(ExpelHarm, on => EHtar, ret => Me.HealthPercent > 70 && TalentManager.HasGlyph("Targeted Expulsion")),
+                //Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 70 && TalentManager.HasGlyph("Targeted Expulsion") || Me.HealthPercent < 85 && !TalentManager.HasGlyph("Targeted Expulsion")),
+                Spell.Cast(ExpelHarm, ret => Me.HealthPercent < 85),
 
                 //Healing Spheres need to work on not happy with this atm
                 //HealingSphere(),
