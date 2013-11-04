@@ -47,9 +47,7 @@ namespace SlimAI.Class.Warrior
                     //CD's all bout living
                     Spell.Cast(VictoryRush, ret => Me.HealthPercent <= 90 && Me.HasAura("Victorious")),
                     Spell.Cast(BerserkerRage, ret => NeedZerker()),
-                    Spell.Cast(EnragedRegeneration, ret => (Me.HealthPercent <= 80 && Me.HasAura(Enrage) ||
-                                                              Me.HealthPercent <= 50 && Spell.GetSpellCooldown("Berserker Rage").TotalSeconds > 10)
-                                                              && SpellManager.HasSpell("Enraged Regeneration")),
+                    Spell.Cast(EnragedRegeneration, ret => NeedEnrageRegen()),
                     Spell.Cast(LastStand, ret => Me.HealthPercent <= 15 && !Me.HasAura("Shield Wall")),
                     Spell.Cast(ShieldWall, ret => Me.HealthPercent <= 30 && !Me.HasAura("Last Stand")),
 
@@ -70,18 +68,16 @@ namespace SlimAI.Class.Warrior
 
                     new Decorator(ret => Spell.GetSpellCooldown("Shield Slam").TotalSeconds >= 1 && Spell.GetSpellCooldown("Revenge").TotalSeconds >= 1/*SpellManager.Spells["Shield Slam"].Cooldown && SpellManager.Spells["Revenge"].Cooldown*/,
                         new PrioritySelector(
-                    Spell.Cast(StormBolt),
-                    Spell.Cast(DragonRoar, ret => Me.CurrentTarget.Distance <= 8),
-                    Spell.Cast(Execute),
-                    Spell.Cast(ThunderClap, ret => !Me.CurrentTarget.HasAura("Weakened Blows") && Me.CurrentTarget.Distance <= 8),
-
-                    new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >=2 && SlimAI.AOE, CreateAoe()),
-
-                    Spell.Cast(CommandingShout, ret => Me.HasPartyBuff(PartyBuffType.AttackPower)),
-                    Spell.Cast(BattleShout),
-                    Spell.Cast(HeroicStrike, ret => Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss)),
-                    Spell.Cast(HeroicThrow, ret => Me.CurrentTarget.Distance >= 10),
-                    Spell.Cast(Devastate, ret => Me.CurrentTarget.HasAura("Weakened Blows")))));
+                            Spell.Cast(StormBolt),
+                            Spell.Cast(DragonRoar, ret => Me.CurrentTarget.Distance <= 8),
+                            Spell.Cast(Execute),
+                            Spell.Cast(ThunderClap, ret => !Me.CurrentTarget.HasAura("Weakened Blows") && Me.CurrentTarget.Distance <= 8),
+                            new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >=2 && SlimAI.AOE, CreateAoe()),
+                            Spell.Cast(CommandingShout, ret => Me.HasPartyBuff(PartyBuffType.AttackPower)),
+                            Spell.Cast(BattleShout),
+                            Spell.Cast(HeroicStrike, ret => Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss)),
+                            Spell.Cast(HeroicThrow, ret => Me.CurrentTarget.Distance >= 10),
+                            Spell.Cast(Devastate, ret => Me.CurrentTarget.HasAura("Weakened Blows")))));
         }
 
         private static Composite CreateAoe()
@@ -140,6 +136,13 @@ namespace SlimAI.Class.Warrior
                    (SpellManager.HasSpell("Enraged Regeneration") && (!Me.HasAura(Enrage) &&
                     Me.HealthPercent <= 80 && !SpellManager.Spells["Enraged Regeneration"].Cooldown ||
                     Spell.GetSpellCooldown("Enraged Regeneration").TotalSeconds > 30 && SpellManager.Spells["Enraged Regeneration"].Cooldown)));
+        }
+
+        private static bool NeedEnrageRegen()
+        {
+
+            return (Me.HealthPercent <= 80 && Me.HasAura(Enrage) || Me.HealthPercent <= 50 && 
+                    Spell.GetSpellCooldown("Berserker Rage").TotalSeconds > 10) && SpellManager.HasSpell("Enraged Regeneration");
         }
 
         static bool IsCurrentTank()
