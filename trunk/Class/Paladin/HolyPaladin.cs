@@ -35,28 +35,27 @@ namespace SlimAI.Class.Paladin
                 new Decorator(ret => SlimAI.Burst,
                     new PrioritySelector(
                         Spell.Cast(DivineFavor,
-                                    ret => HealerManager.GetCountWithHealth(60) > 3),
+                                    ret => HealerManager.GetCountWithHealth(60) > 3 && !Me.HasAnyAura("Guardian of Ancient Kings", "Avenging Wrath", "Divine Favor")),
                         Spell.Cast(AvengingWrath,
-                                    ret => HealerManager.GetCountWithHealth(50) > 3),
+                                    ret => HealerManager.GetCountWithHealth(50) > 3 && !Me.HasAnyAura("Guardian of Ancient Kings", "Avenging Wrath", "Divine Favor")),
                         Spell.Cast(GuardianofAncientKings,
-                                    ret => HealerManager.GetCountWithHealth(40) > 3))),
+                                    ret => HealerManager.GetCountWithHealth(40) > 3 && !Me.HasAnyAura("Guardian of Ancient Kings","Avenging Wrath", "Divine Favor")))),
                 LightsHammerCast(),
-
+                
                 Spell.Cast(SacredShield,
                            on => Tanking,
                            ret => healtarget.HealthPercent < 100),                
                 Spell.Cast("Light of Dawn",
-                           on => GetBestHolyRadianceTarget(),
-                           ret => healtarget.HealthPercent < 93 && Me.CurrentHolyPower >= 3,
-                           cancel => healtarget.HealthPercent > cancelHeal),
+                           ret => HealerManager.GetCountWithHealth(90) > 3 && Me.CurrentHolyPower >= 3),
                 Spell.Cast("Word of Glory",
                            on => healtarget,
-                           ret => healtarget.HealthPercent < 85 && Me.CurrentHolyPower >= 3,
-                           cancel => healtarget.HealthPercent > cancelHeal),
+                           ret => healtarget.HealthPercent < 85 && Me.CurrentHolyPower >= 3),
                 Spell.Cast("Holy Shock",
                            on => healtarget,
-                           ret => healtarget.HealthPercent < 93,
-                           cancel => healtarget.HealthPercent > cancelHeal),
+                           ret => healtarget.HealthPercent < 93),
+                Spell.Cast(HolyPrism,
+                            on => PrismTar(),
+                            ret => HealerManager.GetCountWithHealth(90) > 3),
                 HolyRadianceCast(),
                 //Spell.Cast("Holy Radiance",
                 //           on => healtarget,
@@ -152,6 +151,14 @@ namespace SlimAI.Class.Paladin
 
             return null;
 
+        }
+        #endregion
+
+        #region Prism tar
+        private static WoWUnit PrismTar()
+        {
+            var prismtarget = Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsTargetingUs() && u.IsHostile && Me.IsSafelyFacing(u));
+            return prismtarget;
         }
         #endregion
 

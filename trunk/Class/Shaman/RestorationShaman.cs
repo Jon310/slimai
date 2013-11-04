@@ -60,7 +60,7 @@ namespace SlimAI.Class.Shaman
                             ret => !Totems.Exist(WoWTotemType.Water) && Me.ManaPercent < 80),
                         Spell.Cast("Elemental Blast",
                             on => BoltTar(),
-                            ret => true,
+                            ret => healtarget.HealthPercent > 50,
                             cancel => healtarget.HealthPercent < 50),
                         HealingRainCast(),
                         ChainHealCast(),
