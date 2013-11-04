@@ -35,8 +35,13 @@ namespace SlimAI.Class.Shaman
         {
             HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
+                new Decorator(ret => !Me.Combat || Me.Mounted,
+                    new ActionAlwaysSucceed()),
                 Spell.Cast(HealingStreamTotem, ret => Me.HealthPercent < 80 && !Totems.Exist(WoWTotemType.Water)),
                 Spell.Cast(HealingTideTotem, ret => HealerManager.GetCountWithHealth(55) > 6 && !Totems.Exist(WoWTotemType.Water)),
+                Common.CreateInterruptBehavior(),
+                new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
+                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                 new Decorator(ret => SlimAI.Burst,
                     new PrioritySelector(
                         Spell.Cast(StormlashTotem, ret => !Me.HasAura("Stormlash Totem")),

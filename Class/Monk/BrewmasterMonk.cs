@@ -29,7 +29,7 @@ namespace SlimAI.Class.Monk
                 /*Things to fix
                  * using glyph of expel harm to heal ppl dont want to have to page heal manger if i dont have to to keep it faster i guess
                 */
-                new Decorator(ret => !Me.Combat,
+                new Decorator(ret => !Me.Combat || Me.Mounted,
                     new ActionAlwaysSucceed()),
                 Spell.Cast(SpearHandStrike, ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
                 Spell.WaitForCastOrChannel(),
