@@ -59,6 +59,7 @@
     <Compile Include="Class\Monk\BrewmasterMonk.cs" />
     <Compile Include="Class\Monk\MistweaverMonk.cs" />
     <Compile Include="Class\Monk\WindwalkerMonk.cs" />
+    <Compile Include="Class\Paladin\HolyPaladin.cs" />
     <Compile Include="Class\Paladin\ProtectionPaladin.cs" />
     <Compile Include="Class\Paladin\RetributionPaladin.cs" />
     <Compile Include="Class\Priest\ShadowPriest.cs" />
