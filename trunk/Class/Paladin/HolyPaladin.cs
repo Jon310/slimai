@@ -27,35 +27,40 @@ namespace SlimAI.Class.Paladin
 
             var cancelHeal = Math.Max(95, Math.Max(93, Math.Max(55, 25)));//95,93,55,25
             return new PrioritySelector(
-                new Decorator(ret => !Me.Combat && !Me.CurrentTarget.IsAlive && Me.IsCasting,
-                              new ActionAlwaysSucceed()),
+                Spell.WaitForCastOrChannel(),
+                new Decorator(ret => (Me.Combat || healtarget.Combat) && !Me.Mounted,
+                    new PrioritySelector(
+
+                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                        new Decorator(ret => Me.ManaPercent <= 85,
+                            new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; })),
                 Common.CreateInterruptBehavior(),
                 Spell.Cast(DivinePlea,
                             ret => Me.ManaPercent < 85),
+                new Decorator(ret => SlimAI.Dispell,
+                    Dispelling.CreateDispelBehavior()),
                 new Decorator(ret => SlimAI.Burst,
                     new PrioritySelector(
                         Spell.Cast(DivineFavor,
-                                    ret => HealerManager.GetCountWithHealth(60) > 3 && !Me.HasAnyAura("Guardian of Ancient Kings", "Avenging Wrath", "Divine Favor")),
+                                    ret => HealerManager.GetCountWithHealth(60) > 3 && !Me.HasAnyAura("Guardian of Ancient Kings", "Avenging Wrath")),
                         Spell.Cast(AvengingWrath,
-                                    ret => HealerManager.GetCountWithHealth(50) > 3 && !Me.HasAnyAura("Guardian of Ancient Kings", "Avenging Wrath", "Divine Favor")),
+                                    ret => HealerManager.GetCountWithHealth(50) > 3 && !Me.HasAnyAura("Guardian of Ancient Kings","Divine Favor")),
                         Spell.Cast(GuardianofAncientKings,
-                                    ret => HealerManager.GetCountWithHealth(40) > 3 && !Me.HasAnyAura("Guardian of Ancient Kings","Avenging Wrath", "Divine Favor")))),
+                                    ret => HealerManager.GetCountWithHealth(40) > 3 && !Me.HasAnyAura("Avenging Wrath", "Divine Favor")))),
                 LightsHammerCast(),
                 
-                Spell.Cast(SacredShield,
-                           on => Tanking,
-                           ret => healtarget.HealthPercent < 100),                
+                SSCast(),                
                 Spell.Cast("Light of Dawn",
-                           ret => HealerManager.GetCountWithHealth(90) > 3 && Me.CurrentHolyPower >= 3),
+                           ret => HealerManager.GetCountWithHealth(90) > 3 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))),
                 Spell.Cast("Word of Glory",
                            on => healtarget,
-                           ret => healtarget.HealthPercent < 85 && Me.CurrentHolyPower >= 3),
+                           ret => healtarget.HealthPercent < 85 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))),
                 Spell.Cast("Holy Shock",
                            on => healtarget,
                            ret => healtarget.HealthPercent < 93),
                 Spell.Cast(HolyPrism,
-                            on => PrismTar(),
-                            ret => HealerManager.GetCountWithHealth(90) > 3),
+                            on => PrismTar()),
+                            //ret => HealerManager.GetCountWithHealth(90) > 2),
                 HolyRadianceCast(),
                 //Spell.Cast("Holy Radiance",
                 //           on => healtarget,
@@ -73,7 +78,8 @@ namespace SlimAI.Class.Paladin
                            on => healtarget,
                            ret => healtarget.HealthPercent < 93,
                            cancel => healtarget.HealthPercent > cancelHeal)
-
+                        )
+                    )
                 );
         }
 
@@ -144,13 +150,49 @@ namespace SlimAI.Class.Paladin
                 .DefaultIfEmpty(null)
                 .FirstOrDefault();
 
-            if (t != null && t.Count >= 3)
+            if (t != null && t.Count >= 2)
             {
                 return t.Player;
             }
 
             return null;
 
+        }
+        #endregion
+
+        #region SS
+        private static Composite SSCast()
+        {
+            return new Decorator(ret =>
+            {
+                int rollCount = HealerManager.Instance.TargetList.Count(u => u.IsAlive && u.HasMyAura("Sacred Shield"));
+                // Logger.WriteDebug("GetBestRiptideTarget:  currently {0} group members have my Riptide", rollCount);
+                return rollCount < 3;
+            },
+                new PrioritySelector(
+                    Spell.Cast(SacredShield, on =>
+                    {
+                        // if tank needs SS, bail out on Rolling as they have priority
+                        //WoWUnit unit = GetBestSSTankTarget();
+                        //return unit;
+                        //if (GetBestSSTankTarget() != null)
+                        //    return null;
+                        // get the best target from all wowunits in our group
+                        WoWUnit unit = GetBestSSTarget();
+                        return unit;
+                    }, ret => !GetBestSSTarget().HasAura("Sacred Shield"))));
+        }
+
+        private static WoWUnit GetBestSSTarget()
+        {
+            WoWUnit SSTarget = HealerManager.Instance.TargetList.Where(u => u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && !u.HasAura("Sacred Shield") && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+            return SSTarget;
+        }
+
+        private static WoWUnit GetBestSSTankTarget()
+        {
+            WoWUnit SSTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && !u.HasAura("Sacred Shield") && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+            return SSTarget;
         }
         #endregion
 
