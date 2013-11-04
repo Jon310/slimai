@@ -117,8 +117,7 @@ namespace SlimAI.Class.Monk
 
                 //dont like using this in auto to many probs with it
                 //Spell.Cast("Invoke Xuen, the White Tiger", ret => Me.CurrentTarget.IsBoss && IsCurrentTank()),
-                new Throttle(
-                Spell.Cast(TigerPalm, ret => Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 1 && Me.CurrentChi < 3 && Me.CurrentEnergy < 80)));
+                new Throttle(Spell.Cast(TigerPalm, ret => Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 1 && Me.CurrentChi < 3 && Me.CurrentEnergy < 80)));
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster)]

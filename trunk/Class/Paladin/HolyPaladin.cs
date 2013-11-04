@@ -157,7 +157,7 @@ namespace SlimAI.Class.Paladin
         #region Prism tar
         private static WoWUnit PrismTar()
         {
-            var prismtarget = Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsTargetingUs() && u.IsHostile && Me.IsSafelyFacing(u));
+            var prismtarget = Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsTargetingUs() && u.IsHostile && Me.IsSafelyFacing(u) && Clusters.GetClusterCount(u, Unit.NearbyFriendlyPlayers, ClusterType.Radius, 15f) >= 2);
             return prismtarget;
         }
         #endregion
