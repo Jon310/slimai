@@ -31,7 +31,7 @@ namespace SlimAI.Class.Shaman
                 new Decorator(ret => (Me.Combat || healtarget.Combat) && !Me.Mounted,
                     new PrioritySelector(
 
-                        //new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                         new Decorator(ret => Me.ManaPercent <= 85,
                             new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; })),
                         RollRiptide(),
@@ -94,7 +94,7 @@ namespace SlimAI.Class.Shaman
                         Common.CreateInterruptBehavior(),
                         Spell.Cast("Lightning Bolt",
                             on => BoltTar(), 
-                            reet => TalentManager.HasGlyph("Telluric Currents"), 
+                            ret => TalentManager.HasGlyph("Telluric Currents"), 
                             cancel => healtarget.HealthPercent < 70 && Me.ManaPercent > 10))));
         }
 
@@ -420,13 +420,13 @@ namespace SlimAI.Class.Shaman
             int count = targetInfo == null ? 0 : targetInfo.Count;
 
             // too few hops? then search any group member
-            if (count < 3)
+            if (count < 2)
             {
                 target = Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, ChainHealHopRange);
                 if (target != null)
                 {
                     count = Clusters.GetClusterCount(target, ChainHealPlayers, ClusterType.Chained, ChainHealHopRange);
-                    if (count < 3)
+                    if (count < 2)
                         target = null;
                 }
             }
@@ -469,7 +469,7 @@ namespace SlimAI.Class.Shaman
                 .DefaultIfEmpty(null)
                 .FirstOrDefault();
 
-            if (t != null && t.Count >= 3)
+            if (t != null && t.Count >= 2)
             {
                 return t.Player;
             }
