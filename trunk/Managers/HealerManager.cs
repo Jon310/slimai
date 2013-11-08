@@ -69,6 +69,12 @@ namespace SlimAI.Managers
                     outgoingUnits.Add(incomingUnit);
                     if (incomingUnit is WoWPlayer && incomingUnit.ToPlayer().GotAlivePet)
                         outgoingUnits.Add(incomingUnit.ToPlayer().Pet);
+
+                    if (incomingUnit is WoWUnit && (incomingUnit.ToUnit().Guid == 17379701135970928502 ||
+                                                    incomingUnit.ToUnit().Guid == 17379701140265895799 || 
+                                                    incomingUnit.ToUnit().Guid == 17379701148855830392 || 
+                                                    incomingUnit.ToUnit().Guid == 17379701144560863097))
+                        outgoingUnits.Add(incomingUnit.ToUnit());
                 }
                 catch (System.AccessViolationException)
                 {
@@ -87,7 +93,6 @@ namespace SlimAI.Managers
 
             if (StyxWoW.Me.FocusedUnit != null && StyxWoW.Me.FocusedUnit.IsFriendly && !StyxWoW.Me.FocusedUnit.IsPet && !StyxWoW.Me.FocusedUnit.IsPlayer)
                 outgoingUnits.Add(StyxWoW.Me.FocusedUnit);
-
         }
 
         protected override void DefaultRemoveTargetsFilter(List<WoWObject> units)
@@ -96,8 +101,7 @@ namespace SlimAI.Managers
             int maxHealRangeSqr;
             maxHealRangeSqr = 40 * 40;
 
-            string[] _doNotHeal;
-            _doNotHeal = new[] { "Reshape Life", "Parasitic Growth", "Cyclone", "Dominate Mind", "Agressive Behavior", "Beast of Nightmares", "Corrupted Healing" };
+            string[] _doNotHeal = new[] { "Reshape Life", "Parasitic Growth", "Cyclone", "Dominate Mind", "Agressive Behavior", "Beast of Nightmares", "Corrupted Healing" };
 
             for (int i = units.Count - 1; i >= 0; i--)
             {
