@@ -22,39 +22,40 @@ namespace SlimAI.Class.Paladin
         public static Composite ProtectionCombat()
         {
             return new PrioritySelector(
-                new Decorator(ret => !Me.Combat && !Me.CurrentTarget.IsAlive && Me.IsCasting,
+                new Decorator(ret => !Me.Combat || !Me.CurrentTarget.IsAlive || Me.IsCasting || Me.Mounted,
                     new ActionAlwaysSucceed()),
-                Common.CreateInterruptBehavior(),
-                new Throttle( TimeSpan.FromMilliseconds(500),
-                    new Sequence(
-                        new Action( ret => _seal = GetBestSeal()),
-                        new Decorator(ret => !Me.HasMyAura(SealSpell(_seal)) && Spell.CanCastHack(SealSpell(_seal), Me),
-                            Spell.Cast( s => SealSpell(_seal), on => Me, ret => !Me.HasAura(SealSpell(_seal)))))),
+                //Common.CreateInterruptBehavior(),
+                //new Throttle(TimeSpan.FromMilliseconds(500),
+                //    new Sequence(
+                //        new Action(ret => _seal = GetBestSeal()),
+                //        new Decorator(ret => !Me.HasMyAura(SealSpell(_seal)) && Spell.CanCastHack(SealSpell(_seal), Me),
+                //            Spell.Cast(s => SealSpell(_seal), on => Me, ret => !Me.HasAura(SealSpell(_seal)))))),
 
+                Common.CreateInterruptBehavior(),
                 //Staying alive
+                Item.UsePotionAndHealthstone(40),
                 Spell.Cast(SacredShield, on => Me, ret => !Me.HasAura("Sacred Shield") && SpellManager.HasSpell("Sacred Shield")),
                 Spell.Cast(LayonHands, on => Me, ret => Me.HealthPercent <= 10 && !Me.HasAura("Forbearance")),
                 Spell.Cast(ArdentDefender, ret => Me.HealthPercent <= 15 && Me.HasAura("Forbearance")),
-                Spell.Cast(DivineProtection, ret => Me.HealthPercent <= 80 && !Me.HasAura("Shield of the Righteous")),
+                Spell.Cast(GuardianofAncientKings, ret => Me.HealthPercent < 50 && !Me.HasAnyAura("ArdentDefender") && SlimAI.AFK),
+                Spell.Cast(DivineProtection, ret => Me.HealthPercent <= 80 && !Me.HasAura("Shield of the Righteous") && IsCurrentTank()),
 
                 Spell.Cast(WordofGlory, ret => Me.HealthPercent < 50 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))),
-                Spell.Cast(WordofGlory, ret => Me.HealthPercent < 25 && (Me.CurrentHolyPower >= 2 || Me.HasAura("Divine Purpose"))),
-                Spell.Cast(WordofGlory, ret => Me.HealthPercent < 15 && (Me.CurrentHolyPower >= 1 || Me.HasAura("Divine Purpose"))),
+                //Spell.Cast(WordofGlory, ret => Me.HealthPercent < 25 && (Me.CurrentHolyPower >= 2 || Me.HasAura("Divine Purpose"))),
+                //Spell.Cast(WordofGlory, ret => Me.HealthPercent < 15 && (Me.CurrentHolyPower >= 1 || Me.HasAura("Divine Purpose"))),
 
-                //Prot T15 2pc 
-                new Decorator(ret => SlimAI.AFK && !Me.HasAura("Shield of Glory"),
-                    new PrioritySelector(
-                        Spell.Cast(WordofGlory, ret => Me.HealthPercent < 90 && Me.CurrentHolyPower == 1),
-                        Spell.Cast(WordofGlory, ret => Me.HealthPercent < 75 && Me.CurrentHolyPower <= 2),
-                        Spell.Cast(WordofGlory, ret => Me.HealthPercent < 50 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))))),
+                Spell.Cast(WordofGlory, 
+                    on => Me,
+                    ret => SpellManager.HasSpell(EternalFlame) && !Me.ActiveAuras.ContainsKey("Eternal Flame") && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose")) && Me.HasAura("Bastion of Glory", 5)),
 
                 CreateDispelBehavior(),
 
-                new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2,
+                new Decorator(ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 9f) >= 2,
                     CreateAoe()),
 
-                Spell.Cast(ShieldoftheRighteous, ret => (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose")) && SlimAI.Burst),
-                Spell.Cast(HammeroftheRighteous, ret => !Me.CurrentTarget.HasAura("Weakened Blows")),
+                new Decorator(ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 9f) < 2,
+                    new PrioritySelector(
+                Spell.Cast(ShieldoftheRighteous, ret => MaxHolyPower),
                 Spell.Cast(Judgment, ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
                 Spell.Cast(AvengersShield, ret => Me.HasAura(GrandCrusader)),
                 Spell.Cast(CrusaderStrike),
@@ -62,19 +63,22 @@ namespace SlimAI.Class.Paladin
                 new Decorator(ret => Spell.GetSpellCooldown("Judgment").TotalSeconds >= 1 && Spell.GetSpellCooldown("Crusader Strike").TotalSeconds >= 1 && !Me.HasAura(GrandCrusader),
                     new PrioritySelector(
                         LightsHammer(),
-                        Spell.Cast(HolyPrism, on => Unit.UnfriendlyUnits(15).Count() >= 2 ? Me : Me.CurrentTarget),
+                        Spell.Cast(HolyPrism),
                         Spell.Cast(ExecutionSentence),
                         Spell.Cast(HammerofWrath),
-                        Spell.Cast(ShieldoftheRighteous, ret => Me.CurrentHolyPower >= 3 && SlimAI.Burst),
+                        Spell.Cast(ShieldoftheRighteous, ret => SlimAI.Burst),
                         Spell.Cast(AvengersShield),
                         Spell.Cast(Consecration, ret => !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange),
-                        Spell.Cast(HolyWrath, ret => Me.CurrentTarget.IsWithinMeleeRange))));
+                        Spell.Cast(HolyWrath, ret => Me.CurrentTarget.IsWithinMeleeRange)
+                        ))
+                        ))
+            );
         }
         
         private static Composite CreateAoe()
         {
             return new PrioritySelector(
-                Spell.Cast(ShieldoftheRighteous, ret => (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose")) && SlimAI.Burst),
+                Spell.Cast(ShieldoftheRighteous, ret => MaxHolyPower),
                 Spell.Cast(Judgment, ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
                 Spell.Cast(HammeroftheRighteous),
                 Spell.Cast(Judgment),
@@ -85,7 +89,7 @@ namespace SlimAI.Class.Paladin
                         Spell.Cast(HolyPrism, on => Me, ret => Me.HealthPercent <= 90),
                         Spell.Cast(ExecutionSentence),
                         Spell.Cast(HammerofWrath),
-                        Spell.Cast(ShieldoftheRighteous, ret => Me.CurrentHolyPower >= 3 && SlimAI.Burst),
+                        Spell.Cast(ShieldoftheRighteous, ret => SlimAI.Burst),
                         Spell.Cast(Consecration, ret => !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange),
                         Spell.Cast(AvengersShield),
                         Spell.Cast(HolyWrath, ret => Me.CurrentTarget.IsWithinMeleeRange),
@@ -101,6 +105,22 @@ namespace SlimAI.Class.Paladin
                                     where Dispelling.CanDispel(unit)
                                     select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
                 return dispelothers;
+            }
+        }
+
+        #region Is Tank
+        static bool IsCurrentTank()
+        {
+            return StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid;
+        }
+        #endregion
+
+        private static bool MaxHolyPower
+        {
+            get
+            {
+                return ((Spell.GetSpellCooldown("Judgment").TotalSeconds <= 1 || Spell.GetSpellCooldown("Crusader Strike").TotalSeconds <= 1 || Me.HasAura(GrandCrusader)) && Me.CurrentHolyPower == 5) ||
+                    Me.HasAura("Divine Purpose");
             }
         }
 

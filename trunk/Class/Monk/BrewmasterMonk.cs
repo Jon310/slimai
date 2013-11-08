@@ -70,7 +70,8 @@ namespace SlimAI.Class.Monk
                         new Decorator(ret => (Me.GetAuraTimeLeft("Shuffle").TotalSeconds >= 6 || Me.CurrentChi > 2),
                             new PrioritySelector(
                                 Spell.Cast(PurifyingBrew, ret => Me.HasAura("Moderate Stagger") && Me.HealthPercent <= 70),
-                                Spell.Cast(PurifyingBrew, ret => Me.HasAura("Light Stagger") && Me.HealthPercent < 40))))),
+                                new Throttle(1,
+                                Spell.Cast(PurifyingBrew, ret => Me.HasAura("Light Stagger") && Me.HealthPercent < 40)))))),
 
                 Item.UsePotionAndHealthstone(40),
 
