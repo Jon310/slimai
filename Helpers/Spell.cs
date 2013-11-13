@@ -1389,7 +1389,7 @@ namespace SlimAI.Helpers
                 new Throttle(
                     new PrioritySelector(
                         new Sequence(
-                // save flag indicating if currently in a GCD or IsCasting before queueing our cast
+                            // save flag indicating if currently in a GCD or IsCasting before queueing our cast
                             new Action(ret =>
                             {
                                 _castOnUnit = onUnit(ret);
@@ -1402,9 +1402,6 @@ namespace SlimAI.Helpers
                                 // find spell 
                                 SpellFindResults sfr;
                                 if (!SpellManager.FindSpell(name(ret), out sfr))
-                                    return RunStatus.Failure;
-
-                                if (SpellManager.Spells[name.ToString()].Cooldown)
                                     return RunStatus.Failure;
 
                                 WoWSpell spell = sfr.Override ?? sfr.Original;
