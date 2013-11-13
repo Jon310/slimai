@@ -1404,6 +1404,9 @@ namespace SlimAI.Helpers
                                 if (!SpellManager.FindSpell(name(ret), out sfr))
                                     return RunStatus.Failure;
 
+                                if (SpellManager.Spells[name.ToString()].Cooldown)
+                                    return RunStatus.Failure;
+
                                 WoWSpell spell = sfr.Override ?? sfr.Original;
 
                                 if (checkMovement(ret) && Me.IsMoving && !AllowMovingWhileCasting(spell))

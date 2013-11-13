@@ -42,19 +42,20 @@ namespace SlimAI.Managers
         public static bool NeedHealTargeting { get; set; }
 
         private List<WoWUnit> HealList { get { return ObjectList.ConvertAll(o => o.ToUnit()); } }
-        public static List<WoWObject> GetInitialList { get { return ObjectManager.ObjectList.Where(o => o is WoWPlayer).ToList(); } }
+        public static List<WoWObject> GetInitialList { get { return ObjectManager.ObjectList.Where(o => o is WoWPlayer || o is WoWUnit).ToList(); } }
         private static IEnumerable<WoWPartyMember> GroupMembers { get { return !StyxWoW.Me.GroupInfo.IsInRaid ? StyxWoW.Me.GroupInfo.PartyMembers : StyxWoW.Me.GroupInfo.RaidMembers; } }
 
         protected override List<WoWObject> GetInitialObjectList()
         {
             // Targeting requires a list of WoWObjects - so it's not bound to any specific type of object. Just casting it down to WoWObject will work fine.
-            return ObjectManager.ObjectList.Where(o => o is WoWPlayer).ToList();
+            return ObjectManager.ObjectList.Where(o => o is WoWPlayer || o is WoWUnit).ToList();
         }
 
         protected override void DefaultIncludeTargetsFilter(List<WoWObject> incomingUnits, HashSet<WoWObject> outgoingUnits)
         {
             bool foundMe = false;
             bool isHorde = StyxWoW.Me.IsHorde;
+            
 
             foreach (WoWObject incomingUnit in incomingUnits)
             {
@@ -63,18 +64,13 @@ namespace SlimAI.Managers
                     if (incomingUnit.IsMe)
                         foundMe = true;
 
-                    if (incomingUnit.ToPlayer().IsHorde != isHorde || !incomingUnit.ToPlayer().IsFriendly)
+                    if (/*incomingUnit.ToPlayer().IsHorde != isHorde || */!incomingUnit.ToPlayer().IsFriendly)
                         continue;
 
                     outgoingUnits.Add(incomingUnit);
                     if (incomingUnit is WoWPlayer && incomingUnit.ToPlayer().GotAlivePet)
                         outgoingUnits.Add(incomingUnit.ToPlayer().Pet);
 
-                    if (incomingUnit is WoWUnit && (incomingUnit.ToUnit().Guid == 17379701135970928502 ||
-                                                    incomingUnit.ToUnit().Guid == 17379701140265895799 || 
-                                                    incomingUnit.ToUnit().Guid == 17379701148855830392 || 
-                                                    incomingUnit.ToUnit().Guid == 17379701144560863097))
-                        outgoingUnits.Add(incomingUnit.ToUnit());
                 }
                 catch (System.AccessViolationException)
                 {
@@ -84,6 +80,9 @@ namespace SlimAI.Managers
                 }
             }
 
+            if (Me.IsInMyPartyOrRaid)
+                outgoingUnits.Add(Group.GetPlayerByClassPrio(40, false));
+
             if (!foundMe)
             {
                 outgoingUnits.Add(StyxWoW.Me);
@@ -91,7 +90,7 @@ namespace SlimAI.Managers
                     outgoingUnits.Add(StyxWoW.Me.Pet);
             }
 
-            if (StyxWoW.Me.FocusedUnit != null && StyxWoW.Me.FocusedUnit.IsFriendly && !StyxWoW.Me.FocusedUnit.IsPet && !StyxWoW.Me.FocusedUnit.IsPlayer)
+            if (StyxWoW.Me.FocusedUnit != null && StyxWoW.Me.FocusedUnit.IsFriendly)
                 outgoingUnits.Add(StyxWoW.Me.FocusedUnit);
         }
 
@@ -331,6 +330,18 @@ namespace SlimAI.Managers
                 {
                     // simply eat the exception here
                 }
+            }
+
+            foreach (WoWUnit units in GetInitialList)
+            {
+                if (units.Entry == 72218)
+                    minUnit = units;
+                if (units.Entry == 72219)
+                    minUnit = units;
+                if (units.Entry == 72220)
+                    minUnit = units;
+                if (units.Entry == 72221)
+                    minUnit = units;
             }
 
             return minUnit;
