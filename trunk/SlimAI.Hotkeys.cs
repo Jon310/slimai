@@ -19,6 +19,7 @@ namespace SlimAI
         public static bool AOE { get; set; }
         public static bool Weave { get; set; }
         public static bool Dispell { get; set; }
+        public static bool HealAll { get; set; }
 
         protected virtual void UnregisterHotkeys()
         {
@@ -30,6 +31,7 @@ namespace SlimAI
             HotkeysManager.Unregister("AOE Toggle");
             HotkeysManager.Unregister("Weave Toggle");
             HotkeysManager.Unregister("Dispell Toggle");
+            HotkeysManager.Unregister("Heal All");
         }
 
         protected virtual void RegisterHotkeys()
@@ -121,6 +123,17 @@ namespace SlimAI
                 Lua.DoString("print('Dispelling Enabled: " + Dispell + "')");
             });
             Dispell = true;
+
+            HotkeysManager.Register("Heal All",
+            Keys.H,
+            ModifierKeys.Control,
+            o =>
+            {
+                HealAll = !HealAll;
+                Logging.Write("Heal All enabled: " + HealAll);
+                Lua.DoString("print('Heal All Enabled: " + HealAll + "')");
+            });
+            HealAll = false;
         }
 
     }

@@ -314,8 +314,6 @@ namespace SlimAI.Managers
             double minHealth = 999;
             WoWUnit minUnit = null;
 
-            // iterate the list so we make a single pass through it
-            //Test Cached Units
             foreach (WoWUnit unit in HealerManager.Instance.TargetList)
             {
                 try
@@ -330,18 +328,6 @@ namespace SlimAI.Managers
                 {
                     // simply eat the exception here
                 }
-            }
-
-            foreach (WoWUnit units in GetInitialList)
-            {
-                if (units.Entry == 72218)
-                    minUnit = units;
-                if (units.Entry == 72219)
-                    minUnit = units;
-                if (units.Entry == 72220)
-                    minUnit = units;
-                if (units.Entry == 72221)
-                    minUnit = units;
             }
 
             return minUnit;

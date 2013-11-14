@@ -74,25 +74,43 @@ namespace SlimAI.Helpers
         /// <summary>Creates an interrupt spell cast composite. This attempts to use spells in order of range (shortest to longest).  
         /// behavior consists only of spells that apply to current toon based upon class, spec, and race
         /// </summary>
+        //public static Composite CreateInterruptBehavior()
+        //{
+        //    Composite actionSelectTarget;
+        //    if (Me.CurrentTarget != null)
+        //        actionSelectTarget = new Action( 
+        //            ret => {
+        //                WoWUnit u = Me.CurrentTarget;
+        //                _unitInterrupt = IsInterruptTarget(u) ? u : null;
+        //                if (_unitInterrupt != null)
+        //                    Logging.WriteDiagnostic("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds );
+        //            }
+        //            );
+        //    else if ( true )
+        //    {
+        //        actionSelectTarget = new Action( 
+        //            ret => { 
+        //                _unitInterrupt = Unit.NearbyUnfriendlyUnits.Where(u => IsInterruptTarget(u)).OrderBy( u => u.Distance ).FirstOrDefault();
+        //                if (_unitInterrupt != null)
+        //                    Logging.WriteDiagnostic("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds);
+        //                }
+        //            );
+        //    }
+
         public static Composite CreateInterruptBehavior()
         {
             Composite actionSelectTarget;
-            if (Me.CurrentTarget != null)
-                actionSelectTarget = new Action( 
-                    ret => {
-                        WoWUnit u = Me.CurrentTarget;
-                        _unitInterrupt = IsInterruptTarget(u) ? u : null;
-                        if (_unitInterrupt != null)
-                            Logging.WriteDiagnostic("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds );
-                    }
-                    );
-            else if ( true )
+            if (true)
             {
                 actionSelectTarget = new Action( 
-                    ret => { 
-                        _unitInterrupt = Unit.NearbyUnfriendlyUnits.Where(u => IsInterruptTarget(u)).OrderBy( u => u.Distance ).FirstOrDefault();
-                        if (_unitInterrupt != null)
-                            Logging.WriteDiagnostic("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds);
+                    ret => {
+                        _unitInterrupt = null;
+                        if (Me.Class == WoWClass.Shaman && Totems.Exist(WoWTotem.Grounding))
+                            return RunStatus.Failure;
+
+                        _unitInterrupt = Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(IsInterruptTarget).OrderBy(u => u.Distance).FirstOrDefault();
+                        
+                        return _unitInterrupt == null ? RunStatus.Failure : RunStatus.Success;
                         }
                     );
             }
@@ -215,12 +233,11 @@ namespace SlimAI.Helpers
 
             #endregion
 
-            return new Sequence(
-                actionSelectTarget,               
-                new Decorator(
-                    ret => _unitInterrupt != null,
+            return new ThrottlePasses(1, TimeSpan.FromMilliseconds(500),
+                new Sequence(
+                    actionSelectTarget,
                     // majority of these are off GCD, so throttle all to avoid most fail messages
-                    new Throttle( TimeSpan.FromMilliseconds(500), prioSpell )
+                    prioSpell
                     )
                 );
         }
@@ -230,15 +247,12 @@ namespace SlimAI.Helpers
             if (u == null || !u.IsCasting)
                 return false;
 
-            if (!u.CanInterruptCurrentSpellCast)
-            {
-                return false;
-            }
-            if (!u.InLineOfSpellSight)
-            {
-                return false;
-            }
-            return !(u.CurrentCastTimeLeft.TotalMilliseconds < 250);
+            if (!u.CanInterruptCurrentSpellCast);  
+            else if (!u.InLineOfSpellSight);   
+            else if (u.CurrentCastTimeLeft.TotalMilliseconds < 250);
+            else
+                return true;
+            return false;
         }
 
 

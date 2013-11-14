@@ -228,10 +228,7 @@ namespace SlimAI.Helpers
             }
 
             return new Sequence(
-                new Action(r => _unitDispel = (from unit in ObjectManager.GetObjectsOfType<WoWPlayer>(false)
-                                               where unit.IsAlive
-                                               where CanDispel(unit)
-                                               select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault()),
+                new Action(r => _unitDispel = HealerManager.Instance.TargetList.FirstOrDefault(u => u.IsAlive && CanDispel(u))),
                 prio
                 );
         }
