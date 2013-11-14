@@ -31,6 +31,7 @@ namespace SlimAI.Class.Deathknight
             BloodCombatBuffs(),
             new Decorator(ret => SlimAI.AFK,
                 CreateAFK()),
+            Item.UsePotionAndHealthstone(40),
             new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
 
             Spell.Cast(DeathStrike, ret => ShouldDeathStrike),
@@ -47,10 +48,9 @@ namespace SlimAI.Class.Deathknight
                     Spell.Cast(BloodBoil, ret => SlimAI.AOE && ((Me.CurrentTarget.HasAuraExpired("Blood Plague", 3) && Me.CurrentTarget.HasAura("Blood Plague")) && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3 ||
                                                  Me.HasAura(81141) && !SpellManager.CanCast("Death and Decay"))),
                     Spell.Cast(RuneTap, ret => Me.HealthPercent <= 80 && Me.BloodRuneCount >= 1),
-                    new Decorator(ret => Me.CurrentRunicPower >= 30 && !Me.HasAura("Lichborne"),
-                        Spell.Cast(RuneStrike, ret => (Me.CurrentRunicPower >= 60 || Me.HealthPercent > 90) && NoRunes)),
+                    Spell.Cast(RuneStrike, ret => Me.CurrentRunicPower >= 30 && !Me.HasAura("Lichborne")),
                     Spell.Cast(SoulReaper, ret => Me.BloodRuneCount > 0 && Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent <= 35),
-                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && !SpellManager.CanCast("Death and Decay") && Unit.UnfriendlyUnits(10).Count() >= 3 && Me.BloodRuneCount > 0),
+                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && !SpellManager.CanCast("Death and Decay") && Unit.UnfriendlyUnits(10).Count() > 3 && Me.BloodRuneCount > 0),
                     Spell.Cast(HeartStrike, ret => Me.BloodRuneCount > 0),
                     Spell.Cast(HornofWinter, ret => Me.CurrentRunicPower < 90))));
 
@@ -123,10 +123,15 @@ namespace SlimAI.Class.Deathknight
         {
             get
             {
-                return Me.HealthPercent < 40 || (Me.UnholyRuneCount + Me.FrostRuneCount + Me.DeathRuneCount >= 4) ||
+                return SpellManager.CanCast("Death Strike") && (Me.HealthPercent < 40 || (Me.UnholyRuneCount + Me.FrostRuneCount + Me.DeathRuneCount >= 4) ||
                        (Me.HealthPercent < 90 && (Me.GetAuraTimeLeft("Blood Shield").TotalSeconds < 2)) ||
-                       IsCurrentTank() && !Me.HasAura("Blood Shield") || Me.HasAura("Blood Charge", 10);
+                       IsCurrentTank() && !Me.HasAura("Blood Shield") || Me.HasAura("Blood Charge", 10));
             }
+        }
+
+        private static bool FewRunes
+        {
+            get { return BloodRuneSlotsActive <= 1 || FrostRuneSlotsActive <= 1 || UnholyRuneSlotsActive <= 1; }
         }
 
         private static bool NoRunes
