@@ -199,6 +199,11 @@ namespace SlimAI.Helpers
             }
         }
 
+        public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMeOrMyStuff
+        {
+            get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingMyStuff()))); }
+        }
+
         /// <summary>
         ///   Gets the nearby friendly players that can be seen
         /// </summary>
@@ -680,6 +685,11 @@ namespace SlimAI.Helpers
                 || u.IsTargetingAnyMinion
                 || Unit.GroupMemberInfos.Any(m => m.Guid == u.CurrentTargetGuid);
 
+        }
+
+        public static bool IsTargetingMyStuff(this WoWUnit u)
+        {
+            return u.IsTargetingMeOrPet || u.IsTargetingAnyMinion;
         }
 
         public static bool IsSensitiveDamage(this WoWUnit u, float range)

@@ -245,7 +245,7 @@ namespace SlimAI.Class.Monk
         {
             get
             {
-                var dispelothers = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                var dispelothers = (from unit in ObjectManager.GetObjectsOfType<WoWPlayer>()
                                     where unit.IsAlive
                                     where Dispelling.CanDispel(unit)
                                     select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
