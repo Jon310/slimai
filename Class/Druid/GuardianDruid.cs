@@ -2,6 +2,7 @@
 using CommonBehaviors.Actions;
 using SlimAI.Settings;
 using Styx;
+using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
 using SlimAI.Helpers;
@@ -18,18 +19,25 @@ namespace SlimAI.Class.Druid
         public static Composite GuardianCombat()
         {
             return new PrioritySelector(
-                new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget, 
+                new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted, 
                     new ActionAlwaysSucceed()),
                 Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
-                Common.CreateInterruptBehavior(),
+                Spell.Cast(SkullBash, ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
                 CreateCooldowns(),
-                Spell.Cast(Maul, ret => Me.RagePercent > 90 && Me.HasAura("Tooth and Claw")),
+                Spell.Cast(Maul, ret => Me.RagePercent > 90),
                 Spell.Cast(Mangle),
-                Spell.Cast(Thrash),
-                Spell.Cast(Lacerate),
-                CreateAoe(),
-                Spell.Cast(FaerieFire),
-                Spell.Cast(Maul, ret => !IsCurrentTank()));
+                Spell.Cast(FaerieFire, ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+                new Decorator(ret => !SpellManager.CanCast("Mangle"),
+                    new PrioritySelector(
+                        //Spell.Cast(Thrash, ret => !SpellManager.Spells["Thrash"].Cooldown),
+                        Spell.Cast(Thrash),
+                        Spell.Cast(Lacerate),
+                        CreateAoe(),
+                        Spell.Cast(FaerieFire),
+                        Spell.Cast(Maul, ret => !IsCurrentTank())
+                    )
+                )
+            );
         }
 
         private static Composite CreateCooldowns()
@@ -42,7 +50,7 @@ namespace SlimAI.Class.Druid
                 Spell.Cast(CenarionWard, on => Me),
                 Spell.Cast(Enrage, ret => Me.RagePercent < 40),
                 Spell.Cast(HealingTouch, ret => Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 1.5),
-                Spell.Cast(BarkSkin, ret => Me.HealthPercent <= 60),
+                Spell.Cast(BarkSkin, ret => IsCurrentTank()),
                 new Decorator(ret => SlimAI.Burst,
                     new PrioritySelector(
                         Spell.Cast(SurvivalInstincts, ret => Me.HealthPercent <= 50 && !Me.HasAura("Might of Ursoc")),
@@ -50,7 +58,8 @@ namespace SlimAI.Class.Druid
                 Spell.Cast(Renewal, ret => Me.HealthPercent <= 50 || Me.HasAura("Might of Ursoc")),
                 Item.UsePotionAndHealthstone(40),
                 Spell.Cast(FrenziedRegeneration, ret => Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration")),
-                Spell.Cast(SavageDefense, ret => !Me.HasAura("Savage Defense") && IsCurrentTank()));
+                Spell.Cast(SavageDefense, ret => !Me.HasAura("Savage Defense") && IsCurrentTank())
+            );
         }
 
         private static Composite CreateAoe()
@@ -121,11 +130,10 @@ namespace SlimAI.Class.Druid
                           SavageDefense = 62606,
                           SavageRoar = 52610,
                           Shred = 5221,
-                          SkullBash = 106839,
+                          SkullBash = 80964,
                           SurvivalInstincts = 61336,
                           Swipe = 106785,
-                          Thrash = 106832,
-                          TigersFury = 5217;
+                          Thrash = 77758;
         #endregion
     }
 }

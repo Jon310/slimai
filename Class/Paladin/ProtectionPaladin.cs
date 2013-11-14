@@ -50,11 +50,9 @@ namespace SlimAI.Class.Paladin
 
                 CreateDispelBehavior(),
 
-                new Decorator(ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 9f) >= 2,
+                new Decorator(ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 9f) >= 2 && SlimAI.AOE,
                     CreateAoe()),
 
-                new Decorator(ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 9f) < 2,
-                    new PrioritySelector(
                 Spell.Cast(ShieldoftheRighteous, ret => MaxHolyPower),
                 Spell.Cast(Judgment, ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
                 Spell.Cast(AvengersShield, ret => Me.HasAura(GrandCrusader)),
@@ -70,8 +68,8 @@ namespace SlimAI.Class.Paladin
                         Spell.Cast(AvengersShield),
                         Spell.Cast(Consecration, ret => !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange),
                         Spell.Cast(HolyWrath, ret => Me.CurrentTarget.IsWithinMeleeRange)
-                        ))
-                        ))
+                        
+                    ))
             );
         }
         
