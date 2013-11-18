@@ -34,6 +34,7 @@ namespace SlimAI.Class.Shaman
                         new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                         new Decorator(ret => Me.ManaPercent <= 85,
                             new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; })),
+                        Common.CreateInterruptBehavior(),
                         RollRiptide(),
                         TidalWaves(),
                         new Decorator(ret => SlimAI.Dispell,
@@ -82,7 +83,6 @@ namespace SlimAI.Class.Shaman
                         Spell.Cast(Ascendance,
                             ret => HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 50) >= 4 && !Me.HasAura("Ascendance") && SlimAI.Burst),
                         RiptideCast(),
-                        Common.CreateInterruptBehavior(),
                         new Decorator(ret => Me.ManaPercent > 85 && healtarget.HealthPercent > 75,
                             new PrioritySelector(
                                 Spell.Cast(SearingTotem,

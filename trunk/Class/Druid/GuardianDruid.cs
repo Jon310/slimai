@@ -22,7 +22,7 @@ namespace SlimAI.Class.Druid
                 new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted, 
                     new ActionAlwaysSucceed()),
                 Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
-                Spell.Cast(SkullBash, ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
+                Spell.Cast(SkullBash, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsCasting && u.IsWithinMeleeRange && Me.CurrentTarget.CanInterruptCurrentSpellCast && Me.IsSafelyFacing(u))),
                 CreateCooldowns(),
                 Spell.Cast(Maul, ret => Me.RagePercent > 90),
                 Spell.Cast(Mangle),
@@ -30,7 +30,7 @@ namespace SlimAI.Class.Druid
                 new Decorator(ret => !SpellManager.CanCast("Mangle"),
                     new PrioritySelector(
                         //Spell.Cast(Thrash, ret => !SpellManager.Spells["Thrash"].Cooldown),
-                        Spell.Cast(Thrash),
+                        Spell.Cast("Thrash"),
                         Spell.Cast(Lacerate),
                         CreateAoe(),
                         Spell.Cast(FaerieFire),
