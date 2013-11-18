@@ -128,6 +128,12 @@ namespace SlimAI.Helpers
             return otherUnits.Where(u => u.Location.GetNearestPointOnSegment(myLoc,targetLoc).Distance(u.Location) <= distance);
         }
 
+        public static IEnumerable<WoWUnit> GetPathToPointCluster(WoWPoint destLoc, IEnumerable<WoWUnit> otherUnits, float distance)
+        {
+            var myLoc = StyxWoW.Me.Location;
+            return otherUnits.Where(u => u.Location.GetNearestPointOnSegment(myLoc, destLoc).Distance(u.Location) <= distance);
+        }
+
         private static int GetPathClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
         {
             return GetPathCluster(target, otherUnits, distance).Count();

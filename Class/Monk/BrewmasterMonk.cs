@@ -32,7 +32,7 @@ namespace SlimAI.Class.Monk
                 */
                 new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                     new ActionAlwaysSucceed()),
-                Spell.Cast(SpearHandStrike, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsCasting && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
+                Spell.Cast(SpearHandStrike, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsCasting && Me.CurrentTarget.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
                 Spell.WaitForCastOrChannel(),
                 Item.UsePotionAndHealthstone(40),
                 //new Action(ret => { Item.UseWaist(); return RunStatus.Failure; }),
