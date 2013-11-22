@@ -127,8 +127,8 @@ namespace SlimAI.Class.Monk
                 Spell.Cast(SpinningFireBlossom, ret => !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed) && !Me.CurrentTarget.HasAura(123407) && Me.CurrentTarget.Distance > 10 && Me.CurrentTarget.InLineOfSight)),
                 
                 //Detox
-                new Decorator(ret => SlimAI.Dispell,
-                    Dispelling.CreateDispelBehavior()),
+                //new Decorator(ret => SlimAI.Dispell,
+                //    Dispelling.CreateDispelBehavior()),
 
                 //Healing Spheres need to work on
                 //Spell.CastOnGround("Healing Sphere", on => Me.Location, ret => Me.HealthPercent <= 50),
