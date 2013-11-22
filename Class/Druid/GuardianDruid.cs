@@ -22,18 +22,18 @@ namespace SlimAI.Class.Druid
                 new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted, 
                     new ActionAlwaysSucceed()),
                 Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
-                Spell.Cast(SkullBash, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsCasting && u.IsWithinMeleeRange && Me.CurrentTarget.CanInterruptCurrentSpellCast && Me.IsSafelyFacing(u))),
+                Common.CreateInterruptBehavior(),
+                //Spell.Cast(SkullBash, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
                 CreateCooldowns(),
-                Spell.Cast(Maul, ret => Me.RagePercent > 90),
+                Spell.Cast(Maul, ret => Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefense).TotalSeconds >= 3),
                 Spell.Cast(Mangle),
-                Spell.Cast(FaerieFire, ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+                Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
                 new Decorator(ret => !SpellManager.CanCast("Mangle"),
                     new PrioritySelector(
-                        //Spell.Cast(Thrash, ret => !SpellManager.Spells["Thrash"].Cooldown),
                         Spell.Cast("Thrash"),
-                        Spell.Cast(Lacerate),
                         CreateAoe(),
-                        Spell.Cast(FaerieFire),
+                        Spell.Cast(Lacerate),
+                        Spell.Cast("Faerie Fire"),
                         Spell.Cast(Maul, ret => !IsCurrentTank())
                     )
                 )
@@ -47,18 +47,21 @@ namespace SlimAI.Class.Druid
                     new PrioritySelector(
                         new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
                         new Action(ret => { Item.UseHands(); return RunStatus.Failure; }))),
+                new Decorator(ret => SlimAI.Burst && Me.RagePercent < 60 && IsCurrentTank() && Me.HealthPercent < 60,
+                    new PrioritySelector(
+                        Spell.Cast("Incarnation: Son of Ursoc"))),
                 Spell.Cast(CenarionWard, on => Me),
                 Spell.Cast(Enrage, ret => Me.RagePercent < 40),
                 Spell.Cast(HealingTouch, ret => Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 1.5),
                 Spell.Cast(BarkSkin, ret => IsCurrentTank()),
-                new Decorator(ret => SlimAI.Burst,
+                new Decorator(ret => SlimAI.Weave,
                     new PrioritySelector(
                         Spell.Cast(SurvivalInstincts, ret => Me.HealthPercent <= 50 && !Me.HasAura("Might of Ursoc")),
                         Spell.Cast(MightofUrsoc, ret => Me.HealthPercent <= 30 && !Me.HasAura("Survival Instincts")))),
                 Spell.Cast(Renewal, ret => Me.HealthPercent <= 50 || Me.HasAura("Might of Ursoc")),
                 Item.UsePotionAndHealthstone(40),
                 Spell.Cast(FrenziedRegeneration, ret => Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration")),
-                Spell.Cast(SavageDefense, ret => !Me.HasAura("Savage Defense") && IsCurrentTank())
+                Spell.Cast(SavageDefense, ret => IsCurrentTank())
             );
         }
 
@@ -109,7 +112,7 @@ namespace SlimAI.Class.Druid
         #region Druid Spells
         private const int BarkSkin = 22812,
                           BearForm = 5487,
-                          Berserk = 106952,
+                          Berserk = 50334,
                           CenarionWard = 102351,
                           DreamofCenarius = 108381,
                           Enrage = 5229,
@@ -118,6 +121,7 @@ namespace SlimAI.Class.Druid
                           FerociousBite = 22568,
                           FrenziedRegeneration = 22842,
                           HealingTouch = 5185,
+                          IncarnationSonofUrsoc = 106731,
                           Lacerate = 33745,
                           MarkoftheWild = 1126,
                           Mangle = 33917,

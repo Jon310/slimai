@@ -32,7 +32,7 @@ namespace SlimAI.Class.Monk
                 */
                 new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                     new ActionAlwaysSucceed()),
-                Spell.Cast(SpearHandStrike, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsCasting && Me.CurrentTarget.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
+                Spell.Cast(SpearHandStrike, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
                 Spell.WaitForCastOrChannel(),
                 Item.UsePotionAndHealthstone(40),
                 //new Action(ret => { Item.UseWaist(); return RunStatus.Failure; }),
@@ -88,7 +88,7 @@ namespace SlimAI.Class.Monk
                 Spell.Cast(Guard, ret => Me.CurrentChi >= 2 && Me.HasAura("Power Guard")),
                 //Blackout Kick might have to add guard back but i think its better to open with BK and get shuffle to build AP for Guard
 
-                new Throttle(1, 1,
+                new Throttle(1,
                     Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 80 && Me.CurrentEnergy >= 40)),
                 //Detox
                 CreateDispelBehavior(),
