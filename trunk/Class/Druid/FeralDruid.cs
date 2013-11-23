@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using SlimAI.Helpers;
-using SlimAI.Managers;
 using CommonBehaviors.Actions;
 using SlimAI.Settings;
 using Styx;
@@ -14,48 +13,54 @@ namespace SlimAI.Class.Druid
     class FeralDruid
     {      
         static LocalPlayer Me { get { return StyxWoW.Me; } }
-        static WoWUnit healtarget { get { return HealerManager.FindLowestHealthTarget(); } }
         private static DruidSettings Settings { get { return GeneralSettings.Instance.Druid(); } }
         private static double? _EnergyRegen;
+        private static double? _timeToMax;
+        private static double? _energy;
 
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral)]
         public static Composite FeralCombat()
         {
-            HealerManager.NeedHealTargeting = true;
+
             return new PrioritySelector(
-                Common.CreateInterruptBehavior(),
-                Spell.WaitForCastOrChannel(),
-                new Decorator(ret => Me.CurrentTarget != null && (!Me.CurrentTarget.IsWithinMeleeRange || Me.IsCasting),
-                    new ActionAlwaysSucceed()),
                 new Throttle(1,
                     new Action(context => ResetVariables())),
+                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
+                    new ActionAlwaysSucceed()),
+                Common.CreateInterruptBehavior(),
+                Spell.WaitForCastOrChannel(),
                 new Decorator(ret => Me.HasAura("Tiger's Fury"),
                     new PrioritySelector(
                         new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                         new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
-                        Spell.Cast(FeralSpirit, ret => SlimAI.Burst))),
+                        Spell.Cast(FeralSpirit, ret => SlimAI.Burst)
+                        )),
                 Spell.Cast(FerociousBite, ret => Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 3 && Me.CurrentTarget.HealthPercent <= 25),
                 Spell.Cast(FaerieFire, ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
                 new Throttle(2,
-                    Spell.Cast(HealingTouch, 
-                        on => healtarget, 
-                        ret => Me.HasAura("Predatory Swiftness") && !Me.HasAura(DreamofCenarius) && (Me.GetAuraTimeLeft("Predatory Swiftness").TotalSeconds <= 1.5 || Me.ComboPoints >= 4))),
-                Spell.Cast(SavageRoar, ret => Me.GetAuraTimeLeft("Savage Roar").TotalSeconds < 3 || !Me.HasAura("Savage Roar")),
-                Spell.Cast(TigersFury, ret => Me.EnergyPercent <= 35 && !Me.ActiveAuras.ContainsKey("Clearcasting")),
-                Spell.Cast(Berserk, ret => Me.HasAura("Tiger's Fury") && SlimAI.Burst),
-                Spell.Cast(FerociousBite, ret => Me.ComboPoints >= 5 && Me.CurrentTarget.HealthPercent <= 25 && Me.CurrentTarget.HasAura("Rip")),
-                Spell.Cast(Rip, ret => Me.ComboPoints == 5 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 2 || !Me.CurrentTarget.HasAura("Rip"))),
-                Spell.Cast("Thrash", ret => Me.ActiveAuras.ContainsKey("Clearcasting") && (Me.CurrentTarget.GetAuraTimeLeft("Thrash").TotalSeconds < 3 || !Me.CurrentTarget.HasAura("Thrash"))),
+                    Spell.Cast(HealingTouch,
+                        on => HTtar,
+                        ret => Me.HasAura("Predatory Swiftness") && !Me.HasAura(DreamofCenarius) && (Me.GetAuraTimeLeft("Predatory Swiftness").TotalSeconds <= 1.5 || Me.ComboPoints >= 4 || Me.CurrentTarget.GetAuraTimeLeft("Rake").TotalSeconds <= 2.5))),
+                Spell.Cast("Savage Roar", ret => Me.GetAuraTimeLeft("Savage Roar").TotalSeconds < 3 || !Me.HasAura("Savage Roar")),
+                Spell.Cast("Tiger's Fury", ret => Me.EnergyPercent <= 30 && !Me.HasAura(Clearcasting)),
+                Spell.Cast("Berserk", ret => Me.HasAura(TigersFury) && SlimAI.Burst),
+                Spell.Cast(FerociousBite, ret => Me.ComboPoints >= 5 && Me.CurrentTarget.HealthPercent <= 25 && Me.CurrentTarget.HasMyAura("Rip")),
+                Spell.Cast(Rip, ret => Me.ComboPoints == 5 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 2 || !Me.CurrentTarget.HasMyAura("Rip"))),
+                Spell.Cast("Thrash", ret => Me.HasAura(Clearcasting) && (Me.CurrentTarget.GetAuraTimeLeft("Thrash").TotalSeconds < 3 || !Me.CurrentTarget.HasMyAura("Thrash"))),
                 Spell.Cast(Rake, ret => Me.CurrentTarget.GetAuraTimeLeft("Rake").TotalSeconds <= 3 || !Me.CurrentTarget.HasAura("Rake")),
                 Spell.Cast("Thrash", ret => Me.CurrentTarget.GetAuraTimeLeft("Thrash").TotalSeconds < 3 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds >= 8 &&
                                            (Me.GetAuraTimeLeft("Savage Roar").TotalSeconds >= 12 || Me.HasAura("Berserk") || Me.ComboPoints == 5))),
                 Spell.Cast(FerociousBite, ret => Me.ComboPoints >= 5 && Me.CurrentTarget.HasMyAura("Rip") && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds > 7 && Me.GetAuraTimeLeft("Savage Roar").TotalSeconds > 6),
-                Spell.Cast("Swipe", ret => Unit.UnfriendlyUnits(8).Count() >= 2 &&
-                                           (Me.GetAuraTimeLeft("Savage Roar").TotalSeconds <= 5 || Me.ActiveAuras.ContainsKey("Clearcasting") ||
-                                           Me.HasAura("Berserk") || Me.HasAura("Tiger's Fury") || Spell.GetSpellCooldown("Tiger's Fury").TotalSeconds <= 3)),
-                Spell.Cast(Shred, ret => Me.CurrentTarget.MeIsSafelyBehind || Me.ActiveAuras.ContainsKey("Clearcasting") || Me.HasAura("Berserk") || EnergyRegen >= 15),
-                Spell.Cast("Mangle"));
-#region Old dps
+                //Spell.Cast("Swipe", ret => Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE),
+                ////(Me.GetAuraTimeLeft("Savage Roar").TotalSeconds <= 5 || Me.ActiveAuras.ContainsKey("Clearcasting") ||
+                ////Me.HasAura("Berserk") || Me.HasAura("Tiger's Fury") || Spell.GetSpellCooldown("Tiger's Fury").TotalSeconds <= 3)),
+                //Spell.Cast(Shred, ret => Me.CurrentTarget.MeIsBehind || Me.HasAura(Clearcasting) || Me.HasAura("Berserk") || EnergyRegen >= 15),
+                //Spell.Cast("Mangle"));                
+                CreateFiller());
+            
+
+            #region Old dps
+
 //                new Throttle(Spell.Cast("Nature's Vigil", ret => Me.CachedHasAura("Berserk"))),
 //                Spell.Cast("Incarnation", ret => Me.CachedHasAura("Berserk")),
 //                Spell.CastOnGround("Force of Nature",
@@ -106,10 +111,25 @@ namespace SlimAI.Class.Druid
 //                Spell.Cast("Mangle", ret => Me.ComboPoints <= 5 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 3 || Me.ComboPoints == 0 && Me.HasAuraExpired("Savage Roar", 2)),
 //                Spell.Cast("Shred", ret => (Me.CurrentTarget.MeIsSafelyBehind || (TalentManager.HasGlyph("Shred") && (Me.HasAnyAura("Tiger's Fury", "Berserk"))))),
 //                Spell.Cast("Mangle", ret => !Me.CurrentTarget.MeIsBehind));
-#endregion
+
+            #endregion
         }
 
-        private static double EnergyRegen
+        private static Composite CreateFiller()
+        {
+            return new PrioritySelector(
+                new Decorator(ret => Me.HasAura(Clearcasting) || Me.HasAura("Berserk") || Me.HasAura(TigersFury) || Me.ComboPoints < 5 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 3 ||
+                                     Me.ComboPoints == 0 && Me.GetAuraTimeLeft("Savage Roar").TotalSeconds < 2 || Spell.GetSpellCooldown("Tiger's Fury").TotalSeconds <= 3 || Me.EnergyPercent >= 70,
+                    new PrioritySelector(
+                Spell.Cast("Swipe", ret => Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE),
+                                           //(Me.GetAuraTimeLeft("Savage Roar").TotalSeconds <= 5 || Me.ActiveAuras.ContainsKey("Clearcasting") ||
+                                           //Me.HasAura("Berserk") || Me.HasAura("Tiger's Fury") || Spell.GetSpellCooldown("Tiger's Fury").TotalSeconds <= 3)),
+                Spell.Cast(Shred, ret => Me.CurrentTarget.MeIsBehind || Me.HasAura(Clearcasting) || Me.HasAura("Berserk") || EnergyRegen >= 15),
+                Spell.Cast("Mangle"))));
+        }
+
+        #region Engery 
+        protected static double EnergyRegen
         {
             get
             {
@@ -122,11 +142,54 @@ namespace SlimAI.Class.Druid
             }
         }
 
+        protected static double Energy
+        {
+            get
+            {
+                if (!_energy.HasValue)
+                {
+                    _energy = Lua.GetReturnVal<int>("return UnitPower(\"player\");", 0);
+                    return _energy.Value;
+                }
+                return _energy.Value;
+            }
+        }
+
+        protected static double TimeToMax
+        {
+            get
+            {
+                if (!_timeToMax.HasValue)
+                {
+                    _timeToMax = (100 - Energy) * (1.0 / EnergyRegen);
+                    return _timeToMax.Value;
+                }
+                return _timeToMax.Value;
+            }
+        }
+        #endregion
+
         private static RunStatus ResetVariables()
         {
             _EnergyRegen = null;
             return RunStatus.Failure;
         }
+
+        #region Healing Touch
+        private static WoWUnit HTtar
+        {
+            get
+            {
+                var eHheal = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                              where unit.IsAlive
+                              where unit.Distance < 40
+                              where unit.InLineOfSight
+                              where unit.HealthPercent <= 100
+                              select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
+                return eHheal;
+            }
+        }
+        #endregion
 
         #region DruidTalents
         public enum DruidTalents
@@ -134,7 +197,7 @@ namespace SlimAI.Class.Druid
             FelineSwiftness = 1,//Tier 1
             DisplacerBeast,
             WildCharge,
-            NaturesSwiftness,//Tier 2
+            YserasGift,//Tier 2
             Renewal,
             CenarionWard,
             FaerieSwarm,//Tier 3
@@ -157,10 +220,11 @@ namespace SlimAI.Class.Druid
                           BearForm = 5487,
                           Berserk = 106952,
                           CenarionWard = 102351,
+                          Clearcasting = 135700,
                           DreamofCenarius = 108381,
                           Enrage = 5229,
                           FaerieFire = 770,
-                          FeralSpirit = 51533,
+                          FeralSpirit = 110807,
                           FerociousBite = 22568,
                           FrenziedRegeneration = 22842,
                           HealingTouch = 5185,
@@ -173,7 +237,7 @@ namespace SlimAI.Class.Druid
                           Renewal = 108238,
                           Rip = 1079,
                           SavageDefense = 62606,
-                          SavageRoar = 52610,
+                          SavageRoar = 127538,
                           Shred = 5221,
                           SkullBash = 106839,
                           SurvivalInstincts = 61336,
