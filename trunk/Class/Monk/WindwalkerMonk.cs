@@ -29,6 +29,8 @@ namespace SlimAI.Class.Monk
                      * need to check healing spheres 
                      * chi capping? need to do more checking
                     */
+                    new Throttle(1,
+                        new Action(context => ResetVariables())),
                     new Decorator(ret => SlimAI.PvPRotation, 
                         CreatePvP()),
                     new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget,
@@ -108,15 +110,16 @@ namespace SlimAI.Class.Monk
         {
             return new PrioritySelector(
 
+                Spell.WaitForCastOrChannel(),
+                ZenMed(),
+                ParalysisFocus(),
+
                 new Decorator(ret => !Me.Combat || Me.Mounted,
                     new ActionAlwaysSucceed()),
 
-                Spell.WaitForCastOrChannel(),
-
-                //ParalysisFocus(),
-                new Decorator(ret => SpellManager.CanCast(Paralysis) && SlimAI.AFK,
-                    new PrioritySelector(
-                        Spell.Cast(Paralysis, on => Me.FocusedUnit, ret => Me.FocusedUnit.InLineOfSight))),
+                //new Decorator(ret => SpellManager.CanCast(Paralysis) && SlimAI.AFK,
+                //    new PrioritySelector(
+                //        Spell.Cast(Paralysis, on => Me.FocusedUnit, ret => Me.FocusedUnit.InLineOfSight))),
 
                 Spell.Cast(Disable, ret => !Me.CurrentTarget.HasAura(Disable)),
 
@@ -136,7 +139,7 @@ namespace SlimAI.Class.Monk
                 new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
 
                 //Tigerseye
-                Spell.Cast(TigereyeBrew, ret => Me.HasAura("Tigereye Brew", 18)),
+                //Spell.Cast(TigereyeBrew, ret => Me.HasAura("Tigereye Brew", 18)),
 
                 new Throttle(2,
                 Spell.Cast(ChiBrew, ret => Me.CurrentChi < 2 && SlimAI.Weave/*&& Me.stackcount("Tigereye Brew") <= 1*/)),
@@ -169,17 +172,12 @@ namespace SlimAI.Class.Monk
 
                 Spell.Cast(TigerPalm, ret => Me.HasAura("Combo Breaker: Tiger Palm")),
 
-                new Decorator(ret => SlimAI.AOE,
-                    new PrioritySelector(
-                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 4 && Me.CurrentChi < 3),
-                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3))),
-
                 Spell.Cast(ExpelHarm, ret => Me.CurrentChi <= 3 && Me.HealthPercent < 80),
 
-                Spell.Cast(Jab, ret => Me.CurrentChi < 3),
+                Spell.Cast(Jab, ret => Me.CurrentChi < 4),
 
                 // chi dump
-                Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 3 && SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 1),
+                Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 4 || Me.CurrentChi >= 2 && SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 3),
                 new ActionAlwaysSucceed()
             );
         }
@@ -211,12 +209,30 @@ namespace SlimAI.Class.Monk
         {
             return
                 new Decorator(ret => SpellManager.CanCast(Paralysis) &&
+                    KeyboardPolling.IsKeyDown(Keys.C),
+                    new PrioritySelector(
+                        Spell.Cast(Paralysis, on => Me.FocusedUnit))  
+                    //new Action(ret => Spell.Cast(Paralysis, on => Me.FocusedUnit))
+                    );
+        }
+
+        private static Composite ZenMed()
+        {
+            return
+                new Decorator(ret => SpellManager.CanCast(ZenMeditation) &&
                     KeyboardPolling.IsKeyDown(Keys.Z),
                     new Action(ret =>
                     {
-                        Spell.Cast(Paralysis, on => Me.FocusedUnit);
+                        SpellManager.Cast(ZenMeditation);
                         return;
                     }));
+        }
+
+        private static RunStatus ResetVariables()
+        {
+            KeyboardPolling.IsKeyDown(Keys.Z);
+            KeyboardPolling.IsKeyDown(Keys.C);
+            return RunStatus.Failure;
         }
         #endregion
 
@@ -273,6 +289,7 @@ namespace SlimAI.Class.Monk
                           TigereyeBrew = 116740,
                           TigerPalm = 100787,
                           TouchofDeath = 115080,
+                          ZenMeditation = 115176,
                           ZenSphere = 124081;
         #endregion
 

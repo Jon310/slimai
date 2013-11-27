@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Windows.Forms;
 using SlimAI.Helpers;
 using SlimAI.Managers;
 using CommonBehaviors.Actions;
@@ -21,6 +22,7 @@ namespace SlimAI.Class.Monk
         private static double? _energyRegen;
         private static double? _energy;
 
+        #region Combat
         [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
         public static Composite BrewmasterCombat()
         {
@@ -32,8 +34,10 @@ namespace SlimAI.Class.Monk
                 */
                 new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                     new ActionAlwaysSucceed()),
-                Spell.Cast(SpearHandStrike, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
+                ZenMed(),
                 Spell.WaitForCastOrChannel(),
+                Common.CreateInterruptBehavior(),
+                //Spell.Cast(SpearHandStrike, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
                 Item.UsePotionAndHealthstone(40),
                 //new Action(ret => { Item.UseWaist(); return RunStatus.Failure; }),
                 new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
@@ -43,104 +47,85 @@ namespace SlimAI.Class.Monk
                 //stance stuff need to work on it more
                 Spell.Cast(StanceoftheSturdyOx, ret => IsCurrentTank() && !Me.HasAura("Stance of the Sturdy Ox")),
 
-                //new Decorator(ret => Me.HasAura("Stance of the Fierce Tiger"),
-                //    new PrioritySelector(
-                //        HealingSphereTank(),
-                //        Spell.Cast(TigerPalm, ret => !Me.HasAura("Tiger Power")),
-                //        Spell.Cast(ChiWave),
-                //        Spell.Cast(BlackoutKick),
-                //        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
-                //        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
-                //        Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 35),
-                //        Spell.Cast(Jab, ret => Me.CurrentChi <= 4),
-                //        Spell.Cast(TigerPalm),
-                //        new ActionAlwaysSucceed())),
+                new Decorator(ret => Me.HasAura("Stance of the Fierce Tiger"),
+                    new PrioritySelector(
+                        //HealingSphereTank(),
+                        Spell.Cast(TigerPalm, ret => !Me.HasAura("Tiger Power")),
+                        Spell.Cast(ChiWave),
+                        Spell.Cast(BlackoutKick),
+                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
+                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
+                        Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 35),
+                        Spell.Cast(Jab, ret => Me.CurrentChi <= 4),
+                        Spell.Cast(TigerPalm),
+                        new ActionAlwaysSucceed())),
 
                 //// apply the Weakened Blows debuff. Keg Smash also generates allot of threat 
                 Spell.Cast(KegSmash, ret => Me.CurrentChi <= 3 && Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8).Any(u => !u.HasAura("Weakened Blows") &&
                                             u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
 
                 OxStatue(),
-                //Spell.CastOnGround("Summon Black Ox Statue", on => Me.Location, ret => !Me.HasAura("Sanctuary of the Ox") && AdvancedAI.UsefulStuff),
-
+                
                 //PB, EB, and Guard are off the GCD
                 //!!!!!!!Purifying Brew !!!!!!!
-                //new Decorator(ret => Me.CurrentChi >= 1,
-                //    new Throttle(1,1,
-                //        new PrioritySelector(
-                //            Spell.Cast(PurifyingBrew, ret => Me.HasAura("Heavy Stagger")),
-                //            new Decorator(ret => (Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds >= 6 || Me.CurrentChi >= 3),
-                //                new PrioritySelector(
-                //                    Spell.Cast(PurifyingBrew, ret => Me.HasAura("Moderate Stagger") && Me.HealthPercent <= 70)
-                //                    //Spell.Cast(PurifyingBrew, ret => Me.HasAura("Light Stagger") && Me.HealthPercent < 40)
-                //                    ))))),
-
-                Spell.Cast(PurifyingBrew, ret => Me.HasAura("Heavy Stagger")),
-                Spell.Cast(PurifyingBrew, ret => Me.HasAura("Moderate Stagger") && Me.HealthPercent <= 70 && (Me.GetAuraTimeLeft("Shuffle").TotalSeconds >= 6 || Me.CurrentChi >= 3)),
-                //Spell.Cast(PurifyingBrew, ret => Me.HasAura("Light Stagger") && Me.HealthPercent < 40 && (Me.GetAuraTimeLeft("Shuffle").TotalSeconds >= 6 || Me.CurrentChi >= 3)),
-
-                Item.UsePotionAndHealthstone(40),
+                new Decorator(ret => Me.CurrentChi >= 1,
+                    new Throttle(1,
+                        new PrioritySelector(
+                            Spell.Cast(PurifyingBrew, ret => Me.HasAura("Heavy Stagger")),
+                            new Decorator(ret => (HasShuffle() || Me.CurrentChi >= 2) && !Me.HasAura(ElusiveBrew),
+                                new PrioritySelector(
+                                    Spell.Cast(PurifyingBrew, ret => Me.HasAura("Moderate Stagger") && Me.HealthPercent <= 70)
+                //Spell.Cast(PurifyingBrew, ret => Me.HasAura("Light Stagger") && Me.HealthPercent < 40)
+                                    ))))),
 
                 //Elusive Brew will made auto at lower stacks when I can keep up 80 to 90% up time this is just to keep from capping
-                Spell.Cast(ElusiveBrew, ret => Me.HasAura("Elusive Brew", 12) && !Me.HasAura(ElusiveBrew)),
-
-                //Guard
-                Spell.Cast(Guard, ret => Me.CurrentChi >= 2 && Me.HasAura("Power Guard")),
-                //Blackout Kick might have to add guard back but i think its better to open with BK and get shuffle to build AP for Guard
-
-                new Throttle(1,
-                    Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 80 && Me.CurrentEnergy >= 40)),
+                Spell.Cast(ElusiveBrew, ret => Me.HasAura("Elusive Brew", 12) && !Me.HasAura(ElusiveBrew) && IsCurrentTank()),
+                Spell.Cast(BlackoutKick, ret => !Me.HasAura("Shuffle") || Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds < 6),
+                Spell.Cast(Guard, ret => Me.CurrentChi >= 2 && Me.HasAura("Power Guard") && Me.HealthPercent <= 90 && IsCurrentTank()),
+                
+                //Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 80),
+                Spell.Cast(ExpelHarm, on => EHtar, ret => Me.HealthPercent > 70 && TalentManager.HasGlyph("Targeted Expulsion")),
+                Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 70 && TalentManager.HasGlyph("Targeted Expulsion") || Me.HealthPercent < 80 && !TalentManager.HasGlyph("Targeted Expulsion")),
                 //Detox
                 CreateDispelBehavior(),
 
-                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => Me.IsSafelyFacing(u) && u.IsWithinMeleeRange) >= 1,
-                    new PrioritySelector(
-                Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 2 && !Me.HasAura("Shuffle") || Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds < 6),
                 Spell.Cast(TigerPalm, ret => Me.CurrentChi >= 2 && !Me.HasAura("Power Guard") || !Me.HasAura("Tiger Power")),
-
-                Spell.Cast(BreathofFire, ret => Me.CurrentChi >= 3 && Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds > 6.5 && Me.CurrentTarget.HasAura("Dizzying Haze") && SlimAI.AOE),
-
+                Spell.Cast(BreathofFire, ret => Me.CurrentChi >= 3 && HasShuffle() && Me.CurrentTarget.HasAura("Dizzying Haze") && SlimAI.AOE),
                 Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 3),
                 Spell.Cast(KegSmash),
 
                 //Chi Talents
-                //need to do math here and make it use 2 if im going to use it
                 Spell.Cast(ChiWave),
-                //Spell.Cast("Chi Wave", on => Me, ret => Me.HealthPercent <= 85),
                 Spell.Cast(ZenSphere, ret => !Me.HasAura(ZenSphere)),
                 
-                //Spell.Cast(ExpelHarm, on => EHtar, ret => Me.HealthPercent > 70 && TalentManager.HasGlyph("Targeted Expulsion")),
-                //Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 70 && TalentManager.HasGlyph("Targeted Expulsion") || Me.HealthPercent < 85 && !TalentManager.HasGlyph("Targeted Expulsion")),
-                //new Throttle(TimeSpan.FromMilliseconds(1000),
-                //    Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 80)),
-
                 //Healing Spheres need to work on not happy with this atm
-                //HealingSphere(),
+                HealingSphere(),
                 //HealingSphereTank(),
-                //Spell.CastOnGround("Healing Sphere", on => Me.Location, ret => Me.HealthPercent <= 50 && Me.CurrentEnergy >= 60),
 
-                new Decorator(ret => SlimAI.AOE && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 2,
+                new Decorator(ret => SlimAI.AOE,
                     new PrioritySelector(
-                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
-                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 5))),
+                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3 && ((Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= (((40 - 0) * (1.0 / EnergyRegen)) / 1.6)) || Me.CurrentEnergy >= 80)),
+                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 5 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3))),
 
-                Spell.Cast(Jab, ret => ((Me.CurrentEnergy - 40) + (Spell.GetSpellCooldown("Keg Smash").TotalSeconds * EnergyRegen)) > 40),
-
-                //Spell.Cast("Jab", ret => Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= (((40 - 0) * (1.0 / EnergyRegen)) / 1.6)),
+                //Spell.Cast(Jab, ret => ((Me.CurrentEnergy - 40) + (Spell.GetSpellCooldown("Keg Smash").TotalSeconds * EnergyRegen)) > 40),
+                Spell.Cast("Jab", ret => (Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= (((40 - 0) * (1.0 / EnergyRegen)) / 1.6)) || Me.CurrentEnergy >= 80),
                 //Spell.Cast("Jab", ret => Me.CurrentEnergy >= 80 || Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3),
 
                 //dont like using this in auto to many probs with it
                 //Spell.Cast("Invoke Xuen, the White Tiger", ret => Me.CurrentTarget.IsBoss && IsCurrentTank()),
                 new Throttle(Spell.Cast(TigerPalm, ret => Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 1 && Me.CurrentChi < 3 && Me.CurrentEnergy < 80))
-                )));
+                );
         }
+#endregion
 
+        #region Buffs
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
         public static Composite BrewmasterPreCombatBuffs()
         {
             return new PrioritySelector(
                 PartyBuff.BuffGroup("Legacy of the Emperor"));
         }
+        #endregion
 
         #region Zen Heals
 
@@ -246,6 +231,20 @@ namespace SlimAI.Class.Monk
         }
         #endregion
 
+        #region Zen Med
+        private static Composite ZenMed()
+        {
+            return
+                new Decorator(ret => SpellManager.CanCast(ZenMeditation) && !Me.IsMoving &&
+                    KeyboardPolling.IsKeyDown(Keys.Z),
+                    new Action(ret =>
+                    {
+                        SpellManager.Cast(ZenMeditation);
+                        return;
+                    }));
+        }
+        #endregion
+
         #region Is Tank
         static bool IsCurrentTank()
         {
@@ -253,6 +252,13 @@ namespace SlimAI.Class.Monk
         }
         #endregion
 
+        #region Shuffle
+        static bool HasShuffle()
+        {
+            return Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds > 6;
+        }
+        #endregion
+        
         #region Dispelling
 
         private static WoWUnit Dispeltar
@@ -333,6 +339,7 @@ namespace SlimAI.Class.Monk
                           SummonBlackOxStatue = 115315,
                           TigerPalm = 100787,
                           TouchofDeath = 115080,
+                          ZenMeditation = 115176,
                           ZenSphere = 124081;
         #endregion
     }
