@@ -39,7 +39,8 @@ namespace SlimAI.Class.Warrior
                                 new PrioritySelector(
                                     Spell.Cast(Avatar),
                                     Spell.Cast(SkullBanner))))),
-                    Item.UsePotionAndHealthstone(40),
+                    //new Throttle(1,
+                    //    Item.UsePotionAndHealthstone(40)),
                     new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                     DemoBanner(),
                     Leap(),
@@ -77,7 +78,7 @@ namespace SlimAI.Class.Warrior
                             Spell.Cast(BattleShout),
                             Spell.Cast(HeroicStrike, ret => Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss)),
                             Spell.Cast(HeroicThrow, ret => Me.CurrentTarget.Distance >= 10),
-                            Spell.Cast(Devastate, ret => Me.CurrentTarget.HasAura("Weakened Blows")))));
+                            Spell.Cast(Devastate))));
         }
 
         private static Composite CreateAoe()

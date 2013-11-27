@@ -62,11 +62,11 @@ namespace SlimAI.Helpers
                 new Decorator(
                     ret => StyxWoW.Me.HealthPercent < healthPercent,
                     new PrioritySelector(
-                        ctx => FindFirstUsableItemBySpell("Healthstone", "Life Spirit"),
-                        new Decorator(
-                            ret => ret != null,
-                            new Sequence(
-                                new Action(ret => ((WoWItem)ret).UseContainerItem()))))));
+                            ctx => FindFirstUsableItemBySpell("Healthstone", "Life Spirit"),
+                            new Decorator(
+                                ret => ret != null,
+                                new Sequence(
+                                        new Action(ret => ((WoWItem)ret).UseContainerItem()))))));
         }
 
         public static void UseTrinkets()

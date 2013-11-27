@@ -91,7 +91,7 @@ namespace SlimAI.Class.Warrior
                 new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                 Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage)),
                 Spell.Cast(SweepingStrikes),
-                Spell.Cast(Bladestorm),
+                Spell.Cast(Bladestorm, ret => Me.HasAura(SweepingStrikes)),
                 Spell.Cast(Whirlwind, ret => (Me.CurrentTarget.HasAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105),
                 Spell.Cast(MortalStrike),
                 Spell.Cast(DragonRoar, ret => !Me.CurrentTarget.HasAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8),
