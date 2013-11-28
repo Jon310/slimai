@@ -1,4 +1,5 @@
-﻿using SlimAI.Managers;
+﻿using System.Windows.Forms;
+using SlimAI.Managers;
 using CommonBehaviors.Actions;
 using Styx;
 using Styx.CommonBot;
@@ -23,9 +24,13 @@ namespace SlimAI.Class.Deathknight
         public static Composite BloodDKCombat()
         {
             return new PrioritySelector(
-                Common.CreateInterruptBehavior(),
-                new Decorator(ret =>!Me.Combat || Me.Mounted || Me.IsCasting || Me.IsChanneling,
-                              new ActionAlwaysSucceed()),
+            new Throttle(1,
+                new Action(context => ResetVariables())),
+
+            new Decorator(ret => Me.IsCasting || Me.IsChanneling || !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
+                            new ActionAlwaysSucceed()),
+            Army(),
+            Common.CreateInterruptBehavior(),
             new Decorator(ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague"), 
                 CreateApplyDiseases()),
             BloodCombatBuffs(),
@@ -37,7 +42,7 @@ namespace SlimAI.Class.Deathknight
             Spell.Cast(DeathStrike, ret => ShouldDeathStrike),
 
             new Throttle(1, 2,
-                new Decorator(ret => Unit.UnfriendlyUnits(12).Count() >= 2 && !Me.HasAura("Unholy Blight") && SlimAI.AOE && ShouldSpreadDiseases,
+                new Decorator(ret => Unit.UnfriendlyUnits(12).Count() >= 2 && !Me.HasAura("Unholy Blight") && SlimAI.AOE && ShouldSpreadDiseases && BloodRuneUse,
                     new PrioritySelector(
                         Spell.Cast(BloodBoil, ret => SpellManager.HasSpell("Roiling Blood")),
                         Spell.Cast(Pestilence, ret => !SpellManager.HasSpell("Roiling Blood"))))),
@@ -45,13 +50,13 @@ namespace SlimAI.Class.Deathknight
             new Decorator(ret => !ShouldDeathStrike,
                 new PrioritySelector(
                     DnD(),
-                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && ((Me.CurrentTarget.HasAuraExpired("Blood Plague", 3) && Me.CurrentTarget.HasAura("Blood Plague")) && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3 ||
+                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && ((Me.CurrentTarget.HasAuraExpired("Blood Plague", 3)) && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3 ||
                                                  Me.HasAura(81141) && !SpellManager.CanCast("Death and Decay"))),
                     Spell.Cast(RuneTap, ret => Me.HealthPercent <= 80 && Me.BloodRuneCount >= 1),
                     Spell.Cast(RuneStrike, ret => Me.CurrentRunicPower >= 30 && !Me.HasAura("Lichborne")),
-                    Spell.Cast(SoulReaper, ret => Me.BloodRuneCount > 0 && Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent <= 35),
-                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && !SpellManager.CanCast("Death and Decay") && Unit.UnfriendlyUnits(10).Count() > 3 && Me.BloodRuneCount > 0),
-                    Spell.Cast(HeartStrike, ret => Me.BloodRuneCount > 0),
+                    Spell.Cast(SoulReaper, ret => BloodRuneUse && Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent <= 35),
+                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && !SpellManager.CanCast("Death and Decay") && Unit.UnfriendlyUnits(10).Count() > 3 && BloodRuneUse),
+                    Spell.Cast(HeartStrike, ret => BloodRuneUse),
                     Spell.Cast(HornofWinter, ret => Me.CurrentRunicPower < 90))));
 
         }
@@ -60,6 +65,8 @@ namespace SlimAI.Class.Deathknight
         public static Composite BloodDKPreCombatBuffs()
         {
             return new PrioritySelector(
+                new Decorator(ret => Me.Mounted,
+                              new ActionAlwaysSucceed()),
                 Spell.Cast(BoneShield, ret => !Me.HasAura("Bone Shield")),
                 Spell.Cast(HornofWinter, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower)));
         }
@@ -67,7 +74,7 @@ namespace SlimAI.Class.Deathknight
         private static Composite BloodCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.Cast(DancingRuneWeapon, ret => IsCurrentTank()),
+                Spell.Cast(DancingRuneWeapon, ret => IsCurrentTank() && !SpellManager.CanCast("Death Strike") && SlimAI.Burst),
                 Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 5) && Me.HealthPercent < 90 && !SpellManager.CanCast("Death Strike") && NoRunes),
                 Spell.Cast(BoneShield, ret => !Me.HasAura("Bone Shield")),
                 Spell.Cast(Conversion, ret => Me.HealthPercent < 60 && Me.RunicPowerPercent > 20 && !Me.HasAura("Conversion")),
@@ -81,7 +88,7 @@ namespace SlimAI.Class.Deathknight
                     new PrioritySelector(
                         Spell.Cast(RaiseDead, ret => !GhoulMinionIsActive),
                         Spell.Cast(DeathPact),
-                        Spell.Cast(EmpowerRuneWeapon, ret => !SpellManager.CanCast("Death Strike")))),
+                        Spell.Cast(EmpowerRuneWeapon, ret => !SpellManager.CanCast("Death Strike") && SpellManager.Spells["Death Pact"].Cooldown))),
                 Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 10) && NoRunes),
                 Spell.Cast(PlagueLeech, ret => CanCastPlagueLeech));
         }
@@ -129,6 +136,11 @@ namespace SlimAI.Class.Deathknight
             }
         }
 
+        private static bool BloodRuneUse
+        {
+            get { return BloodRuneSlotsActive >= 1; }
+        }
+
         private static bool FewRunes
         {
             get { return BloodRuneSlotsActive <= 1 || FrostRuneSlotsActive <= 1 || UnholyRuneSlotsActive <= 1; }
@@ -157,6 +169,19 @@ namespace SlimAI.Class.Deathknight
         {
             get { return Me.Minions.Any(u => u.Entry == Ghoul); }
         }
+        #region Army
+        private static Composite Army()
+        {
+            return
+                new Decorator(ret => SpellManager.CanCast(ArmyoftheDead) && !Me.IsMoving &&
+                    KeyboardPolling.IsKeyDown(Keys.Z),
+                    new Action(ret =>
+                    {
+                        SpellManager.Cast(ArmyoftheDead);
+                        return;
+                    }));
+        }
+        #endregion
 
         #region Is Tank
         static bool IsCurrentTank()
@@ -175,6 +200,15 @@ namespace SlimAI.Class.Deathknight
                     SpellManager.Cast("Death and Decay");
                     SpellManager.ClickRemoteLocation(tpos);
                 }));
+        }
+        #endregion
+
+        #region Reset
+        private static RunStatus ResetVariables()
+        {
+            KeyboardPolling.IsKeyDown(Keys.Z);
+            KeyboardPolling.IsKeyDown(Keys.C);
+            return RunStatus.Failure;
         }
         #endregion
 
@@ -206,6 +240,7 @@ namespace SlimAI.Class.Deathknight
         #region DeathKnight Spells
         private const int 
             AntiMagicShell = 48707,
+            ArmyoftheDead = 42650,
             Asphyxiate = 108194,
             BloodBoil = 48721,
             BloodTap = 45529,
