@@ -219,7 +219,7 @@ namespace SlimAI.Class.Monk
         private static Composite ZenMed()
         {
             return
-                new Decorator(ret => SpellManager.CanCast(ZenMeditation) &&
+                new Decorator(ret => SpellManager.CanCast(ZenMeditation) && !Me.IsMoving &&
                     KeyboardPolling.IsKeyDown(Keys.Z),
                     new Action(ret =>
                     {

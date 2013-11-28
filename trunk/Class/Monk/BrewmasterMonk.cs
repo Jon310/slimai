@@ -171,6 +171,8 @@ namespace SlimAI.Class.Monk
             _timeToMax = null;
             _energy = null;
             _energyRegen = null;
+            KeyboardPolling.IsKeyDown(Keys.Z);
+            KeyboardPolling.IsKeyDown(Keys.C);
             return RunStatus.Failure;
         }
 
