@@ -56,6 +56,7 @@
     <Compile Include="Class\DeathKnight\UnholyDeathknight.cs" />
     <Compile Include="Class\Druid\FeralDruid.cs" />
     <Compile Include="Class\Druid\GuardianDruid.cs" />
+    <Compile Include="Class\Hunter\BeastmasterHunter.cs" />
     <Compile Include="Class\Monk\BrewmasterMonk.cs" />
     <Compile Include="Class\Monk\MistweaverMonk.cs" />
     <Compile Include="Class\Monk\WindwalkerMonk.cs" />
