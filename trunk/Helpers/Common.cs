@@ -222,8 +222,11 @@ namespace SlimAI.Helpers
             if ( Me.Class == WoWClass.Mage)
                 prioSpell.AddChild( Spell.Cast("Counterspell", ctx => _unitInterrupt, true));
 
-            if ( Me.Class == WoWClass.Hunter)
-                prioSpell.AddChild( Spell.Cast("Silencing Shot", ctx => _unitInterrupt, true));
+            if (Me.Specialization == WoWSpec.HunterBeastMastery || Me.Specialization == WoWSpec.HunterSurvival)
+                prioSpell.AddChild( Spell.Cast("Counter Shot", ctx => _unitInterrupt, true));
+
+            if (Me.Specialization == WoWSpec.HunterMarksmanship)
+                prioSpell.AddChild(Spell.Cast("Silencing Shot", ctx => _unitInterrupt, true));
 
             if ( Me.Class == WoWClass.Druid)
                 prioSpell.AddChild( Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin, true));
