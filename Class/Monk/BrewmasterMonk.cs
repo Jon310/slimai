@@ -80,7 +80,7 @@ namespace SlimAI.Class.Monk
 
                 //Elusive Brew will made auto at lower stacks when I can keep up 80 to 90% up time this is just to keep from capping
                 Spell.Cast(ElusiveBrew, ret => Me.HasAura("Elusive Brew", 12) && !Me.HasAura(ElusiveBrew) && IsCurrentTank()),
-                Spell.Cast(BlackoutKick, ret => !Me.HasAura("Shuffle") || Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds < 6),
+                Spell.Cast(BlackoutKick, ret => !Me.HasAura("Shuffle") || Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds <= 6),
                 Spell.Cast(Guard, ret => Me.CurrentChi >= 2 && Me.HasAura("Power Guard") && Me.HealthPercent <= 90 && IsCurrentTank()),
                 
                 //Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 80),
@@ -91,7 +91,7 @@ namespace SlimAI.Class.Monk
 
                 Spell.Cast(TigerPalm, ret => Me.CurrentChi >= 2 && !Me.HasAura("Power Guard") || !Me.HasAura("Tiger Power")),
                 Spell.Cast(BreathofFire, ret => Me.CurrentChi >= 3 && HasShuffle() && Me.CurrentTarget.HasAura("Dizzying Haze") && SlimAI.AOE),
-                Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 3),
+                Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 3 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds <= 1 || Me.CurrentChi >= 4 || Me.CurrentChi >= 3 && Spell.GetSpellCooldown("Guard").TotalSeconds >= 3),
                 Spell.Cast(KegSmash),
 
                 //Chi Talents
@@ -208,7 +208,7 @@ namespace SlimAI.Class.Monk
         #region Healing Sphere
         private static Composite HealingSphere()
         {
-            return new Decorator(ret => Me.HealthPercent <= 50 && Me.CurrentEnergy >= 60 && Me.GetAuraTimeLeft("Shuffle").TotalSeconds >= 6,
+            return new Decorator(ret => Me.HealthPercent <= 50 && Me.CurrentEnergy >= 60 && Me.GetAuraTimeLeft("Shuffle").TotalSeconds >= 6 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3,
                 new Action(ret =>
                 {
                     var mpos = Me.Location;
