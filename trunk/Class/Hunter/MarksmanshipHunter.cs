@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using CommonBehaviors.Actions;
 using SlimAI.Helpers;
+using CommonBehaviors.Actions;
 using Styx;
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using Action = System.Action;
+using Action = Styx.TreeSharp.Action;
 
 namespace SlimAI.Class.Hunter
 {
@@ -26,7 +23,7 @@ namespace SlimAI.Class.Hunter
             return new PrioritySelector(
 
                 new Throttle(1,
-                    new Styx.TreeSharp.Action(context => ResetVariables())),
+                    new Action(context => ResetVariables())),
 
             new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive || Me.HasAura("Feign Death"),
                 new ActionAlwaysSucceed()),
@@ -36,7 +33,7 @@ namespace SlimAI.Class.Hunter
                     Spell.Cast("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
                     Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.ActiveAuras.ContainsKey("Enraged") || Me.CurrentTarget.ActiveAuras.ContainsKey("Magic")),
                     Spell.Cast("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < 60 && !Pet.HasAura("Mend Pet")),
-
+                    new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                     Spell.Cast("Powershot"),
                     Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
                     Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!")),
@@ -69,7 +66,7 @@ namespace SlimAI.Class.Hunter
         }
 
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Hunter, WoWSpec.HunterSurvival)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Hunter, WoWSpec.HunterMarksmanship)]
         public static Composite MarksmanshipPreCombatBuffs()
         {
             return new PrioritySelector(
@@ -178,7 +175,7 @@ namespace SlimAI.Class.Hunter
                         new PrioritySelector(
                             new Decorator(ret => useLauncher && Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
                             Spell.BuffSelf("Trap Launcher", req => useLauncher),
-                            new Decorator(ret => !useLauncher, new Styx.TreeSharp.Action(ret => Me.CancelAura("Trap Launcher")))
+                            new Decorator(ret => !useLauncher, new Action(ret => Me.CancelAura("Trap Launcher")))
                             ),
 
                         // wait for launcher to appear (or dissappear) as required
@@ -186,16 +183,16 @@ namespace SlimAI.Class.Hunter
                             new Wait(TimeSpan.FromMilliseconds(500),
                                 until => (!useLauncher && !Me.HasAura("Trap Launcher")) || (useLauncher && Me.HasAura("Trap Launcher")),
                                 new ActionAlwaysSucceed()),
-                            new Styx.TreeSharp.Action(ret =>
+                            new Action(ret =>
                             {
                                 return RunStatus.Failure;
                             })
                             ),
 
                 // Spell.Cast( trapName, ctx => onUnit(ctx)),
-                        new Styx.TreeSharp.Action(ret => SpellManager.Cast(trapName, onUnit(ret))),
-                        Helpers.Common.CreateWaitForLagDuration(),
-                        new Styx.TreeSharp.Action(ctx => SpellManager.ClickRemoteLocation(onUnit(ctx).Location))
+                        new Action(ret => SpellManager.Cast(trapName, onUnit(ret))),
+                        Common.CreateWaitForLagDuration(),
+                        new Action(ctx => SpellManager.ClickRemoteLocation(onUnit(ctx).Location))
                         )
                     )
                 );

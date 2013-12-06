@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Windows.Forms;
-using SlimAI;
 using SlimAI.Helpers;
 using SlimAI.Managers;
 using CommonBehaviors.Actions;
@@ -37,7 +36,7 @@ namespace SlimAI.Class.Hunter
 
                         Spell.Cast("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
                         Spell.Cast("Serpent Sting", ret => !Me.CurrentTarget.HasMyAura("Serpent Sting")),
-
+                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                         //Burst
                         new Decorator(ret => SlimAI.Burst,
                             new PrioritySelector(
@@ -232,7 +231,7 @@ namespace SlimAI.Class.Hunter
 
                 // Spell.Cast( trapName, ctx => onUnit(ctx)),
                         new Action(ret => SpellManager.Cast(trapName, onUnit(ret))),
-                        Helpers.Common.CreateWaitForLagDuration(),
+                        Common.CreateWaitForLagDuration(),
                         new Action(ctx => SpellManager.ClickRemoteLocation(onUnit(ctx).Location))
                         )
                     )
