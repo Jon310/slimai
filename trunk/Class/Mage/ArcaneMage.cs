@@ -23,8 +23,9 @@ namespace SlimAI.Class.Mage
                     Spell.Cast("Alter Time", ret => Me.HasAura("Alter Time") && Me.IsMoving),
                     Spell.Cast("Ice Barrier", ret => !Me.HasAura("Ice Barrier")),
 
-                    new Decorator(ret => Me.IsMoving,
+                    new Decorator(ret => Me.IsMoving && !Me.HasAura("Ice Floes"),
                         new PrioritySelector(
+                            Spell.Cast("Ice Floes"),
                             Spell.Cast("Arcane Barrage"),
                             Spell.Cast("Arcane Explosion", ret => Unit.UnfriendlyUnits(10).Count() >= 2 && SlimAI.AOE),
                             Spell.Cast("Fire Blast"),

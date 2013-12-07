@@ -1529,7 +1529,7 @@ namespace SlimAI.Helpers
             if (Me.Class == WoWClass.Shaman)
                 allowMovingWhileCasting = spell.Name == "Lightning Bolt";
             else if (Me.Specialization == WoWSpec.MageFire)
-                allowMovingWhileCasting = spell.Name == "Scorch";
+                allowMovingWhileCasting = spell.Name == "Scorch" || Me.HasAura(108839);
             else if (Me.Class == WoWClass.Hunter)
                 allowMovingWhileCasting = spell.Name == "Steady Shot" || (spell.Name == "Aimed Shot" && TalentManager.HasGlyph("Aimed Shot")) || spell.Name == "Cobra Shot";
             else if (Me.Class == WoWClass.Warlock)

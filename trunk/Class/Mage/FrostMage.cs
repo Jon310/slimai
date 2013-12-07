@@ -20,8 +20,9 @@ namespace SlimAI.Class.Mage
                     Spell.Cast("Ice Barrier", ret => !Me.HasAura("Ice Barrier")),
 
                     //Moving
-                    new Decorator(ret => Me.IsMoving,
+                    new Decorator(ret => Me.IsMoving && !Me.HasAura("Ice Floes"),
                                   new PrioritySelector(
+                                      Spell.Cast("Ice Floes"),
                                       Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
                                       CreateBomb(),
                                       Spell.Cast("Fire Blast", ret => Me.IsMoving),
@@ -39,12 +40,12 @@ namespace SlimAI.Class.Mage
                     new Throttle(3,
                         new PrioritySelector(
                     Spell.Cast("Evocation", ret => !Me.HasAura("Invoker's Energy") || Me.HasAuraExpired("Invoker's Energy", 2)))),
-                    Spell.Cast("Evocation", ret => Spell.GetSpellCooldown("Icy Veins").TotalSeconds == 0 && Me.HasAuraExpired("Invoker's Energy", 20)),
+                    Spell.Cast("Evocation", ret => Spell.GetSpellCooldown("Icy Veins").TotalSeconds <= 2 && Me.HasAuraExpired("Invoker's Energy", 20)),
                     //Spell.CastOnGround("Rune of Power", ret => Me.Location, ret => GetSpellCooldown("Icy Veins").TotalSeconds ==0 && Me.HasAuraExpired("Invoker's Energy", 20)),
 
                     Spell.Cast("Mirror Image", ret => SlimAI.Burst),
                     Spell.Cast("Lifeblood", ret => Me.HasAura("Icy Veins")),
-                    Spell.Cast("Frozen Orb", ret => !Me.HasAura("Fingers of Frost")),
+                    Spell.Cast("Frozen Orb", ret => !Me.HasAura("Fingers of Frost") && SlimAI.Burst),
                     Spell.Cast("Icy Veins", ret => SlimAI.Burst && (Me.HasAura("Brain Freeze") || Me.HasAura("Fingers of Frost")) && !Me.IsMoving),
                     Spell.Cast("Presence of Mind", ret => SlimAI.Burst && (Me.HasAura("Icy Veins") || Spell.GetSpellCooldown("Icy Veins").TotalSeconds > 15)),
                     Spell.Cast("Alter Time", ret => SlimAI.Burst && Me.HasAura("Icy Veins") && !Me.HasAura("Alter Time")),
@@ -66,12 +67,12 @@ namespace SlimAI.Class.Mage
 
                 Spell.Cast("Nether Tempest", ret => !Me.CurrentTarget.HasMyAura("Nether Tempest")),
                 Spell.Cast("Frost Bomb", ret => !Me.IsMoving),                
-                Spell.Cast("Living Bomb", ret => (Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds < 2 || !Me.CurrentTarget.HasAura("Living Bomb")) && Me.CurrentTarget.TimeToDeath() > 6)
+                Spell.Cast("Living Bomb", ret => !Me.CurrentTarget.HasAura("Living Bomb"))
                 );
         }
         private static Composite CreateAoe()
         {
-            return new PrioritySelector(ret => Unit.UnfriendlyUnits(10).Count() > 1,
+            return new PrioritySelector(ret => Unit.UnfriendlyUnits(10).Count() > 1 && SlimAI.AOE,
 
                                         Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location, ret => Unit.UnfriendlyUnitsNearTarget(10).Count() >= 2),
                                         Spell.Cast("Frozen Orb"),
