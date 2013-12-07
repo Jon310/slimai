@@ -39,20 +39,15 @@ namespace SlimAI.Class.Mage
                     new Throttle(3,
                         new PrioritySelector(
                     Spell.Cast("Evocation", ret => !Me.HasAura("Invoker's Energy") || Me.HasAuraExpired("Invoker's Energy", 2)))),
-
                     Spell.Cast("Evocation", ret => Spell.GetSpellCooldown("Icy Veins").TotalSeconds == 0 && Me.HasAuraExpired("Invoker's Energy", 20)),
                     //Spell.CastOnGround("Rune of Power", ret => Me.Location, ret => GetSpellCooldown("Icy Veins").TotalSeconds ==0 && Me.HasAuraExpired("Invoker's Energy", 20)),
 
-                    Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.HasMyAura("Frostbolt", 3)),
                     Spell.Cast("Mirror Image", ret => SlimAI.Burst),
                     Spell.Cast("Lifeblood", ret => Me.HasAura("Icy Veins")),
                     Spell.Cast("Frozen Orb", ret => !Me.HasAura("Fingers of Frost")),
-                    Spell.Cast("Icy Veins", ret => SlimAI.Burst && Me.CurrentTarget.Auras["Frostbolt"].StackCount >= 3 &&
-                                                   (Me.HasAura("Brain Freeze") || Me.HasAura("Fingers of Frost")) && !Me.IsMoving),
-
+                    Spell.Cast("Icy Veins", ret => SlimAI.Burst && (Me.HasAura("Brain Freeze") || Me.HasAura("Fingers of Frost")) && !Me.IsMoving),
                     Spell.Cast("Presence of Mind", ret => SlimAI.Burst && (Me.HasAura("Icy Veins") || Spell.GetSpellCooldown("Icy Veins").TotalSeconds > 15)),
                     Spell.Cast("Alter Time", ret => SlimAI.Burst && Me.HasAura("Icy Veins") && !Me.HasAura("Alter Time")),
-
                     CreateAoe(),
                     Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Alter Time") && Me.HasAura("Brain Freeze")),
                     Spell.Cast("Ice Lance", ret => Me.HasAura("Alter Time") && Me.HasAura("Fingers of Frost")),
