@@ -23,8 +23,8 @@ namespace SlimAI.Class.Warrior
         {
             HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
-                    new Decorator(ret => Me.CurrentTarget != null && !Me.CurrentTarget.IsAlive && Me.IsCasting,
-                        new ActionAlwaysSucceed()),
+                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
+                    new ActionAlwaysSucceed()),
                     new Decorator(ret => Me.HasAura("Dire Fixation"),
                         new PrioritySelector(
                             BossMechs.HorridonHeroic())),
