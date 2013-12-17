@@ -1,4 +1,5 @@
-﻿using SlimAI;
+﻿using CommonBehaviors.Actions;
+using SlimAI;
 using SlimAI.Helpers;
 using Styx;
 using Styx.TreeSharp;
@@ -112,6 +113,8 @@ namespace SlimAI.Class.Mage
         public static Composite FrostPreCombatBuffs()
         {
             return new PrioritySelector(
+                new Decorator(ret => Me.Mounted,
+                    new ActionAlwaysSucceed()),
                 PartyBuff.BuffGroup("Arcane Brilliance"),
                 new Throttle(3,
                 Spell.Cast("Frost Armor", ret => !Me.HasAura("Frost Armor")))

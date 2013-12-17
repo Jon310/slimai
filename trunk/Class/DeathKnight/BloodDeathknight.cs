@@ -30,6 +30,7 @@ namespace SlimAI.Class.Deathknight
             new Decorator(ret => Me.IsCasting || Me.IsChanneling || !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                             new ActionAlwaysSucceed()),
             Army(),
+            CreateInterruptSpellCast(),
             Common.CreateInterruptBehavior(),
             new Decorator(ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague"), 
                 CreateApplyDiseases()),
@@ -180,6 +181,34 @@ namespace SlimAI.Class.Deathknight
                         SpellManager.Cast(ArmyoftheDead);
                         return;
                     }));
+        }
+        #endregion
+
+        #region y'shaarj
+        public static WoWUnit TouchedTar
+        {
+            get
+            {
+                var Touched = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                               where unit.IsAlive
+                               where unit.HasAnyAura("Touch of Y'Shaarj", "Empowered Touch of Y'Shaarj")
+                               where unit.IsCasting
+                               select unit).FirstOrDefault();
+                return Touched;
+            }
+        }
+
+        public static Composite CreateInterruptSpellCast()
+        {
+            return new Decorator(
+                // If the target is casting, and can actually be interrupted, AND we've waited out the double-interrupt timer, then find something to interrupt with.
+                new PrioritySelector(
+                Spell.Cast("Mind Freeze", on => TouchedTar),
+                // AOE interrupt
+                // Racials last.
+                // Don't waste stomp on bosses. They can't be stunned 99% of the time!
+                Spell.Cast("Strangulate", on => TouchedTar, ret => SpellManager.Spells["Mind Freeze"].Cooldown || TouchedTar.Distance >= 8)
+                    ));
         }
         #endregion
 

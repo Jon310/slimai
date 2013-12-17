@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CommonBehaviors.Actions;
 using SlimAI.Helpers;
 using SlimAI.Managers;
 using SlimAI.Settings;
@@ -27,6 +28,8 @@ namespace SlimAI.Class.Warrior
         public static Composite ArmsCombat()
         {
             return new PrioritySelector(
+                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
+                    new ActionAlwaysSucceed()),
                 new Decorator(ret => Me.HasAura("Dire Fixation"),
                     new PrioritySelector(
                         BossMechs.HorridonHeroic())),
@@ -37,7 +40,7 @@ namespace SlimAI.Class.Warrior
                 Item.UsePotionAndHealthstone(50),
                 DemoBanner(),
                 HeroicLeap(),
-                new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 4,
+                new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 4 && SlimAI.AOE,
                             CreateAoe()),
                 new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.HasMyAura("Colossus Smash"),
                     new PrioritySelector(
@@ -47,9 +50,10 @@ namespace SlimAI.Class.Warrior
                 Spell.Cast(BloodBath),
                 new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                 Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage)),
-                Spell.Cast(SweepingStrikes, ret => Unit.UnfriendlyUnits(8).Count() >= 2),
+                Spell.Cast(SweepingStrikes, ret => Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE),
                 Spell.Cast(HeroicStrike, ret => (Me.CurrentTarget.HasAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105, true),
                 Spell.Cast(MortalStrike),
+                Spell.Cast(StormBolt, ret => Me.CurrentTarget.HasMyAura("Colossus Smash")),
                 Spell.Cast(DragonRoar, ret => !Me.CurrentTarget.HasAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8),
                 Spell.Cast(ColossusSmash, ret => Me.CurrentTarget.HasAuraExpired("Colossus Smash") || !Me.CurrentTarget.HasMyAura("Colossus Smash")),
                 Spell.Cast(Execute, ret => Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 95),
@@ -69,6 +73,8 @@ namespace SlimAI.Class.Warrior
         public static Composite ArmsPreCombatBuffs()
         {
             return new PrioritySelector(
+                new Decorator(ret => Me.Mounted,
+                    new ActionAlwaysSucceed()),
                 Spell.Cast(BattleShout, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower)));
         }
 
@@ -92,14 +98,15 @@ namespace SlimAI.Class.Warrior
                 Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage)),
                 Spell.Cast(SweepingStrikes),
                 Spell.Cast(Bladestorm, ret => Me.HasAura(SweepingStrikes)),
-                Spell.Cast(Whirlwind, ret => (Me.CurrentTarget.HasAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105),
+                Spell.Cast(Whirlwind, ret => (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105),
                 Spell.Cast(MortalStrike),
-                Spell.Cast(DragonRoar, ret => !Me.CurrentTarget.HasAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8),
-                Spell.Cast(ColossusSmash, ret => Me.HasAuraExpired("Colossus Smash")),
+                Spell.Cast(StormBolt, ret => Me.CurrentTarget.HasMyAura("Colossus Smash")),
+                Spell.Cast(DragonRoar, ret => !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8),
+                Spell.Cast(ColossusSmash, ret => Me.CurrentTarget.HasAuraExpired("Colossus Smash")),
                 Spell.Cast(Execute, ret => Me.CurrentTarget.HasAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 95),
                 Spell.Cast(DragonRoar, ret => (!Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.HealthPercent < 20) || (Me.HasAura("Bloodbath") && Me.CurrentTarget.HealthPercent >= 20) && Me.CurrentTarget.Distance <= 8),
                 Spell.Cast(ThunderClap, ret => Unit.UnfriendlyUnits(8).Count() >= 3 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds"))),
-                Spell.Cast(Slam, ret => (Me.CurrentTarget.HasAura("Colossus Smash") && Me.HasAura("Recklessness")) && Me.CurrentTarget.HealthPercent >= 20),
+                Spell.Cast(Slam, ret => (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Recklessness")) && Me.CurrentTarget.HealthPercent >= 20),
                 Spell.Cast(Overpower, ret => Me.HasAura("Taste for Blood", 3) && Me.CurrentTarget.HealthPercent >= 20),
                 Spell.Cast(Execute, ret => !Me.HasAura("Sudden Execute")),
                 Spell.Cast(Overpower, ret => Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute")),
@@ -179,6 +186,7 @@ namespace SlimAI.Class.Warrior
                           Recklessness = 1719,
                           SkullBanner = 114207,
                           Slam = 1464,
+                          StormBolt = 107570,
                           SweepingStrikes = 12328,
                           ThunderClap = 6343,
                           VictoryRush = 34428,

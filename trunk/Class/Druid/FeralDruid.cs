@@ -1,8 +1,10 @@
 ﻿using System.Linq;
+using System.Windows.Forms;
 using SlimAI.Helpers;
 using CommonBehaviors.Actions;
 using SlimAI.Settings;
 using Styx;
+using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -25,6 +27,8 @@ namespace SlimAI.Class.Druid
             return new PrioritySelector(
                 new Throttle(1,
                     new Action(context => ResetVariables())),
+                new Decorator(ret => SlimAI.PvPRotation,
+                    CreatePvP()),
                 new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                     new ActionAlwaysSucceed()),
                 Common.CreateInterruptBehavior(),
@@ -35,17 +39,17 @@ namespace SlimAI.Class.Druid
                         new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
                         Spell.Cast(FeralSpirit, ret => SlimAI.Burst)
                         )),
-                Spell.Cast("Force of Nature", ret => Spell.GetCharges("Force of Nature") == 3 || Me.Agility > 32000),
-                //Spell.Cast("Force of Nature"),
-                Spell.Cast(FerociousBite, ret => Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 3 && Me.CurrentTarget.HealthPercent <= 25),
+                Spell.Cast(FerociousBite, ret => Me.CurrentTarget.HasMyAura("Rip") && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 3 && Me.CurrentTarget.HealthPercent <= 25),
                 Spell.Cast(FaerieFire, ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
                 new Throttle(2,
                     Spell.Cast(HealingTouch,
                         on => HTtar,
                         ret => Me.HasAura("Predatory Swiftness") && !Me.HasAura(DreamofCenarius) && (Me.GetAuraTimeLeft("Predatory Swiftness").TotalSeconds <= 1.5 || Me.ComboPoints >= 4 || Me.CurrentTarget.GetAuraTimeLeft("Rake").TotalSeconds <= 4))),
-                Spell.Cast("Savage Roar", ret => Me.GetAuraTimeLeft("Savage Roar").TotalSeconds < 3 && Me.CurrentTarget.HealthPercent < 25 || !Me.HasAura("Savage Roar")),
+                Spell.Cast("Savage Roar", ret => Me.GetAuraTimeLeft("Savage Roar").TotalSeconds < 3 && Me.CurrentTarget.HealthPercent < 25 || !Me.HasAura("Savage Roar") ||
+                                                 (Me.CurrentTarget.HasMyAura("Rip") && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 11 && Me.GetAuraTimeLeft("Savage Roar").TotalSeconds <= 11 && Me.ComboPoints >= 3)),
                 Spell.Cast("Tiger's Fury", ret => Me.EnergyPercent <= 30 && !Me.HasAura(Clearcasting)),
                 Spell.Cast("Berserk", ret => Me.HasAura(TigersFury) && SlimAI.Burst),
+                Spell.Cast("Force of Nature", ret => Spell.GetCharges("Force of Nature") == 3 || Me.Agility > 32000),
                 Spell.Cast(FerociousBite, ret => Me.ComboPoints >= 5 && Me.CurrentTarget.HealthPercent <= 25 && Me.CurrentTarget.HasMyAura("Rip")),
                 Spell.Cast(Rip, ret => Me.ComboPoints == 5 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 2 || !Me.CurrentTarget.HasMyAura("Rip"))),
                 Spell.Cast("Thrash", ret => Me.HasAura(Clearcasting) && (Me.CurrentTarget.GetAuraTimeLeft("Thrash").TotalSeconds < 3 || !Me.CurrentTarget.HasMyAura("Thrash"))),
@@ -117,6 +121,48 @@ namespace SlimAI.Class.Druid
             #endregion
         }
 
+        #region PvP
+        private static Composite CreatePvP()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCastOrChannel(),
+                CloneFocus(),
+                new Decorator(ret => !Me.Combat || Me.Mounted,
+                    new ActionAlwaysSucceed()),
+
+                new Decorator(ret => Me.HasAura("Tiger's Fury") && SlimAI.Burst,
+                    new PrioritySelector(
+                        Spell.Cast("Incarnation: King of the Jungle"),
+                        Spell.Cast("Berserk"),
+                        Spell.Cast("Nature's Vigil"),
+                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                        //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
+                        Spell.Cast(FeralSpirit)
+                        )),
+                Spell.Cast("Cenarion Ward", 
+                        on => WardTar),
+                new Throttle(2,
+                    Spell.Cast(HealingTouch,
+                        on => HTtarPvP,
+                        ret => Me.HasAura("Predatory Swiftness") /*&& Me.GetAuraTimeLeft("Predatory Swiftness").TotalSeconds <= 1.5*/)),
+                Spell.Cast("Savage Roar", ret => Me.GetAuraTimeLeft("Savage Roar").TotalSeconds < 3 && Me.CurrentTarget.HealthPercent < 25 || !Me.HasAura("Savage Roar")),
+                Spell.Cast(FaerieFire, ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3) || !Me.CurrentTarget.HasAura("Faerie Fire")),
+                Spell.Cast("Tiger's Fury", ret => Me.EnergyPercent <= 30 && !Me.HasAura(Clearcasting) && SlimAI.Burst),
+                Spell.Cast(FerociousBite, ret => Me.CurrentTarget.HasMyAura("Rip") && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 3 && Me.CurrentTarget.HealthPercent <= 25 ||
+                                                 Me.ComboPoints >= 5 && Me.CurrentTarget.HasMyAura("Rip") && (Me.CurrentTarget.HealthPercent < 25 ||
+                                                 Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds > 11 && Me.GetAuraTimeLeft("Savage Roar").TotalSeconds > 11)),
+                Spell.Cast(Rip, ret => Me.ComboPoints == 5 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 2 || !Me.CurrentTarget.HasMyAura("Rip"))),
+                Spell.Cast(Rake, ret => Me.CurrentTarget.GetAuraTimeLeft(Rake).TotalSeconds <= 3 || !Me.CurrentTarget.HasAura(Rake)),
+                Spell.Cast("Ravage!"),
+                new Decorator(ret => Me.CurrentEnergy >= 70 || Me.HasAura(Clearcasting) || SlimAI.Weave || Me.HasAura("Tiger's Fury"),
+                    new PrioritySelector(
+                        Spell.Cast(Shred, ret => Me.CurrentTarget.MeIsBehind),
+                        Spell.Cast("Mangle"))),
+                new ActionAlwaysSucceed()
+                );
+        }
+        #endregion
+
         private static Composite CreateFiller()
         {
             return new PrioritySelector(
@@ -131,7 +177,20 @@ namespace SlimAI.Class.Druid
                 Spell.Cast("Mangle"))));
         }
 
-        #region Engery 
+        #region Uility
+        private static Composite CloneFocus()
+        {
+            return
+                new Decorator(ret => SpellManager.CanCast("Cyclone") &&
+                    KeyboardPolling.IsKeyDown(Keys.C),
+                    new PrioritySelector(
+                        Spell.Cast("Cyclone", on => Me.FocusedUnit))
+                //new Action(ret => Spell.Cast(Paralysis, on => Me.FocusedUnit))
+                    );
+        }
+        #endregion
+
+        #region Engery
         protected static double EnergyRegen
         {
             get
@@ -175,6 +234,8 @@ namespace SlimAI.Class.Druid
         private static RunStatus ResetVariables()
         {
             _EnergyRegen = null;
+            KeyboardPolling.IsKeyDown(Keys.Z);
+            KeyboardPolling.IsKeyDown(Keys.C);
             return RunStatus.Failure;
         }
 
@@ -188,6 +249,34 @@ namespace SlimAI.Class.Druid
                               where unit.Distance < 40
                               where unit.InLineOfSight
                               where unit.HealthPercent <= 100
+                              select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
+                return eHheal;
+            }
+        }
+
+        private static WoWUnit HTtarPvP
+        {
+            get
+            {
+                var eHheal = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                              where unit.IsAlive
+                              where unit.Distance < 40
+                              where unit.InLineOfSight
+                              where unit.HealthPercent <= 90
+                              select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
+                return eHheal;
+            }
+        }
+
+        private static WoWUnit WardTar
+        {
+            get
+            {
+                var eHheal = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                              where unit.IsAlive
+                              where unit.Distance < 40
+                              where unit.InLineOfSight
+                              where unit.HealthPercent <= 80
                               select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
                 return eHheal;
             }

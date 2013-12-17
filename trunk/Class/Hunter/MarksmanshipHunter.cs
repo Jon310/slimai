@@ -138,7 +138,7 @@ namespace SlimAI.Class.Hunter
             // Normal - misdirect onto Pet on cooldown
             if (!Me.IsInGroup())
             {
-                return new ThrottlePasses(5,
+                return new Throttle(5,
                     new Decorator(
                         ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
                         Spell.Cast("Misdirection", ctx => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100))

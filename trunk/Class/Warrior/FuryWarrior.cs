@@ -24,23 +24,23 @@ namespace SlimAI.Class.Warrior
                 Common.CreateInterruptBehavior(),
                 Leap(),
                 DemoBanner(),
-                new Decorator(ret => Me.CurrentTarget != null || Me.IsCasting,
+                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                     new ActionAlwaysSucceed()),
                 new Decorator(ret => Me.HasAura("Dire Fixation"),
                     new PrioritySelector(
                         BossMechs.HorridonHeroic())),
                 Spell.Cast(ShatteringThrow, ret => Me.CurrentTarget.IsBoss() && PartyBuff.WeHaveBloodlust),
                 Spell.Cast(VictoryRush, ret => Me.HealthPercent <= 90),
-                Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage) && Me.CurrentTarget.HasAura("Colossus Smash")),
+                Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage) && Me.CurrentTarget.HasMyAura("Colossus Smash")),
                 Spell.Cast(ColossusSmash, ret => Me.CurrentRage > 80 && Me.HasAura("Raging Blow!") && Me.HasAura(Enrage)),
                 new Decorator(ret => Unit.UnfriendlyUnits(8).Count() > 2,
                     CreateAoe()),
-                new Decorator(ret => Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent <= 20,
+                new Decorator(ret => Me.CurrentTarget.HealthPercent <= 20,
                     CreateExecuteRange()),
-                new Decorator(ret => Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent > 20,
+                new Decorator(ret => Me.CurrentTarget.HealthPercent > 20,
                     new PrioritySelector(
                         Item.UsePotionAndHealthstone(40),
-                        new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.IsBoss(),
+                        new Decorator(ret => SlimAI.Burst,
                             new PrioritySelector(
                                 Spell.Cast("Blood Fury"),
                                 Spell.Cast(Recklessness),
@@ -69,6 +69,8 @@ namespace SlimAI.Class.Warrior
         public static Composite FuryPreCombatBuffs()
         {
             return new PrioritySelector(
+                new Decorator(ret => Me.Mounted,
+                    new ActionAlwaysSucceed()),
                 Spell.Cast(BattleShout, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower)),
                 FuryPull());
 
@@ -78,8 +80,10 @@ namespace SlimAI.Class.Warrior
         private static Composite FuryPull()
         {
             return new PrioritySelector(
+                    new Decorator(ret => SlimAI.AFK,
+                        new PrioritySelector(
                 Spell.CastOnGround("Heroic Leap", on => Me.CurrentTarget.Location, ret => SpellManager.Spells["Charge"].Cooldown),
-                Spell.Cast(Charge));
+                Spell.Cast(Charge))));
         }
 
         private static Composite CreateAoe()
@@ -114,10 +118,10 @@ namespace SlimAI.Class.Warrior
         {
             return
                 new Decorator(ret => SpellManager.CanCast("Heroic Leap") &&
-                    Lua.GetReturnVal<bool>("return IsLeftControlKeyDown() and not GetCurrentKeyBoardFocus()", 0),
+                    Lua.GetReturnVal<bool>("return IsLeftAltKeyDown() and not GetCurrentKeyBoardFocus()", 0),
                     new Action(ret =>
                     {
-                        SpellManager.Cast(HeroicLeap);
+                        SpellManager.Cast("Heroic Leap");
                         Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
                     }));
         }
