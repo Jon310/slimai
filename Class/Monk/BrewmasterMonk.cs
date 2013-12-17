@@ -36,6 +36,7 @@ namespace SlimAI.Class.Monk
                     new ActionAlwaysSucceed()),
                 ZenMed(),
                 Spell.WaitForCastOrChannel(),
+                CreateInterruptSpellCast(),
                 Common.CreateInterruptBehavior(),
                 //Spell.Cast(SpearHandStrike, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
                 Item.UsePotionAndHealthstone(40),
@@ -123,6 +124,8 @@ namespace SlimAI.Class.Monk
         public static Composite BrewmasterPreCombatBuffs()
         {
             return new PrioritySelector(
+                new Decorator(ret => Me.Mounted,
+                    new ActionAlwaysSucceed()),
                 PartyBuff.BuffGroup("Legacy of the Emperor"));
         }
         #endregion
@@ -296,6 +299,35 @@ namespace SlimAI.Class.Monk
             return new PrioritySelector(
                 Spell.Cast("Detox", on => Me, ret => Dispelling.CanDispel(Me)),
                 Spell.Cast("Detox", on => Dispeltar, ret => Dispelling.CanDispel(Dispeltar)));
+        }
+        #endregion
+
+        #region y'shaarj
+        public static WoWUnit TouchedTar
+        {
+            get
+            {
+                var Touched = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                                    where unit.IsAlive
+                                    where unit.HasAnyAura("Touch of Y'Shaarj", "Empowered Touch of Y'Shaarj")
+                                    where unit.IsCasting
+                                    select unit).FirstOrDefault();
+                return Touched;
+            }
+        }
+
+        public static Composite CreateInterruptSpellCast()
+        {
+            return new Decorator(
+                // If the target is casting, and can actually be interrupted, AND we've waited out the double-interrupt timer, then find something to interrupt with.
+                new PrioritySelector(
+                Spell.Cast("Spear Hand Strike", on => TouchedTar),
+                // AOE interrupt
+                //need to add ring here
+                // Racials last.
+                // Don't waste stomp on bosses. They can't be stunned 99% of the time!
+                Spell.Cast("Paralysis", on => TouchedTar, ret => !TouchedTar.HasAura("Empowered Touch of Y'Shaarj") && (SpellManager.Spells["Spear Hand Strike"].Cooldown || TouchedTar.Distance >= 8))
+                    ));
         }
         #endregion
 

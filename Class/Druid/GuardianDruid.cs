@@ -52,7 +52,7 @@ namespace SlimAI.Class.Druid
                         Spell.Cast("Incarnation: Son of Ursoc"))),
                 Spell.Cast(CenarionWard, on => Me),
                 Spell.Cast(Enrage, ret => Me.RagePercent < 40),
-                Spell.Cast(HealingTouch, ret => Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 1.5),
+                Spell.Cast(HealingTouch, ret => Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1),
                 Spell.Cast(BarkSkin, ret => IsCurrentTank()),
                 new Decorator(ret => SlimAI.Weave,
                     new PrioritySelector(
@@ -77,6 +77,8 @@ namespace SlimAI.Class.Druid
         public static Composite GuardianPreCombatBuffs()
         {
             return new PrioritySelector(
+                new Decorator(ret => Me.Mounted,
+                    new ActionAlwaysSucceed()),
                 PartyBuff.BuffGroup("Mark of the Wild"));
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using CommonBehaviors.Actions;
 using SlimAI;
 using SlimAI.Helpers;
 using Styx;
@@ -64,6 +65,8 @@ namespace SlimAI.Class.Mage
         public static Composite ArcanePreCombatBuffs()
             {
                 return new PrioritySelector(
+                    new Decorator(ret => Me.Mounted,
+                        new ActionAlwaysSucceed()),
                     PartyBuff.BuffGroup("Arcane Brilliance"),
                     new Throttle(3,
                     Spell.Cast("Mage Armor", ret => !Me.HasAura("Mage Armor"))),

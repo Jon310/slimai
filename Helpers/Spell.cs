@@ -1992,6 +1992,23 @@ namespace SlimAI.Helpers
             return 0;
         }
 
+        public static int GetCharges(int name)
+        {
+            SpellFindResults sfr;
+            if (SpellManager.FindSpell(name, out sfr))
+            {
+                WoWSpell spell = sfr.Override ?? sfr.Original;
+                return GetCharges(spell);
+            }
+            return 0;
+        }
+
+        //public static int GetCharges(WoWSpell spell)
+        //{
+        //    int charges = Lua.GetReturnVal<int>("return GetSpellCharges(" + spell.Id + ")", 0);
+        //    return charges;
+        //}
+
         public static int GetCharges(WoWSpell spell)
         {
             int charges = Lua.GetReturnVal<int>("return GetSpellCharges(" + spell.Id.ToString() + ")", 0);
