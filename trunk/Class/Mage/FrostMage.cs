@@ -3,6 +3,7 @@ using SlimAI;
 using SlimAI.Helpers;
 using Styx;
 using Styx.TreeSharp;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using System.Linq;
 
@@ -67,9 +68,9 @@ namespace SlimAI.Class.Mage
             return new PrioritySelector(
 
                 Spell.Cast("Nether Tempest", ret => !Me.CurrentTarget.HasMyAura("Nether Tempest")),
-                Spell.Cast("Frost Bomb", ret => !Me.IsMoving),                
-                Spell.Cast("Living Bomb", ret => !Me.CurrentTarget.HasAura("Living Bomb"))
-                );
+                Spell.Cast("Frost Bomb", ret => !Me.IsMoving),    
+                new Decorator(ret => bombCount() < 3,
+                    Spell.Cast("Living Bomb", on => bombTarget)));
         }
         private static Composite CreateAoe()
         {
@@ -120,6 +121,35 @@ namespace SlimAI.Class.Mage
                 Spell.Cast("Frost Armor", ret => !Me.HasAura("Frost Armor")))
                 );
         }
+
+        #region Bombs Away!
+        private static int bombCount()
+        {
+            var bombed = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWUnit>()
+                            where unit.IsAlive
+                            where unit.Combat
+                            where unit.IsTargetingUs()
+                            where unit.HasMyAura("Living Bomb")
+                            where unit.Distance <= 40
+                            select unit).Count();
+            return bombed;
+        }
+
+        public static WoWUnit bombTarget
+        {
+            get
+            {
+                var Touched = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWUnit>()
+                               where unit.IsAlive
+                               where unit.Combat
+                               where unit.IsTargetingUs()
+                               where !unit.HasAura("Living Bomb")
+                               where unit.Distance <= 40
+                               select unit).FirstOrDefault();
+                return Touched;
+            }
+        }
+        #endregion
 
         #region MageTalents
         public enum MageTalents
