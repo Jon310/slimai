@@ -24,78 +24,60 @@ namespace SlimAI.Class.Monk
         public static Composite WindwalkerCombat()
         {
             return new PrioritySelector(
-                    /*Things to fix
-                     * energy capping
-                     * need to check healing spheres 
-                     * chi capping? need to do more checking
-                    */
-                    new Throttle(1,
-                        new Action(context => ResetVariables())),
-                    new Decorator(ret => SlimAI.PvPRotation, 
-                        CreatePvP()),
-                    new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget,
-                        new ActionAlwaysSucceed()),
-                   CreateInterruptSpellCast(),
-                   Common.CreateInterruptBehavior(),
+                /* Things to fix
+                 * energy capping
+                 * need to check healing spheres 
+                */
+                new Throttle(1,
+                    new Action(context => ResetVariables())),
+                new Decorator(ret => SlimAI.PvPRotation, 
+                    CreatePvP()),
+                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget,
+                    new ActionAlwaysSucceed()),
+                CreateInterruptSpellCast(),
+                Common.CreateInterruptBehavior(),
+                Spell.WaitForCastOrChannel(),
 
-                    Spell.WaitForCastOrChannel(),
+                //Detox
+                new Decorator(ret => SlimAI.Dispell,
+                    CreateDispelBehavior()),
+                //Healing Spheres need to work on
+                //Spell.CastOnGround("Healing Sphere", on => Me.Location, ret => Me.HealthPercent <= 50),
+                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                Spell.Cast(TigereyeBrew, ret => Me.HasAura("Tigereye Brew", 18)),
+                new Throttle(2,
+                    Spell.Cast("Chi Brew", ret => buffStackCount(TigereyeBrewStack, Me) <= 16 && Me.CurrentChi < 2)),
+                Spell.Cast(EnergizingBrew, ret => Me.CurrentEnergy < 25),
+                // Execute if we can
+                Spell.Cast(TouchofDeath, ret => Me.HasAura("Death Note")),
+                Spell.Cast(TigerPalm, ret => Me.CurrentChi > 0 &&
+                            (!Me.HasAura("Tiger Power") || Me.HasAura("Tiger Power") && Me.GetAuraTimeLeft("Tiger Power").TotalSeconds <= 3)),
 
-                    //Detox
-                    new Decorator(ret => SlimAI.Dispell,
-                        Dispelling.CreateDispelBehavior()),
-                    //CreateDispelBehavior(),
-                    //Healing Spheres need to work on
-                    //Spell.CastOnGround("Healing Sphere", on => Me.Location, ret => Me.HealthPercent <= 50),
+                //need to do some more work on this
+                //Spell.Cast(InvokeXuentheWhiteTiger, ret => SlimAI.Burst),
 
-                    //new Action(ret => { Item.UseWaist(); return RunStatus.Failure; }),
-                    new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                Spell.Cast(RisingSunKick),
+                Spell.Cast(FistsofFury, ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 1 &&
+                            !Me.HasAura("Energizing Brew") && Me.EnergyPercent <= 50 && !PartyBuff.WeHaveBloodlust && !Me.IsMoving &&
+                            SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 2.5 &&SlimAI.Burst),
 
-                    //Tigerseye
-                    Spell.Cast(TigereyeBrew, ret => Me.HasAura("Tigereye Brew", 18)),
+                //Chi Talents
+                Spell.Cast(ChiWave, ret => Me.EnergyPercent < 40),
+                Spell.Cast("Zen Sphere", ret => !Me.HasAura("Zen Sphere")),
 
-                    new Throttle(2,
-                    Spell.Cast(ChiBrew, ret => Me.CurrentChi < 2 && SlimAI.Weave/*&& Me.stackcount("Tigereye Brew") <= 1*/)),
+                // free Tiger Palm or Blackout Kick... do before Jab
+                Spell.Cast(BlackoutKick, ret => Me.HasAura("Combo Breaker: Blackout Kick")),
+                Spell.Cast(TigerPalm, ret => Me.HasAura("Combo Breaker: Tiger Palm")),
 
-                    Spell.Cast(EnergizingBrew, ret => Me.CurrentEnergy < 25),
+                new Decorator(ret => SlimAI.AOE,
+                    new PrioritySelector(
+                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 4 && Me.CurrentChi < 3),
+                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3))),
 
-                    // Execute if we can
-                    Spell.Cast(TouchofDeath, ret => Me.HasAura("Death Note")),
-
-                    Spell.Cast(TigerPalm, ret => Me.CurrentChi > 0 &&
-                              (!Me.HasAura("Tiger Power") || Me.HasAura("Tiger Power") && Me.GetAuraTimeLeft("Tiger Power").TotalSeconds <= 3)),
-
-                    //need to do some more work on this
-                    //Spell.Cast(InvokeXuentheWhiteTiger, ret => SlimAI.Burst),
-
-                    Spell.Cast(RisingSunKick),
-
-                    //Spell ID 116740 = Tigerseye Brew the dmg buff part not the brewing
-                    Spell.Cast(FistsofFury, ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 1 &&
-                              !Me.HasAura("Energizing Brew") && Me.EnergyPercent <= 50 && !PartyBuff.WeHaveBloodlust && !Me.IsMoving &&
-                              SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 2.5 &&SlimAI.Burst),
-
-                    //Chi Talents
-                    Spell.Cast(ChiWave, ret => Me.EnergyPercent < 40),
-                    //need to do math here and make it use 2 if im going to use it
-                    //Spell.Cast("Zen Sphere", ret => !Me.HasAura("Zen Sphere")),
-
-                    // free Tiger Palm or Blackout Kick... do before Jab
-                    Spell.Cast(BlackoutKick, ret => Me.HasAura("Combo Breaker: Blackout Kick")),
-
-                    Spell.Cast(TigerPalm, ret => Me.HasAura("Combo Breaker: Tiger Palm")),
-
-                    new Decorator(ret => SlimAI.AOE,
-                        new PrioritySelector(
-                            Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 4 && Me.CurrentChi < 3),
-                            Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3))),
-
-                    Spell.Cast(ExpelHarm, ret => Me.CurrentChi <= 3 && Me.HealthPercent < 80),
-
-                    //Spell.Cast(Jab, ret => Me.CurrentChi < 3 || (Me.CurrentChi <= 3 && SpellManager.HasSpell("Ascension"))),
-                    Spell.Cast("Jab", ret => Me.CurrentChi < 3),
-
-                    // chi dump
-                    Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 3 && SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 1));
+                Spell.Cast(ExpelHarm, ret => Me.CurrentChi <= Me.MaxChi - 2 && Me.HealthPercent < 80 || Me.HealthPercent <= 30),
+                Spell.Cast("Jab", ret => Me.CurrentChi <= Me.MaxChi - 2),
+                // chi dump
+                Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 3 && SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 1));
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker)]
@@ -133,8 +115,8 @@ namespace SlimAI.Class.Monk
                 Spell.Cast(SpinningFireBlossom, ret => !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed) && !Me.CurrentTarget.HasAura(123407) && Me.CurrentTarget.Distance > 10 && Me.CurrentTarget.InLineOfSight)),
                 
                 //Detox
-                //new Decorator(ret => SlimAI.Dispell,
-                //    Dispelling.CreateDispelBehavior()),
+                new Decorator(ret => SlimAI.Dispell,
+                    CreateDispelBehavior()),
 
                 //Healing Spheres need to work on
                 //Spell.CastOnGround("Healing Sphere", on => Me.Location, ret => Me.HealthPercent <= 50),
@@ -145,13 +127,10 @@ namespace SlimAI.Class.Monk
                 //Spell.Cast(TigereyeBrew, ret => Me.HasAura("Tigereye Brew", 18)),
 
                 new Throttle(2,
-                Spell.Cast(ChiBrew, ret => Me.CurrentChi < 2 && Me.Auras["Tigereye Brew"].StackCount <= 16)),
-
+                Spell.Cast("Chi Brew", ret => buffStackCount(TigereyeBrewStack, Me) <= 16 && Me.CurrentChi < 2)),
                 Spell.Cast(EnergizingBrew, ret => Me.CurrentEnergy < 25),
-
                 // Execute if we can
                 Spell.Cast(TouchofDeath, ret => Me.HasAura("Death Note")),
-
                 Spell.Cast(TigerPalm, ret => Me.CurrentChi > 0 &&
                             (!Me.HasAura("Tiger Power") || Me.HasAura("Tiger Power") && Me.GetAuraTimeLeft("Tiger Power").TotalSeconds <= 3)),
 
@@ -166,18 +145,12 @@ namespace SlimAI.Class.Monk
                 //            SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 2.5 && SlimAI.Burst),
 
                 //Chi Talents
-                Spell.Cast(ChiWave, ret =>  Me.HealthPercent < 85),
-                //need to do math here and make it use 2 if im going to use it
-                //Spell.Cast("Zen Sphere", ret => !Me.HasAura("Zen Sphere")),
-
-                // free Tiger Palm or Blackout Kick... do before Jab
+                Spell.Cast(ChiWave, ret => Me.HealthPercent < 85),
+                Spell.Cast("Zen Sphere", ret => !Me.HasAura("Zen Sphere")),
                 Spell.Cast(BlackoutKick, ret => Me.HasAura("Combo Breaker: Blackout Kick")),
-
                 Spell.Cast(TigerPalm, ret => Me.HasAura("Combo Breaker: Tiger Palm")),
-
-                Spell.Cast(ExpelHarm, ret => Me.CurrentChi <= 3 && Me.HealthPercent < 80),
-
-                Spell.Cast("Jab", ret => Me.CurrentChi < 4),
+                Spell.Cast(ExpelHarm, ret => Me.CurrentChi <= Me.MaxChi - 2 && Me.HealthPercent < 80 || Me.HealthPercent <= 30),
+                Spell.Cast("Jab", ret => Me.CurrentChi <= Me.MaxChi - 2),
 
                 // chi dump
                 Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 4 || Me.CurrentChi >= 2 && SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 3),
@@ -268,6 +241,19 @@ namespace SlimAI.Class.Monk
         }
         #endregion
 
+        #region Stack Count
+        public static uint buffStackCount(int Buff, WoWUnit onTarget)
+        {
+            if (onTarget != null)
+            {
+                var Results = onTarget.GetAuraById(Buff);
+                if (Results != null)
+                    return Results.StackCount;
+            }
+            return 0;
+        }
+        #endregion
+
         #region MonkTalents
         enum MonkTalents
         {
@@ -319,6 +305,7 @@ namespace SlimAI.Class.Monk
                           StanceoftheSturdyOx = 115069,
                           SummonBlackOxStatue = 115315,
                           TigereyeBrew = 116740,
+                          TigereyeBrewStack = 125195,
                           TigerPalm = 100787,
                           TouchofDeath = 115080,
                           ZenMeditation = 115176,
