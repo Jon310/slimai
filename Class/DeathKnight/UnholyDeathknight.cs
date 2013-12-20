@@ -22,56 +22,116 @@ namespace SlimAI.Class.Deathknight
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy)]
         public static Composite UnholyDKCombat()
         {
-                return new PrioritySelector(
-                    Spell.WaitForCastOrChannel(),
-                    Common.CreateInterruptBehavior(),
-                    Item.UsePotionAndHealthstone(40),
-                    Spell.Cast(Conversion, ret => Me.HealthPercent < 50 && Me.RunicPowerPercent >= 20 && !Me.HasAura("Conversion")),
-                    Spell.Cast(Conversion, ret => Me.HealthPercent > 65 && Me.HasAura("Conversion")),
-                    Spell.Cast(DeathPact, ret => Me.HealthPercent < 45),
-                    Spell.Cast(DeathSiphon, ret => Me.HealthPercent < 50),
-                    Spell.Cast(IceboundFortitude, ret => Me.HealthPercent < 40),
-                    Spell.Cast(DeathStrike, ret => Me.GotTarget && Me.HealthPercent < 15),
-                    Spell.Cast(Lichborne, ret => (Me.HealthPercent < 25 && Me.CurrentRunicPower >= 60)),
-                    Spell.Cast(DeathCoil, on => Me, ret => Me.HealthPercent < 50 && Me.HasAura("Lichborne")),
-                    new Throttle(2,
-                        new PrioritySelector(
-                            Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 10) && NoRunes))),
-                    Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 36),
-                    new Decorator(ret => !Me.CurrentTarget.HasMyAura("Frost Fever") || !Me.CurrentTarget.HasMyAura("Blood Plague"),
-                        new PrioritySelector(
-                            Spell.Cast(Outbreak),
-                            Spell.Cast(PlagueStrike))),
-                    new Throttle(1, 2,
-                        new PrioritySelector(
-                            Spell.Cast(UnholyBlight, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && Me.CurrentTarget.DistanceSqr <= 10 * 10 && !StyxWoW.Me.HasAura("Unholy Blight")),
-                            Spell.Cast(BloodBoil, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && TalentManager.IsSelected((int)DeathKnightTalents.RoillingBlood) && !Me.HasAura("Unholy Blight") && ShouldSpreadDiseases))),
+            return new PrioritySelector(
+                new Decorator(ret => SlimAI.PvPRotation,
+                    CreatePvP()),
+                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget,
+                    new ActionAlwaysSucceed()),
+
+                Spell.WaitForCastOrChannel(),
+                Common.CreateInterruptBehavior(),
+                Item.UsePotionAndHealthstone(40),
+                Spell.Cast(Conversion, ret => Me.HealthPercent < 50 && Me.RunicPowerPercent >= 20 && !Me.HasAura("Conversion")),
+                Spell.Cast(Conversion, ret => Me.HealthPercent > 65 && Me.HasAura("Conversion")),
+                Spell.Cast(DeathPact, ret => Me.HealthPercent < 45),
+                Spell.Cast(DeathSiphon, ret => Me.HealthPercent < 50),
+                Spell.Cast(IceboundFortitude, ret => Me.HealthPercent < 40),
+                Spell.Cast(DeathStrike, ret => Me.GotTarget && Me.HealthPercent < 15),
+                Spell.Cast(Lichborne, ret => (Me.HealthPercent < 25 && Me.CurrentRunicPower >= 60)),
+                Spell.Cast(DeathCoil, on => Me, ret => Me.HealthPercent < 50 && Me.HasAura("Lichborne")),
+                new Throttle(2,
+                    new PrioritySelector(
+                        Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 10) && NoRunes))),
+                Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 36),
+                new Decorator(ret => !Me.CurrentTarget.HasMyAura("Frost Fever") || !Me.CurrentTarget.HasMyAura("Blood Plague"),
+                    new PrioritySelector(
+                        Spell.Cast(Outbreak),
+                        Spell.Cast(PlagueStrike))),
+                new Throttle(1, 2,
+                    new PrioritySelector(
+                        Spell.Cast(UnholyBlight, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && Me.CurrentTarget.DistanceSqr <= 10 * 10 && !StyxWoW.Me.HasAura("Unholy Blight")),
+                        Spell.Cast(BloodBoil, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && TalentManager.IsSelected((int)DeathKnightTalents.RoillingBlood) && !Me.HasAura("Unholy Blight") && ShouldSpreadDiseases))),
                             
-                    new Decorator(ret => SlimAI.Burst,
-                        new PrioritySelector(
-                            Spell.Cast("Unholy Frenzy", ret => Me.CurrentTarget.IsWithinMeleeRange && !PartyBuff.WeHaveBloodlust),
-                            new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
-                            new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
-                            Spell.Cast(SummonGargoyle))),
-                    new Throttle(1, 2,
-                        new PrioritySelector(
-                            Spell.Cast(Pestilence, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && !Me.HasAura("Unholy Blight") && ShouldSpreadDiseases))),
-                    //Kill Time
-                    Spell.Cast(DarkTransformation, ret => Me.GotAlivePet && !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") && Me.HasAura("Shadow Infusion", 5)),
-                    Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => true, false),
-                    Spell.Cast(ScourgeStrike, ret => Me.UnholyRuneCount == 2),
-                    Spell.Cast("Festering Strike", ret => Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2),
-                    Spell.Cast(DeathCoil, ret => (Me.HasAura(SuddenDoom) || Me.CurrentRunicPower >= 90)),
-                    Spell.Cast(ScourgeStrike),
-                    Spell.Cast(PlagueLeech, ret => SpellManager.Spells["Outbreak"].CooldownTimeLeft.Seconds <= 1),
-                    Spell.Cast("Festering Strike"),
-                    //Blood Tap
-                    Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 5) && NoRunes),
-                    Spell.Cast(DeathCoil, ret => SpellManager.Spells["Lichborne"].CooldownTimeLeft.Seconds >= 4 && Me.CurrentRunicPower < 60 || !Me.HasAura("Conversion")),
-                    Spell.Cast(HornofWinter),
-                    Spell.Cast(EmpowerRuneWeapon, ret => SlimAI.Burst && NoRunes));
+                new Decorator(ret => SlimAI.Burst,
+                    new PrioritySelector(
+                        Spell.Cast("Unholy Frenzy", ret => Me.CurrentTarget.IsWithinMeleeRange && !PartyBuff.WeHaveBloodlust),
+                        new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
+                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                        Spell.Cast(SummonGargoyle))),
+                new Throttle(1, 2,
+                    new PrioritySelector(
+                        Spell.Cast(Pestilence, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && !Me.HasAura("Unholy Blight") && ShouldSpreadDiseases))),
+                //Kill Time
+                Spell.Cast(DarkTransformation, ret => Me.GotAlivePet && !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") && Me.HasAura("Shadow Infusion", 5)),
+                Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => true, false),
+                Spell.Cast(ScourgeStrike, ret => Me.UnholyRuneCount == 2),
+                Spell.Cast("Festering Strike", ret => Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2),
+                Spell.Cast(DeathCoil, ret => (Me.HasAura(SuddenDoom) || Me.CurrentRunicPower >= 90)),
+                Spell.Cast(ScourgeStrike),
+                Spell.Cast(PlagueLeech, ret => SpellManager.Spells["Outbreak"].CooldownTimeLeft.Seconds <= 1),
+                Spell.Cast("Festering Strike"),
+                //Blood Tap
+                Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 5) && NoRunes),
+                Spell.Cast(DeathCoil, ret => SpellManager.Spells["Lichborne"].CooldownTimeLeft.Seconds >= 4 && Me.CurrentRunicPower < 60 || !Me.HasAura("Conversion")),
+                Spell.Cast(HornofWinter),
+                Spell.Cast(EmpowerRuneWeapon, ret => SlimAI.Burst && NoRunes));
         }
 
+
+        #region PvP
+        private static Composite CreatePvP()
+        {
+            return new PrioritySelector(
+
+                new Decorator(ret => !Me.Combat || Me.Mounted,
+                    new ActionAlwaysSucceed()),
+                Spell.Cast(Conversion, ret => Me.HealthPercent < 50 && Me.RunicPowerPercent >= 20 && !Me.HasAura("Conversion")),
+                Spell.Cast(Conversion, ret => Me.HealthPercent > 65 && Me.HasAura("Conversion")),
+                Spell.Cast(DeathPact, ret => Me.HealthPercent < 45),
+                Spell.Cast(DeathSiphon, ret => Me.HealthPercent < 50),
+                Spell.Cast(IceboundFortitude, ret => Me.HealthPercent < 40),
+                Spell.Cast(DeathStrike, ret => Me.GotTarget && Me.HealthPercent < 15),
+                Spell.Cast(Lichborne, ret => (Me.HealthPercent < 25 && Me.CurrentRunicPower >= 60)),
+                Spell.Cast(DeathCoil, on => Me, ret => Me.HealthPercent < 50 && Me.HasAura("Lichborne")),
+                new Throttle(2,
+                    new PrioritySelector(
+                        Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 10) && NoRunes))),
+                Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 36),
+                new Decorator(ret => !Me.CurrentTarget.HasMyAura("Frost Fever") || !Me.CurrentTarget.HasMyAura("Blood Plague"),
+                    new PrioritySelector(
+                        Spell.Cast(Outbreak),
+                        Spell.Cast(PlagueStrike))),
+                new Throttle(1, 2,
+                    new PrioritySelector(
+                        Spell.Cast(UnholyBlight, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && Me.CurrentTarget.DistanceSqr <= 10 * 10 && !StyxWoW.Me.HasAura("Unholy Blight") && SlimAI.AOE),
+                        Spell.Cast(BloodBoil, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && TalentManager.IsSelected((int)DeathKnightTalents.RoillingBlood) && !Me.HasAura("Unholy Blight") && ShouldSpreadDiseases && SlimAI.AOE))),
+                            
+                new Decorator(ret => SlimAI.Burst,
+                    new PrioritySelector(
+                        Spell.Cast("Unholy Frenzy", ret => Me.CurrentTarget.IsWithinMeleeRange && !PartyBuff.WeHaveBloodlust),
+                        new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
+                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                        Spell.Cast(SummonGargoyle))),
+                new Throttle(1, 2,
+                    new PrioritySelector(
+                        Spell.Cast(Pestilence, ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 2 && !Me.HasAura("Unholy Blight") && ShouldSpreadDiseases && SlimAI.AOE))),
+                //Kill Time
+                Spell.Cast(DarkTransformation, ret => Me.GotAlivePet && !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") && Me.HasAura("Shadow Infusion", 5)),
+                Spell.Cast(NecroticStrike, ret => SlimAI.Weave),
+                Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => true, false),
+                Spell.Cast(ScourgeStrike, ret => Me.UnholyRuneCount == 2),
+                Spell.Cast("Festering Strike", ret => Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2),
+                Spell.Cast(DeathCoil, ret => (Me.HasAura(SuddenDoom) || Me.CurrentRunicPower >= 90)),
+                Spell.Cast(ScourgeStrike),
+                Spell.Cast(PlagueLeech, ret => SpellManager.Spells["Outbreak"].CooldownTimeLeft.Seconds <= 1),
+                Spell.Cast("Festering Strike"),
+                //Blood Tap
+                Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 5) && NoRunes),
+                Spell.Cast(DeathCoil, ret => SpellManager.Spells["Lichborne"].CooldownTimeLeft.Seconds >= 4 && Me.CurrentRunicPower < 60 || !Me.HasAura("Conversion")),
+                Spell.Cast(HornofWinter),
+                Spell.Cast(EmpowerRuneWeapon, ret => SlimAI.Burst && NoRunes));
+        }
+        #endregion
 
         private static bool ShouldSpreadDiseases
         {
@@ -139,6 +199,7 @@ namespace SlimAI.Class.Deathknight
                           IcyTouch = 45477,
                           Lichborne = 49039,
                           MightofUrsoc = 106922,
+                          NecroticStrike = 73975,
                           Obliterate = 49020,
                           Outbreak = 77575,
                           Pestilence = 50842,
