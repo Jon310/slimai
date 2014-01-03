@@ -24,7 +24,6 @@ namespace SlimAI.Class.Druid
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral)]
         public static Composite FeralCombat()
         {
-            HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
                 new Throttle(1,
                     new Action(context => ResetVariables())),
@@ -40,7 +39,7 @@ namespace SlimAI.Class.Druid
                         new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                         new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
                         Spell.Cast("Incarnation: King of the Jungle", ret => SlimAI.Burst && SpellManager.HasSpell("Incarnation: King of the Jungle")),
-                        Spell.Cast("Nature's Vigil", ret => SpellManager.HasSpell("Nature's Vigil")),
+                        Spell.Cast("Nature's Vigil", ret => SlimAI.Burst && SpellManager.HasSpell("Nature's Vigil")),
                         Spell.Cast("Berserk", ret => SlimAI.Burst),
                         Spell.Cast(FeralSpirit, ret => SlimAI.Burst)
                         )),
@@ -149,7 +148,7 @@ namespace SlimAI.Class.Druid
                         //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
                         Spell.Cast(FeralSpirit)
                         )),
-                Spell.Cast("Nature's Vigil", ret => SpellManager.HasSpell("Nature's Vigil") && (HealerManager.GetCountWithHealth(55) >= 2 || Me.HealthPercent <= 30)),
+                Spell.Cast("Nature's Vigil", ret => SpellManager.HasSpell("Nature's Vigil") && Me.HealthPercent <= 30),
                 Spell.Cast("Cenarion Ward",
                         on => WardTar,
                         ret => SpellManager.HasSpell("Cenarion Ward")),
@@ -183,6 +182,15 @@ namespace SlimAI.Class.Druid
         }
         #endregion
 
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral)]
+        public static Composite FeralPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                new Decorator(ret => Me.Mounted || Me.Combat,
+                    new ActionAlwaysSucceed()),
+                PartyBuff.BuffGroup("Mark of the Wild"));
+        }
+
         private static Composite CreateFiller()
         {
             return new PrioritySelector(
@@ -205,7 +213,7 @@ namespace SlimAI.Class.Druid
                     KeyboardPolling.IsKeyDown(Keys.C),
                     new PrioritySelector(
                         Spell.Cast("Cyclone", on => Me.FocusedUnit))
-                //new Action(ret => Spell.Cast(Paralysis, on => Me.FocusedUnit))
+                
                     );
         }
 
@@ -215,6 +223,7 @@ namespace SlimAI.Class.Druid
                 new Decorator(ret => SpellManager.CanCast("Tranquility") &&
                     KeyboardPolling.IsKeyDown(Keys.Z),
                     new PrioritySelector(
+                        Spell.Cast("Heart of the Wild", ret => SpellManager.HasSpell("Heart of the Wild") && SpellManager.CanCast("Heart of the Wild")),
                         Spell.Cast("Tranquility"))
                 //new Action(ret => Spell.Cast(Paralysis, on => Me.FocusedUnit))
                     );

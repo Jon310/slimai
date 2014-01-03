@@ -64,7 +64,7 @@ namespace SlimAI.Managers
                     if (incomingUnit.IsMe)
                         foundMe = true;
 
-                    if (/*incomingUnit.ToPlayer().IsHorde != isHorde || */!incomingUnit.ToPlayer().IsFriendly)
+                    if (incomingUnit.ToPlayer().IsHorde != isHorde || !incomingUnit.ToPlayer().IsFriendly)
                         continue;
 
                     outgoingUnits.Add(incomingUnit);
