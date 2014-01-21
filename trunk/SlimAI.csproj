@@ -67,6 +67,7 @@
     <Compile Include="Class\Paladin\ProtectionPaladin.cs" />
     <Compile Include="Class\Paladin\RetributionPaladin.cs" />
     <Compile Include="Class\Priest\ShadowPriest.cs" />
+    <Compile Include="Class\Rogue\SubtletyRogue.cs" />
     <Compile Include="Class\Rogue\CombatRogue.cs" />
     <Compile Include="Class\Shaman\ElementalShaman.cs" />
     <Compile Include="Class\Shaman\EnhancementShaman.cs" />
