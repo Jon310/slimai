@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Windows.Forms;
 using SlimAI.Helpers;
 using SlimAI.Managers;
 using CommonBehaviors.Actions;
@@ -35,10 +36,14 @@ namespace SlimAI.Class.Shaman
         {
             HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
-                new Decorator(ret => !Me.Combat || Me.Mounted,
+                new Throttle(1,
+                    new Action(context => ResetVariables())),
+                new Decorator(ret => SlimAI.PvPRotation,
+                    CreatePvP()),
+                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                     new ActionAlwaysSucceed()),
-                Spell.Cast(HealingStreamTotem, ret => Me.HealthPercent < 80 && !Totems.Exist(WoWTotemType.Water)),
-                Spell.Cast(HealingTideTotem, ret => HealerManager.GetCountWithHealth(55) > 6 && !Totems.Exist(WoWTotemType.Water)),
+                Spell.Cast(HealingStreamTotem, ret => HealerManager.GetCountWithHealth(80) >= 1 && !Totems.Exist(WoWTotemType.Water)),
+                Spell.Cast(HealingTideTotem, ret => HealerManager.GetCountWithHealth(55) > 4),
                 Common.CreateInterruptBehavior(),
                 new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
                 new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
@@ -49,33 +54,83 @@ namespace SlimAI.Class.Shaman
                         Spell.Cast(FireElementalTotem),
                         Spell.Cast(FeralSpirit),
                         Spell.Cast(Ascendance, ret => !Me.HasAura("Ascendance")))),
-                new Decorator(ret => Unit.UnfriendlyUnits(10).Count() >= 3,
-                    CreateAoe()),
-                Spell.Cast(SearingTotem, ret => Me.GotTarget && Me.CurrentTarget.SpellDistance() <Totems.GetTotemRange(WoWTotem.Searing) - 2f && !Totems.Exist(WoWTotemType.Fire)),
-                Spell.Cast(UnleashedElements, ret => SpellManager.HasSpell("Unleashed Fury")),
-                Spell.Cast(ElementalBlast, ret => Me.HasAura("Maelstrom Weapon", 1)),
-                new Decorator(ret => Me.HasAura("Maelstrom Weapon", 5),
-                    new PrioritySelector(
-                        Spell.Cast(ChainLightning, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
-                        Spell.Cast(LightningBolt))),
                 //StormBlast
                 new Decorator(ret => (Me.HasAura("Ascendance") && !WoWSpell.FromId(115356).Cooldown),
                     new Action(ret => Lua.DoString("RunMacroText('/cast Stormblast')"))),
+                //new Decorator(ret => Unit.UnfriendlyUnits(10).Count() >= 3,
+                //    CreateAoe()),
+                Spell.Cast("Magma Totem", ret => SlimAI.AOE && Me.GotTarget && Me.CurrentTarget.SpellDistance() < Totems.GetTotemRange(WoWTotem.Magma) - 2f && !Totems.Exist(WoWTotemType.Fire) && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
+                new Throttle(2,
+                    Spell.Cast(SearingTotem, ret => Me.GotTarget && Me.CurrentTarget.SpellDistance() <Totems.GetTotemRange(WoWTotem.Searing) - 2f && !Totems.Exist(WoWTotemType.Fire))),
+                Spell.Cast(UnleashedElements, ret => SpellManager.HasSpell("Unleashed Fury")),
+                Spell.Cast(ElementalBlast, ret => Me.HasAura("Maelstrom Weapon", 1)),
+                new Throttle(2,
+                    new Decorator(ret => Me.HasAura("Maelstrom Weapon", 5),
+                        new PrioritySelector(
+                            Spell.Cast(ChainLightning, ret => SlimAI.AOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3),
+                            Spell.Cast(LightningBolt)))),
                 Spell.Cast(StormStrike),
+                Spell.Cast(FlameShock, ret => Me.HasAura("Unleash Flame") && !Me.CurrentTarget.HasMyAura("Flame Shock")),
+                Spell.Cast(LavaLash),
+                Spell.Cast("Fire Nova", ret => SlimAI.AOE && Me.CurrentTarget.HasAura("Flame Shock") && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                Spell.Cast(FlameShock, ret => (Me.HasAura("Unleash Flame") && Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds < 10) || !Me.CurrentTarget.HasMyAura("Flame Shock")),
+                Spell.Cast(UnleashedElements),
+                new Throttle(2,
+                    new Decorator(ret => Me.HasAura("Maelstrom Weapon", 3) && !Me.HasAura("Ascendance"),
+                        new PrioritySelector(
+                            Spell.Cast(ChainLightning, ret => SlimAI.AOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3),
+                            Spell.Cast(LightningBolt)))),
+                Spell.Cast(AncestralSwiftness, ret => !Me.HasAura("Maelstrom Weapon")),
+                Spell.Cast(LightningBolt, ret => Me.HasAura("Ancestral Swiftness")),
+                Spell.Cast(EarthShock),
+                Spell.Cast(EarthElementalTotem, ret => SlimAI.Burst && SpellManager.Spells["Fire Elemental Totem"].CooldownTimeLeft.Seconds >= 50));
+            }
+        
+        #endregion
+
+        #region PvP
+        private static Composite CreatePvP()
+        {
+            return new PrioritySelector(
+                HexFocus(),
+                TotemicProjection(),
+                PurgeBubbles(),
+                Spell.Cast("Cleanse Spirit", on => CleanseHex),
+                new Decorator(retd => Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted,
+                    new ActionAlwaysSucceed()),
+                Spell.Cast(HealingStreamTotem, ret => HealerManager.GetCountWithHealth(80) >= 1 && !Totems.Exist(WoWTotemType.Water)),
+                Spell.Cast(HealingTideTotem, ret => HealerManager.GetCountWithHealth(35) >= 1),
+                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                new Decorator(ret => SlimAI.Burst,
+                    new PrioritySelector(
+                        Spell.Cast(StormlashTotem, ret => !Me.HasAura("Stormlash Totem")),
+                        Spell.Cast(ElementalMastery),
+                        Spell.Cast(FireElementalTotem),
+                        Spell.Cast(FeralSpirit),
+                        Spell.Cast(Ascendance, ret => !Me.HasAura("Ascendance")))),
+                //StormBlast
+                new Decorator(ret => (Me.HasAura("Ascendance") && !WoWSpell.FromId(115356).Cooldown),
+                    new Action(ret => Lua.DoString("RunMacroText('/cast Stormblast')"))),
+                Spell.Cast(SearingTotem, ret => Me.GotTarget && Me.CurrentTarget.SpellDistance() <Totems.GetTotemRange(WoWTotem.Searing) - 2f && !Totems.Exist(WoWTotemType.Fire)),
+                Spell.Cast(UnleashedElements, ret => SpellManager.HasSpell("Unleashed Fury")),
+                new Throttle(2,
+                    Spell.Cast(HealingSurge,
+                        on => HStarPvP,
+                        ret => Me.HasAura("Maelstrom Weapon", 5))),
+                Spell.Cast(ElementalBlast, ret => Me.HasAura("Maelstrom Weapon", 5)),
+                //Spell.Cast(LightningBolt, ret => Me.HasAura("Maelstrom Weapon", 5)),
+                Spell.Cast(StormStrike),
+                Spell.Cast(FrostShock, ret => Me.CurrentTarget.Distance > 10 && SpellManager.HasSpell("Frozen Power")),
                 Spell.Cast(FlameShock, ret => Me.HasAura("Unleash Flame") && !Me.CurrentTarget.HasMyAura("Flame Shock")),
                 Spell.Cast(LavaLash),
                 Spell.Cast(FlameShock, ret => (Me.HasAura("Unleash Flame") && Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds < 10) || !Me.CurrentTarget.HasMyAura("Flame Shock")),
                 Spell.Cast(UnleashedElements),
-                new Decorator(ret => Me.HasAura("Maelstrom Weapon", 3) && !Me.HasAura("Ascendance"),
-                    new PrioritySelector(
-                        Spell.Cast(ChainLightning, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
-                        Spell.Cast(LightningBolt))),
                 Spell.Cast(AncestralSwiftness, ret => !Me.HasAura("Maelstrom Weapon")),
                 Spell.Cast(LightningBolt, ret => Me.HasAura("Ancestral Swiftness")),
                 Spell.Cast(EarthShock),
-                Spell.Cast(EarthElementalTotem, ret => Me.CurrentTarget.IsBoss && SpellManager.Spells["Fire Elemental Totem"].CooldownTimeLeft.Seconds >= 50));
-            }
-        
+                Spell.Cast(EarthElementalTotem, ret => SlimAI.Burst && SpellManager.Spells["Fire Elemental Totem"].CooldownTimeLeft.Seconds >= 50),
+                new ActionAlwaysSucceed());
+        }
         #endregion
 
         private static Composite CreateAoe()
@@ -98,6 +153,111 @@ namespace SlimAI.Class.Shaman
                 //actions.aoe+=/spiritwalkers_grace,moving=1
                 //actions.aoe+=/fire_nova,if=active_flame_shock>=1
                 );
+        }
+
+        #region Uility
+        private static Composite HexFocus()
+        {
+            return
+                new Decorator(ret => SpellManager.CanCast(Hex) &&
+                    KeyboardPolling.IsKeyDown(Keys.C),
+                    new PrioritySelector(
+                        Spell.Cast(AncestralSwiftness, ret => !Me.HasAura("Maelstrom Weapon", 5)),
+                        Spell.Cast(Hex, on => Me.FocusedUnit))
+
+                    );
+        }
+
+        private static Composite Tranq()
+        {
+            return
+                new Decorator(ret => SpellManager.CanCast("Tranquility") &&
+                    KeyboardPolling.IsKeyDown(Keys.Z),
+                    new PrioritySelector(
+                        Spell.Cast("Heart of the Wild", ret => SpellManager.HasSpell("Heart of the Wild") && SpellManager.CanCast("Heart of the Wild")),
+                        Spell.Cast("Tranquility"))
+                //new Action(ret => Spell.Cast(Paralysis, on => Me.FocusedUnit))
+                    );
+        }
+
+        private static WoWUnit CleanseHex
+        {
+            get
+            {
+                var CleanseTar = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                              where unit.IsAlive
+                              where unit.IsInMyPartyOrRaid
+                              where unit.Distance < 40
+                              where unit.InLineOfSight
+                              where unit.HasAura("Hex")
+                              select unit).OrderByDescending(u => u.HealthPercent).FirstOrDefault();
+                return CleanseTar;
+            }
+        }
+
+        private static WoWUnit HStarPvP
+        {
+            get
+            {
+                var eHheal = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                              where unit.IsAlive
+                              where unit.IsInMyPartyOrRaid
+                              where unit.Distance < 40
+                              where unit.InLineOfSight
+                              where unit.HealthPercent <= 80
+                              select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
+                return eHheal;
+            }
+        }
+
+        #region Purge
+        static Composite PurgeBubbles()
+        {
+            return new Decorator(
+                    ret => Me.CurrentTarget.IsPlayer &&
+                          Me.CurrentTarget.HasAnyAura("Hand of Protection", "Presence of Mind") && Me.CurrentTarget.InLineOfSight,
+                //Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") ||
+                //Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") ||
+                //Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")),
+                    new PrioritySelector(
+                        Spell.Cast(Purge)));
+        }
+        #endregion
+
+        //private static WoWUnit Ground(WoWUnit target)
+        //{
+            
+        //    if (target == null || !target.IsPlayer)
+        //        if (target.IsCasting && (target.CastingSpell.Name == "Cyclone" ||
+        //                                 target.CastingSpell.Name == "Chaos Bolt" ||
+        //                                 target.CastingSpell.Name == "Dominated Mind" ||
+        //                                 target.CastingSpell.Name == "Fear" ||
+        //                                 target.CastingSpell.Name == "Hex" ||
+        //                                 target.CastingSpell.Name == "Polymorph" ||
+        //                                 target.CastingSpell.Name == "Repentance")) ;
+
+        //    return Ground();
+        //}
+
+        #endregion
+
+        private static RunStatus ResetVariables()
+        {
+            KeyboardPolling.IsKeyDown(Keys.Z);
+            KeyboardPolling.IsKeyDown(Keys.C);
+            return RunStatus.Failure;
+        }
+
+        private static Composite TotemicProjection()
+        {
+            return
+                new Decorator(ret => SpellManager.CanCast("Totemic Projection") &&
+                    Lua.GetReturnVal<bool>("return IsLeftAltKeyDown() and not GetCurrentKeyBoardFocus()", 0),
+                    new Action(ret =>
+                    {
+                        SpellManager.Cast("Totemic Projection");
+                        Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+                    }));
         }
 
         #region Imbue
@@ -274,12 +434,13 @@ namespace SlimAI.Class.Shaman
                           FireElementalTotem = 2894,
                           FireNova = 1535,
                           FlameShock = 8050,
-                          GreaterHealingWave = 77472,
+                          FrostShock = 8056, 
                           HealingRain = 73920,
                           HealingStreamTotem = 5394,
                           HealingSurge = 8004,
                           HealingTideTotem = 108280,
                           HealingWave = 331,
+                          Hex = 51514,
                           LavaBurst = 51505,
                           LavaLash = 60103,
                           LightningBolt = 403,

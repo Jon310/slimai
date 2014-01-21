@@ -1527,7 +1527,7 @@ namespace SlimAI.Helpers
             // assume we cant do that, but then check for class specific buffs which allow movement while casting
             bool allowMovingWhileCasting = false;
             if (Me.Class == WoWClass.Shaman)
-                allowMovingWhileCasting = spell.Name == "Lightning Bolt";
+                allowMovingWhileCasting = spell.Name == "Lightning Bolt" || Me.HasAura("Maelstrom Weapon", 5) || Me.HasAura("Spiritwalker's Grace");
             else if (Me.Specialization == WoWSpec.MageFire)
                 allowMovingWhileCasting = spell.Name == "Scorch" || Me.HasAura(108839);
             else if (Me.Class == WoWClass.Hunter)

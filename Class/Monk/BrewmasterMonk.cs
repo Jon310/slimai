@@ -100,7 +100,7 @@ namespace SlimAI.Class.Monk
                 Spell.Cast(ZenSphere, ret => !Me.HasAura(ZenSphere)),
                 
                 //Healing Spheres need to work on not happy with this atm
-                HealingSphere(),
+                //HealingSphere(),
                 //HealingSphereTank(),
 
                 new Decorator(ret => SlimAI.AOE,
