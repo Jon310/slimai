@@ -93,6 +93,7 @@ namespace SlimAI.Class.Shaman
         {
             return new PrioritySelector(
                 HexFocus(),
+                Spell.Cast("Grounding Totem", on => GroundingTar, ret => needgrounding()),
                 TotemicProjection(),
                 PurgeBubbles(),
                 Spell.Cast("Cleanse Spirit", on => CleanseHex),
@@ -208,6 +209,27 @@ namespace SlimAI.Class.Shaman
                               select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
                 return eHheal;
             }
+        }
+
+        private static WoWUnit GroundingTar
+        {
+            get
+            {
+                var groundtar = (from unit in ObjectManager.GetObjectsOfType<WoWPlayer>(true, false)
+                              where unit.IsAlive
+                              where !unit.IsInMyPartyOrRaid
+                              where unit.Distance < 40
+                              where unit.InLineOfSight
+                              where unit.IsCasting
+                              where unit.CastingSpellId == 51514 /*Hex*/ || unit.CastingSpellId == 33786 /*Cyclone*/ || unit.CastingSpellId == 5782 /*Fear*/ || unit.CastingSpellId == 145067 /*Turn Evil*/ || unit.CastingSpellId == 20066 /*Repentance*/
+                              select unit).FirstOrDefault();
+                return groundtar;
+            }
+        }
+
+        private static bool needgrounding()
+        {
+            return GroundingTar == null && Me.GroupInfo.PartyMembers.Any(u => u.ToPlayer().HasAura(19503));
         }
 
         #region Purge
