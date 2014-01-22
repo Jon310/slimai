@@ -229,7 +229,7 @@ namespace SlimAI.Class.Shaman
 
         private static bool needgrounding()
         {
-            return GroundingTar == null || Me.GroupInfo.PartyMembers.Any(u => u.ToPlayer().HasAura(19503));
+            return GroundingTar != null || Me.GroupInfo.PartyMembers.Any(u => u.ToPlayer().HasAura(19503));
         }
 
         #region Purge
