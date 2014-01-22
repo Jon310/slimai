@@ -93,7 +93,7 @@ namespace SlimAI.Class.Shaman
         {
             return new PrioritySelector(
                 HexFocus(),
-                Spell.Cast("Grounding Totem", on => GroundingTar, ret => needgrounding()),
+                Spell.Cast("Grounding Totem", ret => needgrounding()),
                 TotemicProjection(),
                 PurgeBubbles(),
                 Spell.Cast("Cleanse Spirit", on => CleanseHex),
@@ -229,7 +229,7 @@ namespace SlimAI.Class.Shaman
 
         private static bool needgrounding()
         {
-            return GroundingTar == null && Me.GroupInfo.PartyMembers.Any(u => u.ToPlayer().HasAura(19503));
+            return GroundingTar == null || Me.GroupInfo.PartyMembers.Any(u => u.ToPlayer().HasAura(19503));
         }
 
         #region Purge
