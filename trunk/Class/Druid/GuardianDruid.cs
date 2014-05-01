@@ -23,7 +23,7 @@ namespace SlimAI.Class.Druid
                     new ActionAlwaysSucceed()),
                 Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
                 Common.CreateInterruptBehavior(),
-                //Spell.Cast(SkullBash, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
+                //Spell.Cast(SkullBash, on => aUnit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
                 CreateCooldowns(),
                 Spell.Cast(Maul, ret => (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3) && Me.HealthPercent > 60),
                 Spell.Cast(Mangle),
@@ -48,16 +48,16 @@ namespace SlimAI.Class.Druid
                     new PrioritySelector(
                         new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
                         new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
-                Spell.Cast("Incarnation: Son of Ursoc", ret => SlimAI.Burst && Me.RagePercent < 60 && Me.HealthPercent < 60),
+                //Spell.Cast("Incarnation: Son of Ursoc", ret => SlimAI.Burst && Me.RagePercent < 60 && Me.HealthPercent < 60),
                 Spell.Cast(CenarionWard, on => Me),
-                Spell.Cast(Enrage, ret => Me.RagePercent < 40),
+                //Spell.Cast(Enrage, ret => Me.RagePercent < 40),
                 Spell.Cast(HealingTouch, ret => Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1),
-                Spell.Cast(BarkSkin),
-                new Decorator(ret => SlimAI.Weave,
-                    new PrioritySelector(
-                        Spell.Cast(SurvivalInstincts, ret => Me.HealthPercent <= 50 && !Me.HasAura("Might of Ursoc")),
-                        Spell.Cast(MightofUrsoc, ret => Me.HealthPercent <= 30 && !Me.HasAura("Survival Instincts")))),
-                Spell.Cast(Renewal, ret => Me.HealthPercent <= 50 || Me.HasAura("Might of Ursoc")),
+                //Spell.Cast(BarkSkin),
+                //new Decorator(ret => SlimAI.Weave,
+                //    new PrioritySelector(
+                //        Spell.Cast(SurvivalInstincts, ret => Me.HealthPercent <= 50 && !Me.HasAura("Might of Ursoc")),
+                //        Spell.Cast(MightofUrsoc, ret => Me.HealthPercent <= 30 && !Me.HasAura("Survival Instincts")))),
+                //Spell.Cast(Renewal, ret => Me.HealthPercent <= 50 || Me.HasAura("Might of Ursoc")),
                 Item.UsePotionAndHealthstone(40),
                 Spell.Cast(FrenziedRegeneration, ret => Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration")),
                 Spell.Cast(SavageDefense)

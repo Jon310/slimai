@@ -106,7 +106,7 @@ namespace SlimAI.Class.Monk
                 //    new PrioritySelector(
                 //        Spell.Cast(Paralysis, on => Me.FocusedUnit, ret => Me.FocusedUnit.InLineOfSight))),
 
-                Spell.Cast(Disable, ret => !Me.CurrentTarget.HasAura(Disable)),
+                Spell.Cast(Disable, ret => !Me.CurrentTarget.HasAura(Disable) && Me.CurrentTarget.IsPlayer && !Freedoms),
 
                 new Throttle(5,
                 //Spell.Cast(SpinningFireBlossom, ret => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Path, 40).Count(u => !u.HasAura(123407) && !u.HasAura(Disable) &&
@@ -138,6 +138,7 @@ namespace SlimAI.Class.Monk
                 //Spell.Cast(InvokeXuentheWhiteTiger, ret => SlimAI.Burst),
 
                 Spell.Cast(RisingSunKick),
+                Spell.Cast(RushingJadeWind, ret => Me.HasAura(TigereyeBrew)),
 
                 //Spell ID 116740 = Tigerseye Brew the dmg buff part not the brewing
                 //Spell.Cast(FistsofFury, ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 1 &&
@@ -181,6 +182,14 @@ namespace SlimAI.Class.Monk
         #endregion
 
         #region Uility
+        private static bool Freedoms
+        {
+            get
+            {
+                return Me.CurrentTarget.HasAnyAura("Hand of Freedom", "Ice Block", "Hand of Protection", "Divine Shield", "Cyclone", "Deterrence", "Phantasm", "Windwalk Totem");
+            }
+        }
+
         private static Composite ParalysisFocus()
         {
             return

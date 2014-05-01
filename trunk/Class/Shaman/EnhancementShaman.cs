@@ -91,7 +91,9 @@ namespace SlimAI.Class.Shaman
         #region PvP
         private static Composite CreatePvP()
         {
+            HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
+
                 HexFocus(),
                 Spell.Cast("Grounding Totem", ret => needgrounding()),
                 TotemicProjection(),
