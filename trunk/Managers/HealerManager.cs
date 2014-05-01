@@ -325,11 +325,11 @@ namespace SlimAI.Managers
             }
         }
 
-        public override void Pulse()
-        {
-            if (NeedHealTargeting)
-                base.Pulse();
-        }
+        //public override void Pulse()
+        //{
+        //    if (NeedHealTargeting)
+        //        base.Pulse();
+        //}
 
         private static HashSet<ulong> GetMainTankGuids()
         {
