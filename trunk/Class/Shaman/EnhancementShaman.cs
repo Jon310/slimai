@@ -94,7 +94,7 @@ namespace SlimAI.Class.Shaman
             return new PrioritySelector(
 
                 HexFocus(),
-                //Spell.Cast("Grounding Totem", ret => needgrounding()),
+                Spell.Cast("Grounding Totem", ret => needgrounding()),
                 TotemicProjection(),
                 PurgeBubbles(),
                 Spell.Cast("Cleanse Spirit", on => CleanseHex),
@@ -228,9 +228,24 @@ namespace SlimAI.Class.Shaman
             }
         }
 
+        private static WoWUnit Scattershotedfriendly
+        {
+            get
+            {
+                var scattar = (from unit in ObjectManager.GetObjectsOfType<WoWPlayer>(true, false)
+                                 where unit.IsAlive
+                                 where unit.IsInMyPartyOrRaid
+                                 where unit.Distance < 40
+                                 where unit.InLineOfSight
+                                 where unit.HasAura(19503)
+                                 select unit).FirstOrDefault();
+                return scattar;
+            }
+        }
+
         private static bool needgrounding()
         {
-            return GroundingTar != null || Me.GroupInfo.PartyMembers.Any(u => u.ToPlayer().HasAura(19503));
+            return GroundingTar != null || Scattershotedfriendly != null;
         }
 
         #region Purge
