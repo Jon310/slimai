@@ -47,15 +47,34 @@ namespace SlimAI.Managers
 
         protected override List<WoWObject> GetInitialObjectList()
         {
+            List<WoWObject> heallist;
             // Targeting requires a list of WoWObjects - so it's not bound to any specific type of object. Just casting it down to WoWObject will work fine.
-            return ObjectManager.ObjectList.Where(o => o is WoWPlayer || o is WoWUnit).ToList();
+            // return ObjectManager.ObjectList.Where(o => o is WoWPlayer).ToList();
+            if (Me.GroupInfo.IsInRaid)
+                heallist = ObjectManager.ObjectList
+                    .Where(o => ((o is WoWPlayer && o.ToPlayer().IsInMyRaid)))
+                    .ToList();
+            else if (Me.GroupInfo.IsInParty)
+                heallist = ObjectManager.ObjectList
+                    .Where(o => ((o is WoWPlayer && o.ToPlayer().IsInMyRaid) || (o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet)))
+                    .ToList();
+            else
+                heallist = ObjectManager.ObjectList
+                    .Where(o => (o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet))
+                    .ToList();
+
+            return heallist;
         }
+
+        private static ulong lastCompanion = 0;
+        private static ulong lastFocus = 0;
 
         protected override void DefaultIncludeTargetsFilter(List<WoWObject> incomingUnits, HashSet<WoWObject> outgoingUnits)
         {
             bool foundMe = false;
             bool isHorde = StyxWoW.Me.IsHorde;
-
+            ulong focusGuid = Me.FocusedUnitGuid;
+            bool foundFocus = false;
 
             foreach (WoWObject incomingUnit in incomingUnits)
             {
@@ -63,14 +82,14 @@ namespace SlimAI.Managers
                 {
                     if (incomingUnit.IsMe)
                         foundMe = true;
-
-                    if (incomingUnit.ToPlayer().IsHorde != isHorde || !incomingUnit.ToPlayer().IsFriendly)
-                        continue;
+                    else if (incomingUnit.Guid == focusGuid)
+                        foundFocus = true;
 
                     outgoingUnits.Add(incomingUnit);
-                    if (incomingUnit is WoWPlayer && incomingUnit.ToPlayer().GotAlivePet)
-                        outgoingUnits.Add(incomingUnit.ToPlayer().Pet);
 
+                    var player = incomingUnit as WoWPlayer;
+                    if (player != null && player.GotAlivePet)
+                        outgoingUnits.Add(player.Pet);
                 }
                 catch (System.AccessViolationException)
                 {
@@ -80,8 +99,8 @@ namespace SlimAI.Managers
                 }
             }
 
-            if (Me.IsInMyPartyOrRaid)
-                outgoingUnits.Add(Group.GetPlayerByClassPrio(40, false));
+            //if (Me.IsInMyPartyOrRaid)
+            //    outgoingUnits.Add(Group.GetPlayerByClassPrio(40, false));
 
             if (!foundMe)
             {
@@ -90,8 +109,21 @@ namespace SlimAI.Managers
                     outgoingUnits.Add(StyxWoW.Me.Pet);
             }
 
-            if (StyxWoW.Me.FocusedUnit != null && StyxWoW.Me.FocusedUnit.IsFriendly)
-                outgoingUnits.Add(StyxWoW.Me.FocusedUnit);
+            try
+            {
+                if (Me.FocusedUnit != null && Me.FocusedUnit.IsFriendly)
+                {
+                    if (!foundFocus)
+                    {
+                        outgoingUnits.Add(StyxWoW.Me.FocusedUnit);
+                        if (Me.FocusedUnit.GotAlivePet)
+                            outgoingUnits.Add(Me.FocusedUnit.Pet);
+                    }
+                }
+            }
+            catch
+            {
+            }
         }
 
         protected override void DefaultRemoveTargetsFilter(List<WoWObject> units)
@@ -113,11 +145,13 @@ namespace SlimAI.Managers
                         continue;
                     }
 
-                    WoWPlayer p = null;
-                    if (unit is WoWPlayer)
-                        p = unit.ToPlayer();
-                    else if (unit.IsPet && unit.OwnedByRoot != null && unit.OwnedByRoot.IsPlayer)
-                        p = unit.OwnedByRoot.ToPlayer();
+                    WoWPlayer p = unit as WoWPlayer;
+                    if (p == null && unit.IsPet)
+                    {
+                        var ownedByRoot = unit.OwnedByRoot;
+                        if (ownedByRoot != null && ownedByRoot.IsPlayer)
+                            p = unit.OwnedByRoot.ToPlayer();
+                    }
 
                     if (p != null)
                     {
@@ -129,11 +163,11 @@ namespace SlimAI.Managers
                         }
 
                         // They're not in our party/raid. So ignore them. We can't heal them anyway.
-                        if (!p.IsInMyPartyOrRaid)
-                        {
-                            units.RemoveAt(i);
-                            continue;
-                        }
+                        //if (!p.IsInMyPartyOrRaid)
+                        //{
+                        //    units.RemoveAt(i);
+                        //    continue;
+                        //}
                     }
 
                     // If we have movement turned off, ignore people who aren't in range.
@@ -164,6 +198,7 @@ namespace SlimAI.Managers
             var tanks = GetMainTankGuids();
             var inBg = Battlegrounds.IsInsideBattleground;
             var amHolyPally = StyxWoW.Me.Specialization == WoWSpec.PaladinHoly;
+            var myLoc = Me.Location;
 
             foreach (TargetPriority prio in units)
             {
@@ -288,6 +323,12 @@ namespace SlimAI.Managers
                     .Select(p => p.ToPlayer())
                     .Where(p => p != null).ToList();
             }
+        }
+
+        public override void Pulse()
+        {
+            if (NeedHealTargeting)
+                base.Pulse();
         }
 
         private static HashSet<ulong> GetMainTankGuids()
