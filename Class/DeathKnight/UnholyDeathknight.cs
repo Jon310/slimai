@@ -129,7 +129,8 @@ namespace SlimAI.Class.Deathknight
                 Spell.Cast(BloodTap, ret => Me.HasAura("Blood Charge", 5) && NoRunes),
                 Spell.Cast(DeathCoil, ret => SpellManager.Spells["Lichborne"].CooldownTimeLeft.Seconds >= 4 && Me.CurrentRunicPower < 60 || !Me.HasAura("Conversion")),
                 Spell.Cast(HornofWinter),
-                Spell.Cast(EmpowerRuneWeapon, ret => SlimAI.Burst && NoRunes));
+                Spell.Cast(EmpowerRuneWeapon, ret => SlimAI.Burst && NoRunes),
+                new ActionAlwaysSucceed()) ;
         }
         #endregion
 

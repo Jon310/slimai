@@ -55,7 +55,7 @@ namespace SlimAI.Managers
         {
             bool foundMe = false;
             bool isHorde = StyxWoW.Me.IsHorde;
-            
+
 
             foreach (WoWObject incomingUnit in incomingUnits)
             {
