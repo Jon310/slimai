@@ -91,15 +91,14 @@ namespace SlimAI.Class.Shaman
         #region PvP
         private static Composite CreatePvP()
         {
-            HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
 
                 HexFocus(),
-                Spell.Cast("Grounding Totem", ret => needgrounding()),
+                //Spell.Cast("Grounding Totem", ret => needgrounding()),
                 TotemicProjection(),
                 PurgeBubbles(),
                 Spell.Cast("Cleanse Spirit", on => CleanseHex),
-                new Decorator(retd => Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted,
+                new Decorator(ret => Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                     new ActionAlwaysSucceed()),
                 Spell.Cast(HealingStreamTotem, ret => HealerManager.GetCountWithHealth(80) >= 1 && !Totems.Exist(WoWTotemType.Water)),
                 Spell.Cast(HealingTideTotem, ret => HealerManager.GetCountWithHealth(35) >= 1),
