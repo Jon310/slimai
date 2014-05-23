@@ -1812,7 +1812,7 @@ namespace SlimAI.Helpers
             {
                 if (Me.Shapeshift == ShapeshiftForm.Cat || Me.Shapeshift == ShapeshiftForm.Bear || Me.Shapeshift == ShapeshiftForm.DireBear )
                 {
-                    if ( Me.HealingSpellIds.Contains( spell.Id))
+                    if (spell.IsHeal())
                     {
                         formSwitch = true;
                         currentPower = Me.CurrentMana;

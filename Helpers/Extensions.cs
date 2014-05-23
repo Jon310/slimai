@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Styx;
 using Styx.CommonBot;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.Pathing;
 
@@ -41,6 +43,26 @@ namespace SlimAI.Helpers
 
             return ("                                                                                                                          ".Substring(0, width - len)) + s;
         }
+
+        public static bool IsHeal(this WoWSpell spell)
+        {
+            return _AddtlHealSpells.Contains(spell.Id)
+                || spell.SpellEffects
+                    .Any(s => s.EffectType == WoWSpellEffectType.Heal
+                        || s.EffectType == WoWSpellEffectType.HealMaxHealth
+                        || s.EffectType == WoWSpellEffectType.HealPct
+                        || (s.EffectType == WoWSpellEffectType.ApplyAura && (s.AuraType == WoWApplyAuraType.PeriodicHeal || s.AuraType == WoWApplyAuraType.SchoolAbsorb))
+                        );
+        }
+
+        private static HashSet<int> _AddtlHealSpells = new HashSet<int>()
+        {
+            33076,  // Prayer of Mending
+            120517, // Halo
+            73920,  // Healing Rain
+            115460, // Healing Sphere
+
+        };
 
         /// <summary>
         ///   A string extension method that turns a Camel-case string into a spaced string. (Example: SomeCamelString -> Some Camel String)
