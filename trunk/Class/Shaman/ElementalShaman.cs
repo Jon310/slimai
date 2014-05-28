@@ -26,7 +26,8 @@ namespace SlimAI.Class.Shaman
                 new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
                         Spell.Cast(ElementalMastery),
-                        Spell.Cast(Ascendance, ret => Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds > 18 && Me.HasAura("Elemental Mastery")),
+                        Spell.Cast(FlameShock, ret => Me.CurrentTarget.HasAuraExpired("Flame Shock", 15) && Me.HasAura(Ascendance)),
+                        Spell.Cast(Ascendance, ret => Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds > 18),
                         Spell.Cast(FireElementalTotem, ret => Me.CurrentTarget.TimeToDeath() > (TalentManager.HasGlyph("Fire Elemental Totem") ? 30 : 60)),
                         Spell.Cast(EarthElementalTotem, ret => Me.CurrentTarget.TimeToDeath() > 60 && Spell.GetSpellCooldown("Fire Elemental Totem").TotalSeconds > 61),
                         Spell.Cast(StormlashTotem, ret => PartyBuff.WeHaveBloodlust))),
@@ -34,16 +35,16 @@ namespace SlimAI.Class.Shaman
                 Spell.WaitForCast(),
                 Spell.Cast(Thunderstorm, ret => Me.ManaPercent < 60 && TalentManager.HasGlyph("Thunderstorm")),
 
-                new Decorator(ret => Unit.UnfriendlyUnitsNearTargetFacing(10).Count() >= 4,
+                new Decorator(ret => Unit.UnfriendlyUnitsNearTargetFacing(10).Count() >= 4 && SlimAI.AOE,
                     AOE()),
 
-                Spell.Cast(SpiritWalkersGrace, ret => Me.IsMoving && !SpellManager.Spells["Lava Burst"].Cooldown),
+                Spell.Cast(SpiritWalkersGrace, ret => Me.IsMoving && !SpellManager.Spells["Lava Burst"].Cooldown && SlimAI.Burst),
                 Spell.Cast(FlameShock, on => FlameShockTar, ret => FlameShockTar.HasAuraExpired("Flame Shock", 1)),
                 Spell.Cast(LavaBurst),
                 Spell.Cast(ElementalBlast),
-                Spell.Cast(EarthShock, ret => Me.HasAura("Lightning Shield", Unit.UnfriendlyUnitsNearTargetFacing(10).Count() > 2 ? 7 : 6)),
+                Spell.Cast(EarthShock, ret => Me.HasAura("Lightning Shield", Unit.UnfriendlyUnitsNearTargetFacing(10).Count() > 2 ? 7 : 5)),
                 Spell.Cast(SearingTotem, ret => !Totems.ExistInRange(Me.CurrentTarget.Location, WoWTotem.Searing)),
-                new Decorator(ret => Unit.UnfriendlyUnitsNearTargetFacing(10).Count()> 1,
+                new Decorator(ret => Unit.UnfriendlyUnitsNearTargetFacing(10).Count() > 1 && SlimAI.AOE,
                     new PrioritySelector(
                         Spell.Cast(ChainLightning),
                         new ActionAlwaysSucceed())),
