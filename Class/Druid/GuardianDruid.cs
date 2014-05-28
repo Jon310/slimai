@@ -21,21 +21,24 @@ namespace SlimAI.Class.Druid
             return new PrioritySelector(
                 new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted, 
                     new ActionAlwaysSucceed()),
-                Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
-                Common.CreateInterruptBehavior(),
+                new Decorator(ret => SlimAI.AFK,
+                    new PrioritySelector(
+                        Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
+                        Common.CreateInterruptBehavior())),
                 //Spell.Cast(SkullBash, on => aUnit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
                 CreateCooldowns(),
-                Spell.Cast(Maul, ret => (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3) && Me.HealthPercent > 60),
+                Spell.Cast(Maul, ret => (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw))),
                 Spell.Cast(Mangle),
                 Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
-                new Decorator(ret => !SpellManager.CanCast("Mangle"),
-                    new PrioritySelector(
+                //new Decorator(ret => !SpellManager.CanCast("Mangle"),
+                //    new PrioritySelector(
                         Spell.Cast("Thrash"),
                         CreateAoe(),
                         Spell.Cast(Lacerate),
                         Spell.Cast("Faerie Fire"),
-                        Spell.Cast(Maul, ret => !IsCurrentTank())
-                    )
+                        Spell.Cast(Maul, ret => !IsCurrentTank()
+                        //)
+                    //)
                 )
             );
         }
@@ -44,7 +47,7 @@ namespace SlimAI.Class.Druid
         {
             return new PrioritySelector(
                 Spell.Cast(Rejuvenation, on => Me, ret => Me.HasAura(HeartoftheWildBuff) && !Me.HasAura(Rejuvenation)),
-                new Decorator(ret => IsCurrentTank(),
+                new Decorator(ret => IsCurrentTank() && SlimAI.AFK,
                     new PrioritySelector(
                         new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
                         new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
@@ -143,7 +146,8 @@ namespace SlimAI.Class.Druid
                           SkullBash = 80964,
                           SurvivalInstincts = 61336,
                           Swipe = 106785,
-                          Thrash = 77758;
+                          Thrash = 77758,
+                          ToothandClaw = 135286;
         #endregion
     }
 }

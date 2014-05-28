@@ -37,6 +37,8 @@ namespace SlimAI.Class.Monk
                 CreateInterruptSpellCast(),
                 Common.CreateInterruptBehavior(),
                 Spell.WaitForCastOrChannel(),
+                Item.UsePotionAndHealthstone(40),
+
 
                 //Detox
                 new Decorator(ret => SlimAI.Dispell,
@@ -98,15 +100,16 @@ namespace SlimAI.Class.Monk
                 Spell.WaitForCastOrChannel(),
                 ZenMed(),
                 ParalysisFocus(),
+                Item.UsePotionAndHealthstone(40),
 
                 new Decorator(ret => !Me.Combat || Me.Mounted,
                     new ActionAlwaysSucceed()),
 
-                //new Decorator(ret => SpellManager.CanCast(Paralysis) && SlimAI.AFK,
-                //    new PrioritySelector(
-                //        Spell.Cast(Paralysis, on => Me.FocusedUnit, ret => Me.FocusedUnit.InLineOfSight))),
+                // Execute if we can
+                //Spell.Cast(TouchofDeath, ret => Me.HasAura("Death Note")),
+                Spell.Cast(TouchofDeath, ret => Me.CurrentTarget.IsPlayer && Me.CurrentTarget.HealthPercent <= 10),
 
-                Spell.Cast(Disable, ret => !Me.CurrentTarget.HasAura(Disable) && Me.CurrentTarget.IsPlayer && !Freedoms),
+                Spell.Cast(Disable, ret => !Me.CurrentTarget.HasAura(Disable) && Me.CurrentTarget.IsPlayer && !Freedoms && SlimAI.AFK),
 
                 new Throttle(5,
                 //Spell.Cast(SpinningFireBlossom, ret => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Path, 40).Count(u => !u.HasAura(123407) && !u.HasAura(Disable) &&
@@ -129,8 +132,6 @@ namespace SlimAI.Class.Monk
                 new Throttle(2,
                 Spell.Cast("Chi Brew", ret => buffStackCount(TigereyeBrewStack, Me) <= 16 && Me.CurrentChi < 2)),
                 Spell.Cast(EnergizingBrew, ret => Me.CurrentEnergy < 25),
-                // Execute if we can
-                Spell.Cast(TouchofDeath, ret => Me.HasAura("Death Note")),
                 Spell.Cast(TigerPalm, ret => Me.CurrentChi > 0 &&
                             (!Me.HasAura("Tiger Power") || Me.HasAura("Tiger Power") && Me.GetAuraTimeLeft("Tiger Power").TotalSeconds <= 3)),
 

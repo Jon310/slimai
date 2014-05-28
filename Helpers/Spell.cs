@@ -1812,12 +1812,16 @@ namespace SlimAI.Helpers
             {
                 if (Me.Shapeshift == ShapeshiftForm.Cat || Me.Shapeshift == ShapeshiftForm.Bear || Me.Shapeshift == ShapeshiftForm.DireBear )
                 {
-                    if (spell.IsHeal())
+//<<<<<<< .mine
+//                    if (spell.IsHealingSpell)
+//=======
+//                    if (spell.IsHeal())
+//>>>>>>> .r53
                     {
                         formSwitch = true;
                         currentPower = Me.CurrentMana;
                     }
-                    else if (spell.PowerCost >= 100)
+                     if (spell.PowerCost >= 100)
                     {
                         formSwitch = true;
                         currentPower = Me.CurrentMana;

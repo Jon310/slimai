@@ -48,18 +48,18 @@ namespace SlimAI.Class.Monk
                 //stance stuff need to work on it more
                 Spell.Cast(StanceoftheSturdyOx, ret => IsCurrentTank() && !Me.HasAura("Stance of the Sturdy Ox")),
 
-                //new Decorator(ret => Me.HasAura("Stance of the Fierce Tiger"),
-                //    new PrioritySelector(
-                //        //HealingSphereTank(),
-                //        Spell.Cast(TigerPalm, ret => !Me.HasAura("Tiger Power")),
-                //        Spell.Cast(ChiWave),
-                //        Spell.Cast(BlackoutKick),
-                //        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
-                //        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
-                //        Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 35),
-                //        Spell.Cast(Jab, ret => Me.CurrentChi <= 4),
-                //        Spell.Cast(TigerPalm),
-                //        new ActionAlwaysSucceed())),
+                new Decorator(ret => Me.HasAura("Stance of the Fierce Tiger"),
+                    new PrioritySelector(
+                //HealingSphereTank(),
+                        Spell.Cast(TigerPalm, ret => !Me.HasAura("Tiger Power")),
+                        Spell.Cast(ChiWave),
+                        Spell.Cast(BlackoutKick),
+                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
+                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
+                        Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 35),
+                        Spell.Cast(Jab, ret => Me.CurrentChi <= 4),
+                        Spell.Cast(TigerPalm),
+                        new ActionAlwaysSucceed())),
 
                 //// apply the Weakened Blows debuff. Keg Smash also generates allot of threat 
                 Spell.Cast(KegSmash, ret => Me.CurrentChi <= 3 && Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8).Any(u => !u.HasAura("Weakened Blows") &&
@@ -82,11 +82,11 @@ namespace SlimAI.Class.Monk
                 //Elusive Brew will made auto at lower stacks when I can keep up 80 to 90% up time this is just to keep from capping
                 Spell.Cast(ElusiveBrew, ret => Me.HasAura("Elusive Brew", 12) && !Me.HasAura(ElusiveBrew) && IsCurrentTank()),
                 Spell.Cast(BlackoutKick, ret => !Me.HasAura("Shuffle") || Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds <= 6),
-                Spell.Cast(Guard, ret => Me.CurrentChi >= 2 && Me.HasAura("Power Guard") && Me.HealthPercent <= 90 && IsCurrentTank()),
+                Spell.Cast(Guard, ret => Me.CurrentChi >= 2 && Me.HasAura("Power Guard") && Me.HealthPercent <= 80 && IsCurrentTank()),
                 
                 //Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 80),
                 //Spell.Cast(ExpelHarm, on => EHtar, ret => Me.HealthPercent > 70 && TalentManager.HasGlyph("Targeted Expulsion")),
-                Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 70 /*&& TalentManager.HasGlyph("Targeted Expulsion") || Me.HealthPercent < 80 && !TalentManager.HasGlyph("Targeted Expulsion")*/),
+                Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 70 && Me.CurrentEnergy > 40/*&& TalentManager.HasGlyph("Targeted Expulsion") || Me.HealthPercent < 80 && !TalentManager.HasGlyph("Targeted Expulsion")*/),
                 //Detox
                 CreateDispelBehavior(),
 
@@ -100,7 +100,7 @@ namespace SlimAI.Class.Monk
                 //Spell.Cast(ZenSphere, ret => !Me.HasAura(ZenSphere)),
                 
                 //Healing Spheres need to work on not happy with this atm
-                //HealingSphere(),
+                HealingSphere(),
                 //HealingSphereTank(),
 
                 new Decorator(ret => SlimAI.AOE,
@@ -212,7 +212,7 @@ namespace SlimAI.Class.Monk
         #region Healing Sphere
         private static Composite HealingSphere()
         {
-            return new Decorator(ret => Me.HealthPercent <= 50 && Me.CurrentEnergy >= 60 && Me.GetAuraTimeLeft("Shuffle").TotalSeconds >= 6 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3,
+           return new Decorator(ret => Me.HealthPercent <= 50 && Me.CurrentEnergy >= 45 && (!Me.CurrentTarget.IsWithinMeleeRange) && Spell.GetSpellCooldown("Expel Harm").TotalSeconds >= 1/*Me.GetAuraTimeLeft("Shuffle").TotalSeconds >= 6 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3*/,
                 new Action(ret =>
                 {
                     var mpos = Me.Location;
