@@ -26,11 +26,11 @@ namespace SlimAI.Class.Shaman
                 new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
                         Spell.Cast(ElementalMastery),
-                        Spell.Cast(FlameShock, ret => Me.CurrentTarget.HasAuraExpired("Flame Shock", 15) && Me.HasAura(Ascendance)),
+                        Spell.Cast(FlameShock, ret => Me.CurrentTarget.HasAuraExpired("Flame Shock") && Me.HasAura(Ascendance)),
                         Spell.Cast(Ascendance, ret => Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds > 18),
                         Spell.Cast(FireElementalTotem, ret => Me.CurrentTarget.TimeToDeath() > (TalentManager.HasGlyph("Fire Elemental Totem") ? 30 : 60)),
                         Spell.Cast(EarthElementalTotem, ret => Me.CurrentTarget.TimeToDeath() > 60 && Spell.GetSpellCooldown("Fire Elemental Totem").TotalSeconds > 61),
-                        Spell.Cast(StormlashTotem, ret => PartyBuff.WeHaveBloodlust))),
+                        Spell.Cast(StormlashTotem, ret => !PartyBuff.WeHaveBloodlust))),
                 
                 Spell.WaitForCast(),
                 Spell.Cast(Thunderstorm, ret => Me.ManaPercent < 60 && TalentManager.HasGlyph("Thunderstorm")),
@@ -39,7 +39,8 @@ namespace SlimAI.Class.Shaman
                     AOE()),
 
                 Spell.Cast(SpiritWalkersGrace, ret => Me.IsMoving && !SpellManager.Spells["Lava Burst"].Cooldown && SlimAI.Burst),
-                Spell.Cast(FlameShock, on => FlameShockTar, ret => FlameShockTar.HasAuraExpired("Flame Shock", 1)),
+                Spell.Cast(FlameShock, on => FlameShockTar, ret => FlameShockTar.HasAuraExpired("Flame Shock")),
+                Spell.Cast(UnleashElements, ret => TalentManager.IsSelected((int)ShamanTalents.UnleashedFury)),
                 Spell.Cast(LavaBurst),
                 Spell.Cast(ElementalBlast),
                 Spell.Cast(EarthShock, ret => Me.HasAura("Lightning Shield", Unit.UnfriendlyUnitsNearTargetFacing(10).Count() > 2 ? 7 : 5)),
@@ -62,7 +63,7 @@ namespace SlimAI.Class.Shaman
         private static Composite AOE()
         {
             return new PrioritySelector(
-                new Decorator(ret => Unit.UnfriendlyUnits(10).Count() > 5 && TalentManager.HasGlyph("Thunderstorm"),
+                new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(10).Count() > 5 && TalentManager.HasGlyph("Thunderstorm"),
                     Spell.Cast(Thunderstorm)),
                 Spell.Cast(ChainLightning));
         }
@@ -72,14 +73,14 @@ namespace SlimAI.Class.Shaman
         {
             get
             {
-                if (Unit.UnfriendlyUnitsNearTargetFacing(10).Count() < 2 && Me.CurrentTarget.HasAuraExpired("Flame Shock", 1))
+                if (Unit.UnfriendlyUnitsNearTargetFacing(10).Count() < 2)
                     return Me.CurrentTarget;
                 if (Unit.UnfriendlyUnitsNearTargetFacing(10).Count().Between(2, 3))
                 {
                     var besttar = (from unit in ObjectManager.GetObjectsOfType<WoWUnit>(false)
                                    where unit.IsAlive
                                    where unit.IsTargetingMyPartyMember || unit.IsTargetingMyRaidMember
-                                   where unit.HasAuraExpired("Flame Shock", 1)
+                                   where unit.HasAuraExpired("Flame Shock")
                                    where unit.InLineOfSight
                                    select unit).FirstOrDefault();
                     return besttar;
@@ -257,7 +258,7 @@ namespace SlimAI.Class.Shaman
                           StormStrike = 17364,
                           Thunderstorm = 51490,
                           TotemicRecall = 36936,
-                          UnleashedElements = 73680,
+                          UnleashElements = 73680,
                           WaterShield = 52127,
                           WindwalkTotem = 108273;
         #endregion
