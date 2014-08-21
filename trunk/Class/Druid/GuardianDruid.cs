@@ -30,12 +30,12 @@ namespace SlimAI.Class.Druid
             // Pause for Casting
             if (Me.IsCasting || Me.IsChanneling || !Me.GotTarget || Me.Mounted) return true;
             //cooldowns
-            if (IsCurrentTank() && SlimAI.AFK){if (await Item.CoUseHands()) return true;}
+            //if (IsCurrentTank() && SlimAI.AFK){if (await Item.CoUseHands()) return true;}
             if (await Item.CoUseHS(40)) return true;
             if (await Spell.CoCast(Rejuvenation, Me, Me.HasAura(HeartoftheWildBuff) && !Me.HasAura(Rejuvenation))) return true;
             if (await Spell.CoCast(CenarionWard, Me)) return true;
             if (await Spell.CoCast("Bone Shield", IsCurrentTank() && !Me.HasAura("Bone Shield"))) return true;
-            if (await Spell.CoCast(HealingTouch, Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1)) return true;
+            if (await Spell.CoCast(HealingTouch, Me, Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1)) return true;
             if (await Spell.CoCast(FrenziedRegeneration, Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration"))) return true;
             if (await Spell.CoCast(SavageDefense, IsCurrentTank())) return true;
 
