@@ -50,6 +50,25 @@ namespace SlimAI.Helpers
         }
 
         #region Coroutine Section
+        public static async Task<bool> CoBuff(int spell)
+        {
+            return await CoCast(spell, Me, !Me.HasAura(spell));
+        }
+
+        public static async Task<bool> CoBuff(int spell, bool reqs)
+        {
+            return await CoCast(spell, Me, !Me.HasAura(spell) && reqs);
+        }
+
+        public static async Task<bool> CoBuff(int spell, WoWUnit unit)
+        {
+            return await CoCast(spell, unit, !unit.HasAura(spell));
+        }
+
+        public static async Task<bool> CoBuff(int spell, WoWUnit unit, bool reqs)
+        {
+            return await CoCast(spell, unit, !unit.HasAura(spell) && reqs);
+        }
 
         public static async Task<bool> CoCast(int spell)
         {
