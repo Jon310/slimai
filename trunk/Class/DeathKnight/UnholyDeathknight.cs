@@ -18,11 +18,17 @@ namespace SlimAI.Class.Deathknight
         internal static int FrostRuneSlotsActive { get { return Me.GetRuneCount(2) + Me.GetRuneCount(3); } }
         internal static int UnholyRuneSlotsActive { get { return Me.GetRuneCount(4) + Me.GetRuneCount(5); } }
         private static DeathKnightSettings Settings { get { return GeneralSettings.Instance.DeathKnight(); } }
+        internal const uint Ghoul = 26125;        
+        internal static bool GhoulMinionIsActive
+        {
+            get { return Me.Minions.Any(u => u.Entry == Ghoul); }
+        }
 
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy)]
         public static Composite UnholyDKCombat()
         {
             return new PrioritySelector(
+
                 new Decorator(ret => SlimAI.PvPRotation,
                     CreatePvP()),
                 new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget,
@@ -77,6 +83,15 @@ namespace SlimAI.Class.Deathknight
                 Spell.Cast(EmpowerRuneWeapon, ret => SlimAI.Burst && NoRunes));
         }
 
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy)]
+        public static Composite UnholyPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                new Decorator(ret => Me.Mounted,
+                    new ActionAlwaysSucceed()),
+                    Spell.Cast("Raise Dead", ret => !Me.GotAlivePet),
+                    Spell.Cast(HornofWinter, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower)));
+        }
 
         #region PvP
         private static Composite CreatePvP()
@@ -89,7 +104,7 @@ namespace SlimAI.Class.Deathknight
                 Spell.Cast(Conversion, ret => Me.HealthPercent > 65 && Me.HasAura("Conversion")),
                 Spell.Cast(DeathPact, ret => Me.HealthPercent < 45),
                 Spell.Cast(DeathSiphon, ret => Me.HealthPercent < 50),
-                Spell.Cast(IceboundFortitude, ret => Me.HealthPercent < 40),
+                //Spell.Cast(IceboundFortitude, ret => Me.HealthPercent < 40),
                 Spell.Cast(DeathStrike, ret => Me.GotTarget && Me.HealthPercent < 15),
                 Spell.Cast(Lichborne, ret => (Me.HealthPercent < 25 && Me.CurrentRunicPower >= 60)),
                 Spell.Cast(DeathCoil, on => Me, ret => Me.HealthPercent < 50 && Me.HasAura("Lichborne")),
