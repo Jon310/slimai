@@ -4,10 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
 using SlimAI.Managers;
 using CommonBehaviors.Actions;
 using Styx;
 using Styx.CommonBot;
+using Styx.CommonBot.Coroutines;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.DBC;
@@ -45,6 +48,72 @@ namespace SlimAI.Helpers
         {
             return ObjectManager.GetObjectsOfType<WoWDynamicObject>().FirstOrDefault(o => o.SpellId == spellId);
         }
+
+        #region Coroutine Section
+
+        public static async Task<bool> CoCast(int spell)
+        {
+            return await CoCast(spell, Me.CurrentTarget, true);
+        }
+
+        public static async Task<bool> CoCast(int spell, WoWUnit unit)
+        {
+            return await CoCast(spell, unit, true);
+        }
+
+        public static async Task<bool> CoCast(int spell, bool reqs)
+        {
+            return await CoCast(spell, Me.CurrentTarget, reqs);
+        }
+
+        public static async Task<bool> CoCast(int spell, WoWUnit unit, bool reqs)
+        {
+            if (unit == null || !reqs || !SpellManager.CanCast(spell, unit, true))
+                return false;
+
+            //if (!SpellManager.CanCast(spell))
+            //    return false;
+
+            if (!SpellManager.Cast(spell))
+                return false;
+
+            var sp = WoWSpell.FromId(spell);
+            var sname = sp != null ? sp.Name : "#" + spell;
+            Logging.Write("Casting " + sname + " on " + unit);
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+
+        public static async Task<bool> CoCast(string spell)
+        {
+            return await CoCast(spell, Me.CurrentTarget, true);
+        }
+
+        public static async Task<bool> CoCast(string spell, bool reqs)
+        {
+            return await CoCast(spell, Me.CurrentTarget, reqs);
+        }
+
+        public static async Task<bool> CoCast(string spell, WoWUnit unit, bool reqs)
+        {
+            if (!reqs)
+                return false;
+
+            if (!SpellManager.CanCast(spell))
+                return false;
+
+            if (!SpellManager.Cast(spell))
+                return false;
+
+            var sname = spell;
+            Logging.Write("Casting " + sname + " on " + unit);
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+
+        #endregion
 
         public static bool IsStandingInGroundEffect(bool harmful = true)
         {

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
+using Buddy.Coroutines;
 using CommonBehaviors.Actions;
 using Styx;
 using Styx.TreeSharp;
@@ -69,6 +71,20 @@ namespace SlimAI.Helpers
                                         new Action(ret => ((WoWItem)ret).UseContainerItem()))))));
         }
 
+        #region Coroutine Healthstone Useage
+        public static async Task<bool> CoUseHS(double healthPercent)
+        {
+            if (Me.HealthPercent < healthPercent)
+            {
+                await Coroutine.ExternalTask(Task.Run(() =>
+                    FindFirstUsableItemBySpell("Healthstone", "Life Spirit").UseContainerItem()));
+                return true;
+            }
+
+            return false;
+        }
+        #endregion
+
         public static void UseTrinkets()
         {
             WoWItem firstTrinket = StyxWoW.Me.Inventory.Equipped.Trinket1;
@@ -88,6 +104,20 @@ namespace SlimAI.Helpers
             if (Gloves != null && Me.Combat && CanUseEquippedItem(Gloves))
                 Gloves.Use();
         }
+
+        #region Coroutines UseHands
+        public static async Task<bool> CoUseHands()
+        {
+            var gloves = StyxWoW.Me.Inventory.Equipped.Hands;
+            if (gloves != null && Me.Combat && CanUseEquippedItem(gloves))
+            {
+                await Coroutine.ExternalTask(Task.Run(() => gloves.Use()));
+                return true;
+            }
+
+            return false;
+        }
+        #endregion
 
         public static void UseWaist()
         {
