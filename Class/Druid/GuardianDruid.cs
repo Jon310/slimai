@@ -50,9 +50,10 @@ namespace SlimAI.Class.Druid
                 new Decorator(ret => IsCurrentTank() && SlimAI.AFK,
                     new PrioritySelector(
                         new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
-                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }))),
                 //Spell.Cast("Incarnation: Son of Ursoc", ret => SlimAI.Burst && Me.RagePercent < 60 && Me.HealthPercent < 60),
                 Spell.Cast(CenarionWard, on => Me),
+                Spell.Cast("Bone Shield", ret => IsCurrentTank() && !Me.HasAura("Bone Shield")),
                 //Spell.Cast(Enrage, ret => Me.RagePercent < 40),
                 Spell.Cast(HealingTouch, ret => Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1),
                 //Spell.Cast(BarkSkin),
@@ -63,11 +64,9 @@ namespace SlimAI.Class.Druid
                 //Spell.Cast(Renewal, ret => Me.HealthPercent <= 50 || Me.HasAura("Might of Ursoc")),
                 Item.UsePotionAndHealthstone(40),
                 Spell.Cast(FrenziedRegeneration, ret => Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration")),
-                Spell.Cast(SavageDefense)
-                    )
-                )
-            );
-        }
+                Spell.Cast(SavageDefense, ret => IsCurrentTank())
+                    );
+            }
 
         private static Composite CreateAoe()
         {
