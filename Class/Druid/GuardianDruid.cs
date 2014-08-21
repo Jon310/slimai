@@ -52,6 +52,12 @@ namespace SlimAI.Class.Druid
 
         }
 
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian)]
+        public static Composite GuardianCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+
         #endregion
 
 
