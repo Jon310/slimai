@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using Buddy.Coroutines;
 using Styx;
 using Styx.Common;
 using Styx.TreeSharp;
@@ -11,7 +13,7 @@ using Action = Styx.TreeSharp.Action;
 
 namespace SlimAI.Helpers
 {
-    public static class CompositeBuilder
+    public static class CoroutineBuilder
     {
         /// <summary>
         /// allows generic behaviors to query current type of behavior
@@ -21,16 +23,16 @@ namespace SlimAI.Helpers
         public static bool SilentBehaviorCreation { get; set; }
 
 
-        private static readonly List<MethodInfo> _methods = new List<MethodInfo>();
+        private static List<MethodInfo> _methods = new List<MethodInfo>();
 
-        public static Composite GetComposite(WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount, bool silent = false)
+        public static async Task<Task<PrioritySelector>> GetCoroutine(WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context, int behaviourCount, bool silent = false)
         {
             if (context == WoWContext.None)
             {
                 // None is an invalid context, but rather than stopping bot wait it out with donothing logic
                 Logging.Write("No Active Context -{0}{1} for{2} set to DoNothingBehavior temporarily", wowClass.ToString().CamelToSpaced(), behavior.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced());
                 behaviourCount = 1;
-                return NoContextAvailable.CreateDoNothingBehavior();
+                return null;
             }
 
             SilentBehaviorCreation = silent;
@@ -43,14 +45,14 @@ namespace SlimAI.Helpers
                     _methods.AddRange(
                         type.GetMethods(BindingFlags.Static | BindingFlags.Public).Where(
                             mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
-                                mi => mi.ReturnType.IsAssignableFrom(typeof (Composite))));
+                                mi => mi.ReturnType.IsAssignableFrom(typeof (Coroutine))));
                 }
                 Logging.Write("SlimAI Behaviors: Added " + _methods.Count + " behaviors");
             }
 
-            var matchedMethods = new Dictionary<BehaviorAttribute, Composite>();
+            var matchedMethods = new Dictionary<BehaviorAttribute, Coroutine>();
 
-            foreach (var mi in _methods)
+            foreach (MethodInfo mi in _methods)
             {
                 // If the behavior is set as ignore. Don't use it? Duh?
                 if (mi.GetCustomAttributes(typeof(IgnoreBehaviorCountAttribute), false).Any())
@@ -74,11 +76,11 @@ namespace SlimAI.Helpers
                         // if it blows up here, you defined a method with the exact same attribute and priority as one already found
 
                         // wrap in trace class
-                        Composite comp = mi.Invoke(null, null) as Composite;
-                        string name = behavior.ToString() + "." + mi.Name + "." + attribute.PriorityLevel.ToString();
+                        var comp = mi.Invoke(null, null) as Coroutine;
+                        var name = behavior.ToString() + "." + mi.Name + "." + attribute.PriorityLevel.ToString();
 
-                        if (SlimAI.Trace)
-                            comp = new CallTrace( name, comp);
+                        //if (SlimAI.Trace)
+                        //    comp = new CallTrace( name, comp);
 
                         matchedMethods.Add(attribute, comp);
 
@@ -92,10 +94,10 @@ namespace SlimAI.Helpers
                 return null;
             }
 
-            var result = new PrioritySelector();
+            var result = Coroutine.ExternalTask(Task.Run(() =>new PrioritySelector()));
             foreach (var kvp in matchedMethods.OrderByDescending(mm => mm.Key.PriorityLevel))
             {
-                result.AddChild(kvp.Value);
+                result.Equals(kvp.Value);
                 behaviourCount++;
             }
 

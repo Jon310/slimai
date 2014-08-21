@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CommonBehaviors.Actions;
+using SlimAI.Class.Warrior;
 using SlimAI.Helpers;
 using SlimAI.Managers;
 using Styx;
@@ -17,6 +19,7 @@ namespace SlimAI
         public override Composite PreCombatBuffBehavior { get { return _preCombatBuffs; } }
         public override Composite DeathBehavior { get { return _deathBehavior; } }
         public override Composite CombatBehavior { get { return _combat; } }
+        //public override Composite CombatBehavior { get { return new ActionRunCoroutine(ctx => FuryWarrior.CombatCoroutine()); } }
         public override Composite PullBehavior { get { return _pull; } }
         public override Composite HealBehavior { get { return _heal; } }
         WoWContext _context = CurrentWoWContext;
@@ -89,7 +92,7 @@ namespace SlimAI
             // Logger.WriteDebug("Creating " + type + " behavior.");
 
             var composite = CompositeBuilder.GetComposite(Class, TalentManager.CurrentSpec, type, context, out count);
-
+            
             TreeHooks.Instance.ReplaceHook(HookName(type), composite);
 
             if ((composite == null || count <= 0) && error)
@@ -97,6 +100,20 @@ namespace SlimAI
                 StopBot(string.Format("SlimAI does not support {0} for this {1} {2} in {3} context!", type, StyxWoW.Me.Class, TalentManager.CurrentSpec, context));
             }
         }
+
+        #region EnsureCoroutine
+        private void EnsureCoroutine(bool error, WoWContext context, BehaviorType type)
+        {
+            const int count = 0;
+
+            var composite = CoroutineBuilder.GetCoroutine(Class, TalentManager.CurrentSpec, type, context, count);
+
+            if (count <= 0 && error)
+            {
+                StopBot(string.Format("SlimAI does not support {0} for this {1} {2} in {3} context!", type, StyxWoW.Me.Class, TalentManager.CurrentSpec, context));
+            }
+        }
+        #endregion
 
         private class LockSelector : PrioritySelector
         {
