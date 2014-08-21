@@ -1,47 +1,86 @@
-﻿using System.Windows.Forms;
+﻿using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Buddy.Coroutines;
+using JetBrains.Annotations;
+using SlimAI.Helpers;
 using CommonBehaviors.Actions;
 using SlimAI.Settings;
 using Styx;
+using Styx.Common;
 using Styx.CommonBot;
+using Styx.CommonBot.Coroutines;
 using Styx.TreeSharp;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using SlimAI.Helpers;
-using System.Linq;
+using Action = Styx.TreeSharp.Action;
 
 namespace SlimAI.Class.Druid
 {
-    class GuardianDruid
+    [UsedImplicitly]
+    public class GuardianDruid
     {
         static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static DruidSettings Settings { get { return GeneralSettings.Instance.Druid(); } }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian)]
-        public static Composite GuardianCombat()
+        #region Coroutine Section
+
+        public static async Task<bool> CombatCoroutine()
         {
-            return new PrioritySelector(
-                new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted, 
-                    new ActionAlwaysSucceed()),
-                new Decorator(ret => SlimAI.AFK,
-                    new PrioritySelector(
-                        Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
-                        Common.CreateInterruptBehavior())),
-                //Spell.Cast(SkullBash, on => aUnit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
-                CreateCooldowns(),
-                Spell.Cast(Maul, ret => (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw))),
-                Spell.Cast(Mangle),
-                Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
-                //new Decorator(ret => !SpellManager.CanCast("Mangle"),
-                //    new PrioritySelector(
-                        Spell.Cast("Thrash"),
-                        CreateAoe(),
-                        Spell.Cast(Lacerate),
-                        Spell.Cast("Faerie Fire"),
-                        Spell.Cast(Maul, ret => !IsCurrentTank()
-                        //)
-                    //)
-                )
-            );
+            // Pause for Casting
+            if (Me.IsCasting || Me.IsChanneling || !Me.GotTarget || Me.Mounted) return true;
+            //cooldowns
+            if (IsCurrentTank() && SlimAI.AFK){if (await Item.CoUseHands()) return true;}
+            if (await Item.CoUseHS(40)) return true;
+            if (await Spell.CoCast(Rejuvenation, Me, Me.HasAura(HeartoftheWildBuff) && !Me.HasAura(Rejuvenation))) return true;
+            if (await Spell.CoCast(CenarionWard, Me)) return true;
+            if (await Spell.CoCast("Bone Shield", IsCurrentTank() && !Me.HasAura("Bone Shield"))) return true;
+            if (await Spell.CoCast(HealingTouch, Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1)) return true;
+            if (await Spell.CoCast(FrenziedRegeneration, Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration"))) return true;
+            if (await Spell.CoCast(SavageDefense, IsCurrentTank())) return true;
+
+            if (await Spell.CoCast(Maul, (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw)))) return true;
+            if (await Spell.CoCast(Mangle)) return true;
+            if (await Spell.CoCast(FaerieFire, !Me.CurrentTarget.HasAura("Weakened Armor", 3))) return true;
+            if (await Spell.CoCast(Thrash)) return true;
+            if (await Spell.CoCast(Swipe, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE)) return true;
+            if (await Spell.CoCast(Lacerate)) return true;
+            if (await Spell.CoCast(FaerieFire)) return true;
+            if (await Spell.CoCast(Maul, !IsCurrentTank())) return true;
+
+            return false;
+
         }
+        #endregion
+
+
+        //[Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian)]
+        //public static Composite GuardianCombat()
+        //{
+        //    return new PrioritySelector(
+        //        new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted, 
+        //            new ActionAlwaysSucceed()),
+        //        new Decorator(ret => SlimAI.AFK,
+        //            new PrioritySelector(
+        //                Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
+        //                Common.CreateInterruptBehavior())),
+        //        //Spell.Cast(SkullBash, on => aUnit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
+        //        CreateCooldowns(),
+        //        Spell.Cast(Maul, ret => (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw))),
+        //        Spell.Cast(Mangle),
+        //        Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+        //        //new Decorator(ret => !SpellManager.CanCast("Mangle"),
+        //        //    new PrioritySelector(
+        //                Spell.Cast("Thrash"),
+        //                CreateAoe(),
+        //                Spell.Cast(Lacerate),
+        //                Spell.Cast("Faerie Fire"),
+        //                Spell.Cast(Maul, ret => !IsCurrentTank()
+        //                //)
+        //            //)
+        //        )
+        //    );
+        //}
 
         private static Composite CreateCooldowns()
         {
@@ -76,6 +115,7 @@ namespace SlimAI.Class.Druid
                     ));
         }
 
+        
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian)]
         public static Composite GuardianPreCombatBuffs()
         {
