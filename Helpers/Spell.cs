@@ -74,7 +74,7 @@ namespace SlimAI.Helpers
             //if (!SpellManager.CanCast(spell))
             //    return false;
 
-            if (!SpellManager.Cast(spell))
+            if (!SpellManager.Cast(spell, unit))
                 return false;
 
             var sp = WoWSpell.FromId(spell);
@@ -100,10 +100,10 @@ namespace SlimAI.Helpers
             if (!reqs)
                 return false;
 
-            if (!SpellManager.CanCast(spell))
+            if (!SpellManager.CanCast(spell, unit, true))
                 return false;
 
-            if (!SpellManager.Cast(spell))
+            if (!SpellManager.Cast(spell, unit))
                 return false;
 
             var sname = spell;
