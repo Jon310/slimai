@@ -51,6 +51,7 @@ namespace SlimAI.Class.Druid
             return false;
 
         }
+
         #endregion
 
 
