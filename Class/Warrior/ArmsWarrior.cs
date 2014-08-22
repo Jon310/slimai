@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using Buddy.Coroutines;
 using CommonBehaviors.Actions;
 using SlimAI.Helpers;
+using SlimAI.Lists;
 using SlimAI.Managers;
 using SlimAI.Settings;
 using Styx;
@@ -52,9 +53,9 @@ namespace SlimAI.Class.Warrior
 
         #region Coroutine Combat
 
-        private static async Task<bool> CoroutineCombat()
+        private static async Task<bool> CombatCoroutine()
         {
-            if (SlimAI.PvPRotation) return true;
+            if (await PvPCoroutine() && SlimAI.PvPRotation) return true;
 
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
@@ -103,66 +104,100 @@ namespace SlimAI.Class.Warrior
             return false;
         }
 
+        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorArms)]
+        public static Composite CoArmsCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+
         #endregion
 
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorArms)]
-        public static Composite ArmsCombat()
-        {
-            return new PrioritySelector(
-                new Throttle(1,
-                    new Action(context => ResetVariables())),
-                new Decorator(ret => SlimAI.PvPRotation,
-                    CreatePvP()),
-                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
-                    new ActionAlwaysSucceed()),
-                new Decorator(ret => Me.HasAura("Dire Fixation"),
-                    new PrioritySelector(
-                        BossMechs.HorridonHeroic())),
-                new Throttle(1,1,
-                    Common.CreateInterruptBehavior()),
-                Spell.Cast(VictoryRush, ret => Me.HealthPercent <= 90 && Me.HasAura("Victorious")),
-                Spell.Cast(DieByTheSword, ret => Me.HealthPercent <= 20),
-                Item.UsePotionAndHealthstone(50),
-                DemoBanner(),
-                Leap(),
-                new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 4 && SlimAI.AOE,
-                            CreateAoe()),
-                new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.HasMyAura("Colossus Smash"),
-                    new PrioritySelector(
-                        Spell.Cast(Recklessness),
-                        Spell.Cast(Avatar),
-                        Spell.Cast(SkullBanner))),
-                Spell.Cast(BloodBath),
-                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
-                Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage)),
-                Spell.Cast(SweepingStrikes, ret => Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE),
-                Spell.Cast(HeroicStrike, ret => (Me.CurrentTarget.HasAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105, true),
-                Spell.Cast(MortalStrike),
-                Spell.Cast(StormBolt, ret => Me.CurrentTarget.HasMyAura("Colossus Smash")),
-                Spell.Cast(DragonRoar, ret => !Me.CurrentTarget.HasAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8),
-                Spell.Cast(ColossusSmash, ret => Me.CurrentTarget.HasAuraExpired("Colossus Smash") || !Me.CurrentTarget.HasMyAura("Colossus Smash")),
-                Spell.Cast(Execute, ret => Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 95),
-                Spell.Cast(DragonRoar, ret => (!Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.HealthPercent < 20) || (Me.HasAura("Bloodbath") && Me.CurrentTarget.HealthPercent >= 20) && Me.CurrentTarget.Distance <= 8),
-                Spell.Cast(ThunderClap, ret => Unit.UnfriendlyUnits(8).Count() >= 3 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds"))),
-                Spell.Cast(Slam, ret => (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Recklessness")) && Me.CurrentTarget.HealthPercent >= 20),
-                Spell.Cast(Overpower, ret => Me.HasAura("Taste for Blood", 3) && Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute")),
-                Spell.Cast(Execute, ret => !Me.HasAura("Sudden Execute")),
-                Spell.Cast(Slam, ret => Me.CurrentRage >= 40 && Me.CurrentTarget.HealthPercent >= 20),
-                Spell.Cast(Overpower, ret => Me.CurrentTarget.HealthPercent >= 20),
-                Spell.Cast(BattleShout),
-                Spell.Cast(HeroicThrow),
-                Spell.Cast(ImpendingVictory, ret => Me.HealthPercent < 50));
-        }
+        //[Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorArms)]
+        //public static Composite ArmsCombat()
+        //{
+        //    return new PrioritySelector(
+        //        new Throttle(1,
+        //            new Action(context => ResetVariables())),
+        //        new Decorator(ret => SlimAI.PvPRotation,
+        //            CreatePvP()),
+        //        new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
+        //            new ActionAlwaysSucceed()),
+        //        new Decorator(ret => Me.HasAura("Dire Fixation"),
+        //            new PrioritySelector(
+        //                BossMechs.HorridonHeroic())),
+        //        new Throttle(1,1,
+        //            Common.CreateInterruptBehavior()),
+        //        Spell.Cast(VictoryRush, ret => Me.HealthPercent <= 90 && Me.HasAura("Victorious")),
+        //        Spell.Cast(DieByTheSword, ret => Me.HealthPercent <= 20),
+        //        Item.UsePotionAndHealthstone(50),
+        //        DemoBanner(),
+        //        Leap(),
+        //        new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 4 && SlimAI.AOE,
+        //                    CreateAoe()),
+        //        new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.HasMyAura("Colossus Smash"),
+        //            new PrioritySelector(
+        //                Spell.Cast(Recklessness),
+        //                Spell.Cast(Avatar),
+        //                Spell.Cast(SkullBanner))),
+        //        Spell.Cast(BloodBath),
+        //        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+        //        Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage)),
+        //        Spell.Cast(SweepingStrikes, ret => Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE),
+        //        Spell.Cast(HeroicStrike, ret => (Me.CurrentTarget.HasAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105, true),
+        //        Spell.Cast(MortalStrike),
+        //        Spell.Cast(StormBolt, ret => Me.CurrentTarget.HasMyAura("Colossus Smash")),
+        //        Spell.Cast(DragonRoar, ret => !Me.CurrentTarget.HasAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8),
+        //        Spell.Cast(ColossusSmash, ret => Me.CurrentTarget.HasAuraExpired("Colossus Smash") || !Me.CurrentTarget.HasMyAura("Colossus Smash")),
+        //        Spell.Cast(Execute, ret => Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 95),
+        //        Spell.Cast(DragonRoar, ret => (!Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.HealthPercent < 20) || (Me.HasAura("Bloodbath") && Me.CurrentTarget.HealthPercent >= 20) && Me.CurrentTarget.Distance <= 8),
+        //        Spell.Cast(ThunderClap, ret => Unit.UnfriendlyUnits(8).Count() >= 3 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds"))),
+        //        Spell.Cast(Slam, ret => (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Recklessness")) && Me.CurrentTarget.HealthPercent >= 20),
+        //        Spell.Cast(Overpower, ret => Me.HasAura("Taste for Blood", 3) && Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute")),
+        //        Spell.Cast(Execute, ret => !Me.HasAura("Sudden Execute")),
+        //        Spell.Cast(Slam, ret => Me.CurrentRage >= 40 && Me.CurrentTarget.HealthPercent >= 20),
+        //        Spell.Cast(Overpower, ret => Me.CurrentTarget.HealthPercent >= 20),
+        //        Spell.Cast(BattleShout),
+        //        Spell.Cast(HeroicThrow),
+        //        Spell.Cast(ImpendingVictory, ret => Me.HealthPercent < 50));
+        //}
 
         #region PvP
+
+        private static async Task<bool> PvPCoroutine()
+        {
+            await CoShatterBubbles();
+            await CoDemoBanner();
+            await CoLeap();
+            await CoMockingBanner();
+
+            if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
+
+            if (await Item.CoUseHS(40)) return true;
+            if (await Spell.CoCast("Disarm", Me.CurrentTarget.HasAnyAura(Disarm) && !Me.CurrentTarget.HasAnyAura(DontDisarm))) return true;
+
+            if (StyxWoW.Me.CurrentTarget != null && (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange || StyxWoW.Me.IsCasting || SpellManager.GlobalCooldown)) return true;
+
+            if (await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"))) return true;
+            //if (await ) return true;
+            //if (await ) return true;
+            //if (await ) return true;
+            //if (await ) return true;
+            //if (await ) return true;
+            //if (await ) return true;
+            //if (await ) return true;
+
+
+            return false;
+        }
+
         private static Composite CreatePvP()
         {
             return new PrioritySelector(
                     ShatterBubbles(),
                     DemoBanner(),
                     Leap(),
-                    MockingBanner(),
+                    MockBanner(),
                     new Decorator(ret => Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted,
                         new ActionAlwaysSucceed()),
 
@@ -235,7 +270,7 @@ namespace SlimAI.Class.Warrior
             return new PrioritySelector(
                 Spell.Cast(Charge));
         }
-
+        
         private static Composite CreateAoe()
         {
             return new PrioritySelector(
@@ -559,6 +594,16 @@ namespace SlimAI.Class.Warrior
         }
         #endregion
 
+        #region Coroutine Shatter Bubbles
+        private static Task<bool> CoShatterBubbles()
+        {
+            return Spell.CoCast(ShatteringThrow,
+                        Me.CurrentTarget.IsPlayer &&
+                        Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") &&
+                        Me.CurrentTarget.InLineOfSight);
+        } 
+        #endregion
+
         #region InterruptCastNoChannel
 
         private static double InterruptCastNoChannel(WoWUnit target)
@@ -743,12 +788,11 @@ namespace SlimAI.Class.Warrior
         #endregion
         #endregion
 
-        private static RunStatus ResetVariables()
+        private static void ResetVariables()
         {
             KeyboardPolling.IsKeyDown(Keys.G);
             KeyboardPolling.IsKeyDown(Keys.Z);
             KeyboardPolling.IsKeyDown(Keys.C);
-            return RunStatus.Failure;
         }
 
         private static Composite Leap()
@@ -825,7 +869,7 @@ namespace SlimAI.Class.Warrior
         }
         #endregion
 
-        private static Composite MockingBanner()
+        private static Composite MockBanner()
         {
             return
                 new Decorator(ret => SpellManager.CanCast("Mocking Banner") &&
@@ -837,6 +881,31 @@ namespace SlimAI.Class.Warrior
                         return;
                     }));
         }
+
+        #region Coroutine Mocking Banner
+        private static async Task<bool> CoMockingBanner()
+        {
+            if (!SpellManager.CanCast(MockingBanner))
+                return false;
+
+            if (KeyboardPolling.IsKeyDown(Keys.G))
+                return false;
+
+            if (!SpellManager.Cast(MockingBanner))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+        #endregion
 
         #region WarriorTalents
         enum WarriorTalents
@@ -881,9 +950,11 @@ namespace SlimAI.Class.Warrior
                           HeroicStrike = 78,
                           HeroicThrow = 57755,
                           ImpendingVictory = 103840,
+                          MockingBanner = 114192,
                           MortalStrike = 12294,
                           Overpower = 7384,
                           Recklessness = 1719,
+                          ShatteringThrow = 64382,
                           SkullBanner = 114207,
                           Slam = 1464,
                           StormBolt = 107570,

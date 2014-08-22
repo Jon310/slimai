@@ -42,7 +42,7 @@ namespace SlimAI.Class.Druid
             if (await Spell.CoCast(Maul, (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw)))) return true;
             if (await Spell.CoCast(Mangle)) return true;
             if (await Spell.CoCast(FaerieFire, !Me.CurrentTarget.HasAura("Weakened Armor", 3))) return true;
-            if (await Spell.CoCast(Thrash)) return true;
+            if (await Spell.CoCast("Thrash")) return true;
             if (await Spell.CoCast(Swipe, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE)) return true;
             if (await Spell.CoCast(Lacerate)) return true;
             if (await Spell.CoCast(FaerieFire)) return true;
@@ -53,7 +53,7 @@ namespace SlimAI.Class.Druid
         }
 
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian)]
-        public static Composite GuardianCombat()
+        public static Composite CoGuardianCombat()
         {
             return new ActionRunCoroutine(ctx => CombatCoroutine());
         }
@@ -62,32 +62,32 @@ namespace SlimAI.Class.Druid
 
 
         //[Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian)]
-        //public static Composite GuardianCombat()
-        //{
-        //    return new PrioritySelector(
-        //        new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted, 
-        //            new ActionAlwaysSucceed()),
-        //        new Decorator(ret => SlimAI.AFK,
-        //            new PrioritySelector(
-        //                Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
-        //                Common.CreateInterruptBehavior())),
-        //        //Spell.Cast(SkullBash, on => aUnit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
-        //        CreateCooldowns(),
-        //        Spell.Cast(Maul, ret => (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw))),
-        //        Spell.Cast(Mangle),
-        //        Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
-        //        //new Decorator(ret => !SpellManager.CanCast("Mangle"),
-        //        //    new PrioritySelector(
-        //                Spell.Cast("Thrash"),
-        //                CreateAoe(),
-        //                Spell.Cast(Lacerate),
-        //                Spell.Cast("Faerie Fire"),
-        //                Spell.Cast(Maul, ret => !IsCurrentTank()
-        //                //)
-        //            //)
-        //        )
-        //    );
-        //}
+        public static Composite GuardianCombat()
+        {
+            return new PrioritySelector(
+                new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted,
+                    new ActionAlwaysSucceed()),
+                new Decorator(ret => SlimAI.AFK,
+                    new PrioritySelector(
+                        Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
+                        Common.CreateInterruptBehavior())),
+                //Spell.Cast(SkullBash, on => aUnit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
+                CreateCooldowns(),
+                Spell.Cast(Maul, ret => (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw))),
+                Spell.Cast(Mangle),
+                Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+                //new Decorator(ret => !SpellManager.CanCast("Mangle"),
+                //    new PrioritySelector(
+                        Spell.Cast("Thrash"),
+                        CreateAoe(),
+                        Spell.Cast(Lacerate),
+                        Spell.Cast("Faerie Fire"),
+                        Spell.Cast(Maul, ret => !IsCurrentTank()
+                //)
+                //)
+                )
+            );
+        }
 
         private static Composite CreateCooldowns()
         {
