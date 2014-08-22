@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Buddy.Coroutines;
 using JetBrains.Annotations;
 using SlimAI.Managers;
 using CommonBehaviors.Actions;
@@ -87,36 +88,107 @@ namespace SlimAI.Helpers
 
         public static async Task<bool> CoCast(int spell, WoWUnit unit, bool reqs)
         {
-            if (unit == null || !reqs || !SpellManager.CanCast(spell, unit, true))
+            var sp = WoWSpell.FromId(spell);
+            var sname = sp != null ? sp.Name : "#" + spell;
+
+            if (unit == null)
                 return false;
 
-            //if (!SpellManager.CanCast(spell))
-            //    return false;
+            if (!reqs)
+                return false;
+
+            if (SpellManager.Spells[sname].Cooldown)
+                return false;
+
+            if (!SpellManager.CanCast(spell, unit, true))
+                return false;
 
             if (!SpellManager.Cast(spell, unit))
                 return false;
-
-            var sp = WoWSpell.FromId(spell);
-            var sname = sp != null ? sp.Name : "#" + spell;
+            
             Logging.Write("Casting " + sname + " on " + unit);
 
             await CommonCoroutines.SleepForLagDuration();
             return true;
         }
 
+        public static async Task<bool> CoCastOnGround(int spell)
+        {
+            return await CoCastOnGround(spell, Me.CurrentTarget.Location, true);
+        }
+
+        public static async Task<bool> CoCastOnGround(int spell, WoWPoint onLocation)
+        {
+            return await CoCastOnGround(spell, onLocation, true);
+        }
+        public static async Task<bool> CoCastOnGround(int spell, bool reqs)
+        {
+            return await CoCastOnGround(spell, Me.CurrentTarget.Location, reqs);
+        }
+
+        public static async Task<bool> CoCastOnGround(int spell, WoWPoint onLocation, bool reqs)
+        {
+            if (!reqs)
+                return false;
+
+            if (!SpellManager.CanCast(spell))
+                return false;
+
+            if (!SpellManager.Cast(spell))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            SpellManager.ClickRemoteLocation(onLocation);
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+
+        /// <summary>
+        /// Casts Spell on current target.
+        /// Returns true if spell has been casted, returns false otherwise.
+        /// </summary>
+        /// <param name="spell">Spell name. (string)</param>
+        /// <returns></returns>
         public static async Task<bool> CoCast(string spell)
         {
             return await CoCast(spell, Me.CurrentTarget, true);
         }
 
+        /// <summary>
+        /// Casts Spell on current target.
+        /// Returns true if spell has been casted, returns false otherwise.
+        /// </summary>
+        /// <param name="spell">Spell name. (string)</param>
+        /// <param name="reqs">Requirements to cast the spell. (bool)</param>
+        /// <returns></returns>
         public static async Task<bool> CoCast(string spell, bool reqs)
         {
             return await CoCast(spell, Me.CurrentTarget, reqs);
         }
 
+        /// <summary>
+        /// Returns true if spell has been casted, returns false otherwise.
+        /// </summary>
+        /// <param name="spell">Spell name. (string)</param>
+        /// <param name="unit">Unit to cast on. (WoWUnit)</param>
+        /// <param name="reqs">Requirements to cast the spell. (bool)</param>
+        /// <returns></returns>
         public static async Task<bool> CoCast(string spell, WoWUnit unit, bool reqs)
         {
+            var sname = spell;
+
+            if (unit == null)
+                return false;
+
             if (!reqs)
+                return false;
+
+            if (!CanCastHack(spell, _castOnUnit))
                 return false;
 
             if (!SpellManager.CanCast(spell, unit, true))
@@ -125,7 +197,7 @@ namespace SlimAI.Helpers
             if (!SpellManager.Cast(spell, unit))
                 return false;
 
-            var sname = spell;
+            
             Logging.Write("Casting " + sname + " on " + unit);
 
             await CommonCoroutines.SleepForLagDuration();

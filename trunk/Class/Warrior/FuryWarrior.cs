@@ -23,7 +23,7 @@ namespace SlimAI.Class.Warrior
         static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings Settings { get { return GeneralSettings.Instance.Warrior(); } }
 
-        #region Coroutine Section
+        #region Coroutine Combat Section
 
         public static async Task<bool> CombatCoroutine()
         {
@@ -139,26 +139,63 @@ namespace SlimAI.Class.Warrior
         //                Spell.Cast(WildStrike, ret => Me.HasAura("Bloodsurge")))));
         //}
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorFury)]
-        public static Composite FuryPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                new Decorator(ret => Me.Mounted,
-                    new ActionAlwaysSucceed()),
-                Spell.Cast(BattleShout, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower)),
-                FuryPull());
+        #region Coroutine Pre Combat Buffs
 
+        private static async Task<bool> PreCombatCoroutine()
+        {
+            if (Me.Mounted) return true;
+            if (await Spell.CoBuff(BattleShout, !Me.HasPartyBuff(PartyBuffType.AttackPower))) return true;
+
+            return false;
+        }
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorFury)]
+        public static Composite CoroutinePreCombatBuffs()
+        {
+            return new ActionRunCoroutine(ctx => PreCombatCoroutine());
+        }
+
+        #endregion
+
+        //[Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorFury)]
+        //public static Composite FuryPreCombatBuffs()
+        //{
+        //    return new PrioritySelector(
+        //        new Decorator(ret => Me.Mounted,
+        //            new ActionAlwaysSucceed()),
+        //        Spell.Cast(BattleShout, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower)),
+        //        FuryPull());
+
+        //}
+
+        #region Coroutine Pull Section
+
+        private static async Task<bool> PullCoroutine()
+        {
+            if (SlimAI.AFK) return true;
+            if (await Spell.CoCastOnGround(HeroicLeap, SpellManager.Spells["Charge"].Cooldown)) return true;
+            if (await Spell.CoCast(Charge)) return true;
+
+            return false;
         }
 
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorFury)]
-        private static Composite FuryPull()
+        private static Composite CoFuryPull()
         {
-            return new PrioritySelector(
-                    new Decorator(ret => SlimAI.AFK,
-                        new PrioritySelector(
-                Spell.CastOnGround("Heroic Leap", on => Me.CurrentTarget.Location, ret => SpellManager.Spells["Charge"].Cooldown),
-                Spell.Cast(Charge))));
+            return new ActionRunCoroutine(ctx => PullCoroutine());
         }
+
+        #endregion
+
+        //[Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorFury)]
+        //private static Composite FuryPull()
+        //{
+        //    return new PrioritySelector(
+        //            new Decorator(ret => SlimAI.AFK,
+        //                new PrioritySelector(
+        //        Spell.CastOnGround("Heroic Leap", on => Me.CurrentTarget.Location, ret => SpellManager.Spells["Charge"].Cooldown),
+        //        Spell.Cast(Charge))));
+        //}
 
         private static Composite CreateAoe()
         {
@@ -355,10 +392,6 @@ namespace SlimAI.Class.Warrior
                           Whirlwind = 1680,
                           WildStrike = 100130;
 
-        private static Task HS()
-        {
-            return Spell.CoCast(HeroicStrike);
-        }
         #endregion
     }
 }
