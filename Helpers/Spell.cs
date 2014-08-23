@@ -91,16 +91,7 @@ namespace SlimAI.Helpers
             var sp = WoWSpell.FromId(spell);
             var sname = sp != null ? sp.Name : "#" + spell;
 
-            if (unit == null)
-                return false;
-
-            if (!reqs)
-                return false;
-
-            if (SpellManager.Spells[sname].Cooldown)
-                return false;
-
-            if (!SpellManager.CanCast(spell, unit, true))
+            if (unit == null || !reqs || !SpellManager.CanCast(spell, unit, true))
                 return false;
 
             if (!SpellManager.Cast(spell, unit))
@@ -128,10 +119,7 @@ namespace SlimAI.Helpers
 
         public static async Task<bool> CoCastOnGround(int spell, WoWPoint onLocation, bool reqs)
         {
-            if (!reqs)
-                return false;
-
-            if (!SpellManager.CanCast(spell))
+            if (!reqs || !SpellManager.CanCast(spell))
                 return false;
 
             if (!SpellManager.Cast(spell))
@@ -171,6 +159,11 @@ namespace SlimAI.Helpers
             return await CoCast(spell, Me.CurrentTarget, reqs);
         }
 
+        public static async Task<bool> CoCast(string spell, WoWUnit unit)
+        {
+            return await CoCast(spell, unit, true);
+        }
+
         /// <summary>
         /// Returns true if spell has been casted, returns false otherwise.
         /// </summary>
@@ -182,21 +175,11 @@ namespace SlimAI.Helpers
         {
             var sname = spell;
 
-            if (unit == null)
-                return false;
-
-            if (!reqs)
-                return false;
-
-            if (!CanCastHack(spell, _castOnUnit))
-                return false;
-
-            if (!SpellManager.CanCast(spell, unit, true))
+            if (unit == null || !reqs || !CanCastHack(spell, _castOnUnit) || !SpellManager.CanCast(spell, unit, true))
                 return false;
 
             if (!SpellManager.Cast(spell, unit))
                 return false;
-
             
             Logging.Write("Casting " + sname + " on " + unit);
 

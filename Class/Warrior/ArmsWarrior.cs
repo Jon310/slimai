@@ -55,7 +55,7 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> CombatCoroutine()
         {
-            if (await PvPCoroutine() && SlimAI.PvPRotation) return true;
+            //if (await PvPCoroutine() && SlimAI.PvPRotation) return true;
 
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
@@ -179,14 +179,36 @@ namespace SlimAI.Class.Warrior
             if (StyxWoW.Me.CurrentTarget != null && (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange || StyxWoW.Me.IsCasting || SpellManager.GlobalCooldown)) return true;
 
             if (await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"))) return true;
-            //if (await ) return true;
-            //if (await ) return true;
-            //if (await ) return true;
-            //if (await ) return true;
-            //if (await ) return true;
-            //if (await ) return true;
-            //if (await ) return true;
+            if (await Spell.CoCast("Piercing Howl", SpellManager.HasSpell("Piercing Howl") && !Freedoms && !Me.CurrentTarget.IsStunned() && !Me.CurrentTarget.IsCrowdControlled() && !Me.CurrentTarget.IsSlowed() && Me.CurrentTarget.IsPlayer)) return true;
+            if (await Spell.CoCast("Hamstring", !SpellManager.HasSpell("Piercing Howl") && !Freedoms && !Me.CurrentTarget.IsStunned() && !Me.CurrentTarget.IsCrowdControlled() && !Me.CurrentTarget.IsSlowed() && Me.CurrentTarget.IsPlayer)) return true;
+            
+            if (await Spell.CoCast("Intervene", BestBanner)) return true;
 
+            if (await CoStormBoltFocus()) return true;
+
+            if (await Spell.CoCast(SweepingStrikes, Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2 && SlimAI.AOE)) return true;
+
+            if (await Spell.CoCast(Recklessness, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange)) return true;
+            if (await Spell.CoCast(Avatar, Me.HasAura("Recklessness") && SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange)) return true;
+            if (await Spell.CoCast(SkullBanner, Me.HasAura("Recklessness") && SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange)) return true;
+            
+            if (await Spell.CoCast(BloodBath, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.AOE)) return true;
+            if (await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.AOE)) return true;
+            if (await Item.CoUseHands()) return true;
+
+            if (await Spell.CoCast("Intervene", BestInterveneTarget)) return true;
+            if (await Spell.CoCast(Charge, ChargeInt)) return true;
+            if (await Spell.CoCast(MortalStrike)) return true;
+            if (await Spell.CoCast(HeroicStrike, (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentRage >= 70) || Me.CurrentRage >= 75)) return true;
+            if (await Spell.CoCast(ColossusSmash, !Me.CurrentTarget.HasAura("Colossus Smash"))) return true;
+            if (await Spell.CoCast(Execute)) return true;
+            if (await Spell.CoCast(ThunderClap, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8).Any(u => !u.HasMyAura("Weakened Blows")))) return true;
+            if (await Spell.CoCast(Slam, (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 40) && Me.CurrentTarget.HealthPercent >= 20)) return true;
+            if (await Spell.CoCast(Overpower, Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute"))) return true;
+            if (await Spell.CoCast(BattleShout, !SlimAI.Weave)) return true;
+            if (await Spell.CoCast("Commanding Shout", SlimAI.Weave)) return true;
+            if (await Spell.CoCast(HeroicThrow)) return true;
+            if (await Spell.CoCast(ImpendingVictory, Me.CurrentTarget.HealthPercent > 20 || Me.HealthPercent < 50)) return true;
 
             return false;
         }
@@ -354,6 +376,18 @@ namespace SlimAI.Class.Warrior
 
                     );
         }
+
+        #region Coroutine Stormbolt Focus
+
+        private static async Task<bool> CoStormBoltFocus()
+        {
+            if (!SpellManager.CanCast("Storm Bolt") && !KeyboardPolling.IsKeyDown(Keys.C))
+                return false;
+            if (await Spell.CoCast(StormBolt, Me.FocusedUnit))
+                return true;
+            return true;
+        }
+        #endregion
 
         #region Best Banner
         public static WoWUnit BestBanner//WoWUnit
@@ -888,7 +922,7 @@ namespace SlimAI.Class.Warrior
             if (!SpellManager.CanCast(MockingBanner))
                 return false;
 
-            if (KeyboardPolling.IsKeyDown(Keys.G))
+            if (!KeyboardPolling.IsKeyDown(Keys.G))
                 return false;
 
             if (!SpellManager.Cast(MockingBanner))

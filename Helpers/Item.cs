@@ -109,13 +109,14 @@ namespace SlimAI.Helpers
         public static async Task<bool> CoUseHands()
         {
             var gloves = StyxWoW.Me.Inventory.Equipped.Hands;
-            if (gloves != null && Me.Combat && CanUseEquippedItem(gloves))
+            if (gloves == null || !Me.Combat || !CanUseEquippedItem(gloves))
             {
-                await Coroutine.ExternalTask(Task.Run(() => gloves.Use()));
-                return true;
+                
+                return false;
             }
 
-            return false;
+            await Coroutine.ExternalTask(Task.Run(() => gloves.Use()));
+            return true;
         }
         #endregion
 
