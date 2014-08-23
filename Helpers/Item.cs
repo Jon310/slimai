@@ -74,7 +74,7 @@ namespace SlimAI.Helpers
         #region Coroutine Healthstone Useage
         public static async Task<bool> CoUseHS(double healthPercent)
         {
-            if (Me.HealthPercent < healthPercent)
+            if (Me.HealthPercent < healthPercent && FindFirstUsableItemBySpell("Healthstone", "Life Spirit") != null)
             {
                 await Coroutine.ExternalTask(Task.Run(() =>
                     FindFirstUsableItemBySpell("Healthstone", "Life Spirit").UseContainerItem()));
