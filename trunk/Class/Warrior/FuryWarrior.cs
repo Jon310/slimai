@@ -51,10 +51,7 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(BerserkerRage, !Me.HasAura(Enrage) && Me.CurrentTarget.HasMyAura("Colossus Smash"));
             await Spell.CoCast(ColossusSmash, Me.CurrentRage > 80 && Me.HasAura("Raging Blow!") && Me.HasAura(Enrage));
 
-            if (Unit.UnfriendlyUnits(8).Count() > 2)
-            {
-                return await CoAoe();
-            }
+            await CoAoe(Unit.UnfriendlyUnits(8).Count() > 2);
 
             await CoExecute();
 
@@ -218,8 +215,11 @@ namespace SlimAI.Class.Warrior
                 Spell.Cast(Cleave, ret => Me.CurrentRage >= 105 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds >= 3, true));
         }
 
-        private static async Task<bool> CoAoe()
+        private static async Task<bool> CoAoe(bool reqs)
         {
+            if (!reqs)
+                return false;
+
             if (Unit.UnfriendlyUnits(8).Count() >= 5)
             {
                 if (await Spell.CoCast(Whirlwind)) return true;
