@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Buddy.Coroutines;
+using JetBrains.Annotations;
 using CommonBehaviors.Actions;
 using SlimAI.Helpers;
 using SlimAI.Lists;
@@ -23,6 +24,7 @@ using Action = Styx.TreeSharp.Action;
 
 namespace SlimAI.Class.Warrior
 {
+    [UsedImplicitly]
     class ArmsWarrior
     {
         static LocalPlayer Me { get { return StyxWoW.Me; } }
@@ -74,7 +76,7 @@ namespace SlimAI.Class.Warrior
             if (await CoLeap()) return true;
             if (await CoDemoBanner()) return true;
 
-            if (await CoAOE() && Unit.UnfriendlyUnits(8).Count() >= 4 && SlimAI.AOE) return true;
+            await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 4 && SlimAI.AOE);
 
             if (await Spell.CoCast(Recklessness, SlimAI.Burst && Me.CurrentTarget.HasMyAura("Colossus Smash"))) return true;
             if (await Spell.CoCast(Avatar, SlimAI.Burst && Me.CurrentTarget.HasMyAura("Colossus Smash"))) return true;
@@ -328,8 +330,11 @@ namespace SlimAI.Class.Warrior
         }
 
         #region Coroutine AOE
-        private static async Task<bool> CoAOE()
+        private static async Task<bool> CoAOE(bool reqs)
         {
+            if (!reqs)
+                return false;
+
             if (await Spell.CoCast(Recklessness, SlimAI.Burst && Me.CurrentTarget.HasAura("Colossus Smash"))) return true;
             if (await Spell.CoCast(Avatar, SlimAI.Burst && Me.CurrentTarget.HasAura("Colossus Smash"))) return true;
             if (await Spell.CoCast(SkullBanner, SlimAI.Burst && Me.CurrentTarget.HasAura("Colossus Smash"))) return true;
