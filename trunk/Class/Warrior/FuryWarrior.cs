@@ -148,7 +148,7 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> PreCombatCoroutine()
         {
-            if (Me.Mounted) return true;
+            if (Me.Mounted) return false;
             if (await Spell.CoBuff(BattleShout, !Me.HasPartyBuff(PartyBuffType.AttackPower))) return true;
 
             return false;
@@ -177,7 +177,7 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> PullCoroutine()
         {
-            if (SlimAI.AFK) return true;
+            if (SlimAI.AFK) return false;
             if (await Spell.CoCastOnGround(HeroicLeap, SpellManager.Spells["Charge"].Cooldown)) return true;
             if (await Spell.CoCast(Charge)) return true;
 
@@ -381,6 +381,7 @@ namespace SlimAI.Class.Warrior
                           Charge = 100,
                           Cleave = 845,
                           ColossusSmash = 86346,
+                          CommandingShout = 469,
                           DemoralizingBanner = 114203,
                           DieByTheSword = 118038,
                           DragonRoar = 118000,

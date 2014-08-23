@@ -281,22 +281,61 @@ namespace SlimAI.Class.Warrior
         }
         #endregion
 
+        //[Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorArms)]
+        //public static Composite ArmsPreCombatBuffs()
+        //{
+        //    return new PrioritySelector(
+        //        new Decorator(ret => Me.Mounted,
+        //            new ActionAlwaysSucceed()),
+        //        Spell.Cast(BattleShout, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower) && !SlimAI.Weave),
+        //        Spell.Cast("Commanding Shout", ret => !Me.HasPartyBuff(PartyBuffType.Stamina) && SlimAI.Weave));
+        //}
+
+
+        #region Precombat Buff Coroutine
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorArms)]
-        public static Composite ArmsPreCombatBuffs()
+        public static Composite CoArmsPreCombatBuffs()
         {
-            return new PrioritySelector(
-                new Decorator(ret => Me.Mounted,
-                    new ActionAlwaysSucceed()),
-                Spell.Cast(BattleShout, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower) && !SlimAI.Weave),
-                Spell.Cast("Commanding Shout", ret => !Me.HasPartyBuff(PartyBuffType.Stamina) && SlimAI.Weave));
+            return new ActionRunCoroutine(ctx => PreCombatBuffCoroutine());
+        }
+
+        private static async Task<bool> PreCombatBuffCoroutine()
+        {
+            if (Me.Mounted)
+                return false;
+
+            await Spell.CoCast(BattleShout, !Me.HasPartyBuff(PartyBuffType.AttackPower) && !SlimAI.Weave);
+            await Spell.CoCast(CommandingShout, !Me.HasPartyBuff(PartyBuffType.Stamina) && SlimAI.Weave);
+
+            return false;
+        }
+        #endregion
+
+        //[Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorArms)]
+        //public static Composite ArmsPull()
+        //{
+        //    return new PrioritySelector(
+        //        Spell.Cast(Charge));
+        //}
+
+        #region Coroutine Pull Section
+
+        private static async Task<bool> PullCoroutine()
+        {
+            if (SlimAI.AFK) return false;
+            if (await Spell.CoCastOnGround(HeroicLeap, SpellManager.Spells["Charge"].Cooldown)) return true;
+            if (await Spell.CoCast(Charge)) return true;
+
+            return false;
         }
 
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorArms)]
-        public static Composite ArmsPull()
+        private static Composite CoArmsPull()
         {
-            return new PrioritySelector(
-                Spell.Cast(Charge));
+            return new ActionRunCoroutine(ctx => PullCoroutine());
         }
+
+        #endregion
         
         private static Composite CreateAoe()
         {
@@ -983,6 +1022,7 @@ namespace SlimAI.Class.Warrior
                           Charge = 100,
                           Cleave = 845,
                           ColossusSmash = 86346,
+                          CommandingShout = 469,
                           DemoralizingBanner = 114203,
                           DieByTheSword = 118038,
                           DragonRoar = 118000,
