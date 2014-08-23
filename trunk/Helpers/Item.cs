@@ -106,8 +106,11 @@ namespace SlimAI.Helpers
         }
 
         #region Coroutines UseHands
-        public static async Task<bool> CoUseHands()
+        public static async Task<bool> CoUseHands(bool reqs = true)
         {
+            if (!reqs)
+                return false;
+
             var gloves = StyxWoW.Me.Inventory.Equipped.Hands;
             if (gloves == null || !Me.Combat || !CanUseEquippedItem(gloves))
             {
