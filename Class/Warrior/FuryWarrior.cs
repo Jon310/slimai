@@ -25,7 +25,7 @@ namespace SlimAI.Class.Warrior
 
         #region Coroutine Combat Section
 
-        public static async Task<bool> CombatCoroutine()
+        private static async Task<bool> CombatCoroutine()
         {
             // Pause for Casting
             if (Me.IsCasting || Me.IsChanneling) return true;
@@ -50,9 +50,15 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90);
             await Spell.CoCast(BerserkerRage, !Me.HasAura(Enrage) && Me.CurrentTarget.HasMyAura("Colossus Smash"));
             await Spell.CoCast(ColossusSmash, Me.CurrentRage > 80 && Me.HasAura("Raging Blow!") && Me.HasAura(Enrage));
-            if (Unit.UnfriendlyUnits(8).Count() > 2 && await CoAoe()) return true;
-            if (Me.CurrentTarget.HealthPercent <= 20 && await CoExecute()) return true;
 
+            if (Unit.UnfriendlyUnits(8).Count() > 2)
+            {
+                return await CoAoe();
+            }
+
+            await CoExecute();
+
+            //less that 20 % stop the bot here
             if (Me.CurrentTarget.HealthPercent < 20) return true;
 
             await Item.CoUseHS(40);
@@ -245,6 +251,9 @@ namespace SlimAI.Class.Warrior
         #region Coroutine Execute Range
         private static async Task<bool> CoExecute()
         {
+            if (Me.CurrentTarget.HealthPercent >= 20)
+                return false;
+
             if (Me.CurrentTarget.HasAura("Colossus Smash"))
             {
                 if (await Spell.CoCast(Bloodthirst)) return true;
