@@ -55,7 +55,7 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> CombatCoroutine()
         {
-            //if (await PvPCoroutine() && SlimAI.PvPRotation) return true;
+            await PvPCoroutine(SlimAI.PvPRotation);
 
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
@@ -164,8 +164,11 @@ namespace SlimAI.Class.Warrior
 
         #region PvP
 
-        private static async Task<bool> PvPCoroutine()
+        private static async Task<bool> PvPCoroutine(bool reqs)
         {
+            if (!reqs)
+                return false;
+
             await CoShatterBubbles();
             await CoDemoBanner();
             await CoLeap();
