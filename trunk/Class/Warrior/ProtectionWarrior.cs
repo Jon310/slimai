@@ -1,11 +1,15 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Buddy.Coroutines;
 using SlimAI.Managers;
 using CommonBehaviors.Actions;
 using SlimAI.Helpers;
 using SlimAI.Settings;
 using Styx;
+using Styx.Common;
 using Styx.CommonBot;
+using Styx.CommonBot.Coroutines;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -18,68 +22,135 @@ namespace SlimAI.Class.Warrior
         static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings Settings { get { return GeneralSettings.Instance.Warrior(); } }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorProtection)]
-        public static Composite ProtCombat()
+        #region Coroutine Combat Section
+        private static async Task<bool> CombatCoroutine()
         {
             HealerManager.NeedHealTargeting = true;
-            return new PrioritySelector(
-                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
-                    new ActionAlwaysSucceed()),
-                    new Decorator(ret => Me.HasAura("Dire Fixation"),
-                        new PrioritySelector(
-                            BossMechs.HorridonHeroic())),
-                    new Throttle(1, 1,
-                        new PrioritySelector(
-                            Common.CreateInterruptBehavior())),
-                    new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange,
-                        new PrioritySelector(
-                            Spell.Cast(Recklessness),
-                            Spell.Cast(BloodBath),
-                            new Decorator(ret => Me.HasAura("Recklessness"),
-                                new PrioritySelector(
-                                    Spell.Cast(Avatar),
-                                    Spell.Cast(SkullBanner))))),
-                    //new Throttle(1,
-                    //    Item.UsePotionAndHealthstone(40)),
-                    new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
-                    DemoBanner(),
-                    Leap(),
-                    Mocking(),
-                    //CD's all bout living
-                    Spell.Cast(VictoryRush, ret => Me.HealthPercent <= 90 && Me.HasAura("Victorious")),
-                    Spell.Cast(BerserkerRage, ret => NeedZerker()),
-                    Spell.Cast(EnragedRegeneration, ret => NeedEnrageRegen()),
-                    Spell.Cast(LastStand, ret => Me.HealthPercent <= 15 && !Me.HasAura("Shield Wall")),
-                    Spell.Cast(ShieldWall, ret => Me.HealthPercent <= 30 && !Me.HasAura("Last Stand")),
+            if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
-                    //Might need some testing
-                    new Throttle(1, 1,
-                        new PrioritySelector(
-                            Spell.Cast(RallyingCry, ret => HealerManager.GetCountWithHealth(55) > 4),
-                            Spell.Cast(DemoralizingShout, ret => Unit.UnfriendlyUnits(10).Any() && IsCurrentTank()))),
+            // Boss Mechanics Section
+            //
+            // End Boss Mechanics Section
 
-                    Spell.Cast(ShieldBlock, ret => !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave),
-                    Spell.Cast(ShieldBarrier, ret => Me.CurrentRage > 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave),
-                    Spell.Cast(ShieldBarrier, ret => Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70),
+            // Intrrupt Section
+            await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
 
-                    Spell.Cast(ShatteringThrow, ret => Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust && !Me.IsMoving),
+            await Spell.CoCast(Recklessness, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
+            await Spell.CoCast(BloodBath, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
+            await Spell.CoCast(Avatar, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange && Me.HasAura("Recklessness"));
+            await Spell.CoCast(SkullBanner, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange && Me.HasAura("Recklessness"));
+            await Item.CoUseHands();
 
-                    Spell.Cast(ShieldSlam),
-                    Spell.Cast(Revenge, ret => Me.CurrentRage < 90),
+            await CoDemoBanner();
+            await CoLeap();
+            await CoMockingBanner();
 
-                    new Decorator(ret => Spell.GetSpellCooldown("Shield Slam").TotalSeconds >= 1 && Spell.GetSpellCooldown("Revenge").TotalSeconds >= 1/*SpellManager.Spells["Shield Slam"].Cooldown && SpellManager.Spells["Revenge"].Cooldown*/,
-                        new PrioritySelector(
-                            Spell.Cast(StormBolt),
-                            Spell.Cast(DragonRoar, ret => Me.CurrentTarget.Distance <= 8),
-                            Spell.Cast(Execute),
-                            Spell.Cast(ThunderClap, ret => !Me.CurrentTarget.HasAura("Weakened Blows") && Me.CurrentTarget.Distance <= 8),
-                            new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >=2 && SlimAI.AOE, CreateAoe()),
-                            Spell.Cast(CommandingShout, ret => Me.HasPartyBuff(PartyBuffType.AttackPower)),
-                            Spell.Cast(BattleShout),
-                            Spell.Cast(HeroicStrike, ret => Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss)),
-                            Spell.Cast(HeroicThrow, ret => Me.CurrentTarget.Distance >= 10),
-                            Spell.Cast(Devastate))));
+            await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
+            await Spell.CoCast(BerserkerRage, NeedZerker());
+            await Spell.CoCast(EnragedRegeneration, NeedEnrageRegen());
+            await Spell.CoCast(LastStand, Me.HealthPercent <= 15 && !Me.HasAura("Shield Wall"));
+            await Spell.CoCast(ShieldWall, Me.HealthPercent <= 30 && !Me.HasAura("Last Stand"));
+
+            await Spell.CoCast(RallyingCry, HealerManager.GetCountWithHealth(55) > 4);
+            await Spell.CoCast(DemoralizingShout, Unit.UnfriendlyUnits(10).Any() && IsCurrentTank());
+
+            await Spell.CoCast(ShieldBlock, !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave);
+            await Spell.CoCast(ShieldBarrier, Me.CurrentRage > 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave);
+            await Spell.CoCast(ShieldBarrier, Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70);
+
+            await Spell.CoCast(ShatteringThrow, Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust && !Me.IsMoving);
+
+            await Spell.CoCast(ShieldSlam);
+            await Spell.CoCast(Revenge, Me.CurrentRage < 90);
+
+            // Needs Testing, Nesting broke the cc last time I tried it, but it could have been other issues.
+            if (Spell.GetSpellCooldown("Shield Slam").TotalSeconds >= 1 && Spell.GetSpellCooldown("Revenge").TotalSeconds >= 1)
+            {
+                await Spell.CoCast(StormBolt);
+                await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
+                await Spell.CoCast(Execute);
+                await Spell.CoCast(ThunderClap, !Me.CurrentTarget.HasAura("Weakened Blows") && Me.CurrentTarget.Distance <= 8);
+                await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
+                await Spell.CoCast(CommandingShout, Me.HasPartyBuff(PartyBuffType.AttackPower));
+                await Spell.CoCast(BattleShout);
+                await Spell.CoCast(HeroicStrike, Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss));
+                await Spell.CoCast(HeroicThrow, Me.CurrentTarget.Distance >= 10);
+                await Spell.CoCast(Devastate);
+            }
+
+            return false;
         }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorProtection)]
+        public static Composite CoProtCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+
+        #endregion
+        
+        //[Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorProtection)]
+        //public static Composite ProtCombat()
+        //{
+        //    HealerManager.NeedHealTargeting = true;
+        //    return new PrioritySelector(
+        //        new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
+        //            new ActionAlwaysSucceed()),
+        //        new Decorator(ret => Me.HasAura("Dire Fixation"),
+        //            new PrioritySelector(
+        //                BossMechs.HorridonHeroic())),
+        //        new Throttle(1, 1,
+        //            new PrioritySelector(
+        //                Common.CreateInterruptBehavior())),
+        //        new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange,
+        //            new PrioritySelector(
+        //                Spell.Cast(Recklessness),
+        //                Spell.Cast(BloodBath),
+        //                new Decorator(ret => Me.HasAura("Recklessness"),
+        //                    new PrioritySelector(
+        //                        Spell.Cast(Avatar),
+        //                        Spell.Cast(SkullBanner))))),
+        //        //new Throttle(1,
+        //        //    Item.UsePotionAndHealthstone(40)),
+        //        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+        //        DemoBanner(),
+        //        Leap(),
+        //        Mocking(),
+        //        //CD's all bout living
+        //        Spell.Cast(VictoryRush, ret => Me.HealthPercent <= 90 && Me.HasAura("Victorious")),
+        //        Spell.Cast(BerserkerRage, ret => NeedZerker()),
+        //        Spell.Cast(EnragedRegeneration, ret => NeedEnrageRegen()),
+        //        Spell.Cast(LastStand, ret => Me.HealthPercent <= 15 && !Me.HasAura("Shield Wall")),
+        //        Spell.Cast(ShieldWall, ret => Me.HealthPercent <= 30 && !Me.HasAura("Last Stand")),
+
+        //        //Might need some testing
+        //        new Throttle(1, 1,
+        //            new PrioritySelector(
+        //                Spell.Cast(RallyingCry, ret => HealerManager.GetCountWithHealth(55) > 4),
+        //                Spell.Cast(DemoralizingShout, ret => Unit.UnfriendlyUnits(10).Any() && IsCurrentTank()))),
+
+        //        Spell.Cast(ShieldBlock, ret => !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave),
+        //        Spell.Cast(ShieldBarrier, ret => Me.CurrentRage > 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave),
+        //        Spell.Cast(ShieldBarrier, ret => Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70),
+
+        //        Spell.Cast(ShatteringThrow, ret => Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust && !Me.IsMoving),
+
+        //        Spell.Cast(ShieldSlam),
+        //        Spell.Cast(Revenge, ret => Me.CurrentRage < 90),
+
+        //        new Decorator(ret => Spell.GetSpellCooldown("Shield Slam").TotalSeconds >= 1 && Spell.GetSpellCooldown("Revenge").TotalSeconds >= 1/*SpellManager.Spells["Shield Slam"].Cooldown && SpellManager.Spells["Revenge"].Cooldown*/,
+        //            new PrioritySelector(
+        //                Spell.Cast(StormBolt),
+        //                Spell.Cast(DragonRoar, ret => Me.CurrentTarget.Distance <= 8),
+        //                Spell.Cast(Execute),
+        //                Spell.Cast(ThunderClap, ret => !Me.CurrentTarget.HasAura("Weakened Blows") && Me.CurrentTarget.Distance <= 8),
+        //                new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >=2 && SlimAI.AOE, CreateAoe()),
+        //                Spell.Cast(CommandingShout, ret => Me.HasPartyBuff(PartyBuffType.AttackPower)),
+        //                Spell.Cast(BattleShout),
+        //                Spell.Cast(HeroicStrike, ret => Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss)),
+        //                Spell.Cast(HeroicThrow, ret => Me.CurrentTarget.Distance >= 10),
+        //                Spell.Cast(Devastate))));
+        //}
 
         private static Composite CreateAoe()
         {
@@ -89,6 +160,19 @@ namespace SlimAI.Class.Warrior
                 Spell.Cast(ThunderClap),
                 Spell.Cast(Cleave, ret => (Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016)) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 5) >= 2)
                 );
+        }
+
+        private static async Task<bool> CoAOE(bool reqs)
+        {
+            if (!reqs)
+                return false;
+
+            await Spell.CoCast(Shockwave, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 9) >= 3);
+            await Spell.CoCast(Bladestorm);
+            await Spell.CoCast(ThunderClap);
+            await Spell.CoCast(Cleave, (Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016)) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 5) >= 2);
+
+            return false;
         }
 
         private static Composite Leap()
@@ -104,6 +188,31 @@ namespace SlimAI.Class.Warrior
                     }));
         }
 
+        #region Coroutine Leap
+        private static async Task<bool> CoLeap()
+        {
+            if (!SpellManager.CanCast(HeroicLeap))
+                return false;
+
+            if (!Lua.GetReturnVal<bool>("return IsLeftAltKeyDown() and not GetCurrentKeyBoardFocus()", 0))
+                return false;
+
+            if (!SpellManager.Cast(HeroicLeap))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+        #endregion
+
         private static Composite DemoBanner()
         {
             return
@@ -117,6 +226,31 @@ namespace SlimAI.Class.Warrior
                     }));
         }
 
+        #region Coroutine Demo Banner
+        private static async Task<bool> CoDemoBanner()
+        {
+            if (!SpellManager.CanCast(DemoralizingBanner))
+                return false;
+
+            if (!Lua.GetReturnVal<bool>("return IsLeftShiftKeyDown() and not GetCurrentKeyBoardFocus()", 0))
+                return false;
+
+            if (!SpellManager.Cast(DemoralizingBanner))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+        #endregion
+
         private static Composite Mocking()
         {
             return
@@ -129,6 +263,31 @@ namespace SlimAI.Class.Warrior
                         return;
                     }));
         }
+
+        #region Coroutine Mocking Banner
+        private static async Task<bool> CoMockingBanner()
+        {
+            if (!SpellManager.CanCast(MockingBanner))
+                return false;
+
+            if (!KeyboardPolling.IsKeyDown(Keys.G))
+                return false;
+
+            if (!SpellManager.Cast(MockingBanner))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+        #endregion
 
         private static bool NeedZerker()
         {

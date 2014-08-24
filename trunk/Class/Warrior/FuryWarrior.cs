@@ -34,7 +34,7 @@ namespace SlimAI.Class.Warrior
             //One of them is corect (maybe), Unknown what one works and is correct format
             //await Interrupt();
             //await Task.Run(() => Common.CreateInterruptBehavior());
-            //await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
+            await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
 
             await CoLeap();
             await CoDemoBanner();
