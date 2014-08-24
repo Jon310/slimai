@@ -66,7 +66,7 @@ namespace SlimAI.Class.Warrior
             // End Boss Mechanics Section
 
             // Interupt Section
-            //
+            await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
             // End Interupt Section
 
             await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
@@ -211,11 +211,11 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(Slam, (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 40) && Me.CurrentTarget.HealthPercent >= 20);
             await Spell.CoCast(Overpower, Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute"));
             await Spell.CoCast(BattleShout, !SlimAI.Weave);
-            await Spell.CoCast("Commanding Shout", SlimAI.Weave);
+            await Spell.CoCast(CommandingShout, SlimAI.Weave);
             await Spell.CoCast(HeroicThrow);
             await Spell.CoCast(ImpendingVictory, Me.CurrentTarget.HealthPercent > 20 || Me.HealthPercent < 50);
 
-            return false;
+            return true;
         }
 
         //private static Composite CreatePvP()
@@ -323,8 +323,8 @@ namespace SlimAI.Class.Warrior
         private static async Task<bool> PullCoroutine()
         {
             if (SlimAI.AFK) return false;
-            if (await Spell.CoCastOnGround(HeroicLeap, SpellManager.Spells["Charge"].Cooldown)) return true;
-            if (await Spell.CoCast(Charge)) return true;
+            await Spell.CoCastOnGround(HeroicLeap, SpellManager.Spells["Charge"].Cooldown);
+            await Spell.CoCast(Charge);
 
             return false;
         }
@@ -337,36 +337,36 @@ namespace SlimAI.Class.Warrior
 
         #endregion
         
-        private static Composite CreateAoe()
-        {
-            return new PrioritySelector(
-                new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.HasAura("Colossus Smash"),
-                    new PrioritySelector(
-                        Spell.Cast(Recklessness),
-                        Spell.Cast(Avatar),
-                        Spell.Cast(SkullBanner))),
-                Spell.Cast(BloodBath),
-                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
-                Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage)),
-                Spell.Cast(SweepingStrikes),
-                Spell.Cast(Bladestorm, ret => Me.HasAura(SweepingStrikes)),
-                Spell.Cast(Whirlwind, ret => (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105),
-                Spell.Cast(MortalStrike),
-                Spell.Cast(StormBolt, ret => Me.CurrentTarget.HasMyAura("Colossus Smash")),
-                Spell.Cast(DragonRoar, ret => !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8),
-                Spell.Cast(ColossusSmash, ret => Me.CurrentTarget.HasAuraExpired("Colossus Smash")),
-                Spell.Cast(Execute, ret => Me.CurrentTarget.HasAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 95),
-                Spell.Cast(DragonRoar, ret => (!Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.HealthPercent < 20) || (Me.HasAura("Bloodbath") && Me.CurrentTarget.HealthPercent >= 20) && Me.CurrentTarget.Distance <= 8),
-                Spell.Cast(ThunderClap, ret => Unit.UnfriendlyUnits(8).Count() >= 3 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds"))),
-                Spell.Cast(Slam, ret => (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Recklessness")) && Me.CurrentTarget.HealthPercent >= 20),
-                Spell.Cast(Overpower, ret => Me.HasAura("Taste for Blood", 3) && Me.CurrentTarget.HealthPercent >= 20),
-                Spell.Cast(Execute, ret => !Me.HasAura("Sudden Execute")),
-                Spell.Cast(Overpower, ret => Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute")),
-                Spell.Cast(Whirlwind, ret => Me.CurrentRage >= 40 && Me.CurrentTarget.HealthPercent >= 20),
-                Spell.Cast(BattleShout),
-                Spell.Cast(HeroicThrow),
-                Spell.Cast(ImpendingVictory, ret => Me.HealthPercent < 50));
-        }
+        //private static Composite CreateAoe()
+        //{
+        //    return new PrioritySelector(
+        //        new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.HasAura("Colossus Smash"),
+        //            new PrioritySelector(
+        //                Spell.Cast(Recklessness),
+        //                Spell.Cast(Avatar),
+        //                Spell.Cast(SkullBanner))),
+        //        Spell.Cast(BloodBath),
+        //        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+        //        Spell.Cast(BerserkerRage, ret => !Me.HasAura(Enrage)),
+        //        Spell.Cast(SweepingStrikes),
+        //        Spell.Cast(Bladestorm, ret => Me.HasAura(SweepingStrikes)),
+        //        Spell.Cast(Whirlwind, ret => (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105),
+        //        Spell.Cast(MortalStrike),
+        //        Spell.Cast(StormBolt, ret => Me.CurrentTarget.HasMyAura("Colossus Smash")),
+        //        Spell.Cast(DragonRoar, ret => !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8),
+        //        Spell.Cast(ColossusSmash, ret => Me.CurrentTarget.HasAuraExpired("Colossus Smash")),
+        //        Spell.Cast(Execute, ret => Me.CurrentTarget.HasAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 95),
+        //        Spell.Cast(DragonRoar, ret => (!Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.HealthPercent < 20) || (Me.HasAura("Bloodbath") && Me.CurrentTarget.HealthPercent >= 20) && Me.CurrentTarget.Distance <= 8),
+        //        Spell.Cast(ThunderClap, ret => Unit.UnfriendlyUnits(8).Count() >= 3 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds"))),
+        //        Spell.Cast(Slam, ret => (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Recklessness")) && Me.CurrentTarget.HealthPercent >= 20),
+        //        Spell.Cast(Overpower, ret => Me.HasAura("Taste for Blood", 3) && Me.CurrentTarget.HealthPercent >= 20),
+        //        Spell.Cast(Execute, ret => !Me.HasAura("Sudden Execute")),
+        //        Spell.Cast(Overpower, ret => Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute")),
+        //        Spell.Cast(Whirlwind, ret => Me.CurrentRage >= 40 && Me.CurrentTarget.HealthPercent >= 20),
+        //        Spell.Cast(BattleShout),
+        //        Spell.Cast(HeroicThrow),
+        //        Spell.Cast(ImpendingVictory, ret => Me.HealthPercent < 50));
+        //}
 
         #region Coroutine AOE
         private static async Task<bool> CoAOE(bool reqs)
