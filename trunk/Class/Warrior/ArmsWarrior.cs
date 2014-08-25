@@ -931,7 +931,7 @@ namespace SlimAI.Class.Warrior
             if (!SpellManager.CanCast(DemoralizingBanner))
                 return false;
 
-            if (!Lua.GetReturnVal<bool>("return IsLeftShiftKeyDown() and not GetCurrentKeyBoardFocus()", 0))
+            if (!KeyboardPolling.IsKeyDown(Keys.Z))
                 return false;
 
             if (!SpellManager.Cast(DemoralizingBanner))
@@ -946,6 +946,7 @@ namespace SlimAI.Class.Warrior
             Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
 
             await CommonCoroutines.SleepForLagDuration();
+            return true;
             return true;
         }
         #endregion
