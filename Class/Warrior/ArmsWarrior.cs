@@ -57,7 +57,10 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> CombatCoroutine()
         {
-            await PvPCoroutine(SlimAI.PvPRotation);
+            if (SlimAI.PvPRotation)
+            {
+                await PvPCoroutine();
+            }
 
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
@@ -166,10 +169,8 @@ namespace SlimAI.Class.Warrior
 
         #region PvP
 
-        private static async Task<bool> PvPCoroutine(bool reqs)
+        private static async Task<bool> PvPCoroutine()
         {
-            if (!reqs)
-                return false;
 
             await CoShatterBubbles();
             await CoDemoBanner();
@@ -580,12 +581,11 @@ namespace SlimAI.Class.Warrior
 
                     new PrioritySelector(
                         Spell.Cast("Charge",
-                            ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f))
+                            ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
 
-                        //Spell.CastOnGround("Heroic Leap",
-                //    ret => StyxWoW.Me.CurrentTarget.Location,
-                //    ret => StyxWoW.Me.CurrentTarget.Distance > 13 && StyxWoW.Me.CurrentTarget.Distance < 40 && SpellManager.Spells["Charge"].Cooldown)
-                ));
+                        Spell.CastOnGround("Heroic Leap",
+                            ret => StyxWoW.Me.CurrentTarget.Location,
+                            ret => StyxWoW.Me.CurrentTarget.Distance > 13 && StyxWoW.Me.CurrentTarget.Distance < 40 && SpellManager.Spells["Charge"].Cooldown)));
         }
         #endregion
 
@@ -659,6 +659,27 @@ namespace SlimAI.Class.Warrior
                                 SpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location);
                             }));
         }
+        #endregion
+
+        #region Coroutine Mocking Banner Auto
+
+        private static async Task<bool> CoMockingBannerAuto()
+        {
+            if (SpellManager.Spells["Demoralizing Banner"].Cooldown &&
+                SpellManager.Spells["Demoralizing Banner"].CooldownTimeLeft.TotalSeconds <= 165 &&
+                SpellManager.Spells["Charge"].Cooldown &&
+                SpellManager.Spells["Heroic Leap"].Cooldown &&
+                !SpellManager.Spells["Mocking Banner"].Cooldown &&
+                !SpellManager.Spells["Intervene"].Cooldown &&
+                !FriendlyUnitsNearTarget(6f).Any() &&
+                StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25)
+            {
+                await Spell.CoCastOnGround(MockingBanner);
+            }
+
+            return false;
+        } 
+
         #endregion
 
         #region ShatterBubbles

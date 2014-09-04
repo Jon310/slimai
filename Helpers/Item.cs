@@ -97,6 +97,30 @@ namespace SlimAI.Helpers
                 secondTrinket.Use();
         }
 
+        #region Coroutine UseTrinkets
+
+        public static async Task<bool> CoUseTrinkets()
+        {
+            WoWItem firstTrinket = StyxWoW.Me.Inventory.Equipped.Trinket1;
+            WoWItem secondTrinket = StyxWoW.Me.Inventory.Equipped.Trinket2;
+
+            if (firstTrinket != null && CanUseEquippedItem(firstTrinket))
+            {
+                await Coroutine.ExternalTask(Task.Run(() => firstTrinket.Use()));
+                return true;
+            }
+
+            if (secondTrinket != null && CanUseEquippedItem(secondTrinket))
+            {
+                await Coroutine.ExternalTask(Task.Run(() => secondTrinket.Use()));
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion
+
         public static void UseHands()
         {
             WoWItem Gloves = StyxWoW.Me.Inventory.Equipped.Hands;

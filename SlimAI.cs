@@ -77,13 +77,16 @@ namespace SlimAI
         }
 
         private SlimAIGUI _configForm;
+        //private Main _configForm;
+
         public override void OnButtonPress()
         {
             if (_configForm == null || _configForm.IsDisposed || _configForm.Disposing)
             {
                 _configForm = new SlimAIGUI();
-                _configForm.Height = GeneralSettings.Instance.FormHeight;
-                _configForm.Width = GeneralSettings.Instance.FormWidth;
+                //_configForm = new Main();
+                _configForm.Height = GeneralSettings.Instance.FormHeight; // 425;
+                _configForm.Width = GeneralSettings.Instance.FormWidth;  // 596;
                 TabControl tab = (TabControl)_configForm.Controls["tabControl1"];
                 tab.SelectedIndex = GeneralSettings.Instance.FormTabIndex;
             }
