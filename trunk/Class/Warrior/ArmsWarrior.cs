@@ -60,6 +60,7 @@ namespace SlimAI.Class.Warrior
             if (SlimAI.PvPRotation)
             {
                 await PvPCoroutine();
+                return true;
             }
 
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
