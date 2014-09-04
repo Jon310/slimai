@@ -1,8 +1,12 @@
-﻿using SlimAI.Managers;
+﻿using System.Threading.Tasks;
+using Buddy.Coroutines;
+using SlimAI.Managers;
 using CommonBehaviors.Actions;
 using SlimAI.Settings;
 using Styx;
+using Styx.Common;
 using Styx.CommonBot;
+using Styx.CommonBot.Coroutines;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -20,83 +24,149 @@ namespace SlimAI.Class.Shaman
         static WoWUnit healtarget { get { return HealerManager.FindLowestHealthTarget(); } }
         private static ShamanSettings Settings { get { return GeneralSettings.Instance.Shaman(); } }
 
-        [Behavior(BehaviorType.Combat | BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
-        public static Composite RestorationCombat()
+        #region Coroutine Combat
+
+        private static async Task<bool> CombatCoroutine()
         {
             HealerManager.NeedHealTargeting = true;
-            //var cancelHeal = Math.Max(95, Math.Max(AvehealingWave(), Math.Max(AvegreaterhealingWave(), AvehealingSurge())));//95,93,55,25
             var cancelHeal = Math.Max(95, Math.Max(93, Math.Max(55, 25)));//95,93,55,25
-            return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-                new Decorator(ret => (Me.Combat || healtarget.Combat) && !Me.Mounted,
-                    new PrioritySelector(
 
-                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
-                        new Decorator(ret => Me.ManaPercent <= 85,
-                            new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; })),
-                        Common.CreateInterruptBehavior(),
-                        RollRiptide(),
-                        TidalWaves(),
-                        new Decorator(ret => SlimAI.Dispell,
-                            Dispelling.CreateDispelBehavior()),
-                        Item.UsePotionAndHealthstone(40),
-                        new Throttle(1, 1,
-                            new PrioritySelector(
-                                Spell.Cast(EarthShield, 
-                                    on => GetBestEarthShieldTargetInstance(),
-                                    ret => !GetBestEarthShieldTargetInstance().HasAura("Earth Shield")))),
-                        Spell.Cast(SpiritLinkTotem, 
-                            on => healtarget,
-                            ret => HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 40 && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= 3 && SlimAI.Burst),
-                        new Decorator(ret => healtarget.HealthPercent < 25,
-                            new Sequence(
-                                Spell.Cast(AncestralSwiftness),
-                                Spell.Cast(GreaterHealingWave, 
-                                    on => healtarget))),
-                        Spell.Cast(HealingTideTotem,
-                            ret => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 60 && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2) && SlimAI.Burst),
-                        Spell.Cast(HealingStreamTotem,
-                            ret => Me.Combat && !Totems.Exist(WoWTotemType.Water) && HealerManager.Instance.TargetList.Any(p => p.GetPredictedHealthPercent() < 95 && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
-                        Spell.Cast(ManaTideTotem, 
-                            ret => !Totems.Exist(WoWTotemType.Water) && Me.ManaPercent < 80),
-                        Spell.Cast("Elemental Blast",
-                            on => BoltTar(),
-                            ret => healtarget.HealthPercent > 50,
-                            cancel => healtarget.HealthPercent < 50),
-                        HealingRainCast(),
-                        ChainHealCast(),
-                        Spell.Cast("Healing Surge",
-                            on => healtarget,
-                            //ret => AvehealingSurge() < Deficit(),//25
-                            ret => healtarget.HealthPercent < 25,
-                            cancel => healtarget.HealthPercent > cancelHeal),
-                        Spell.Cast("Greater Healing Wave", 
-                            on => healtarget,
-                            //ret => AvegreaterhealingWave() < Deficit(),//55
-                            ret => healtarget.HealthPercent < 55,
-                            cancel => healtarget.HealthPercent > cancelHeal),
-                        Spell.Cast("Healing Wave",
-                            on => healtarget,
-                            //ret => AvehealingWave() < Deficit(),//93
-                            ret => healtarget.HealthPercent < 93,
-                            cancel => healtarget.HealthPercent > cancelHeal),
-                        Spell.Cast(Ascendance,
-                            ret => HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 50) >= 4 && !Me.HasAura("Ascendance") && SlimAI.Burst),
-                        RiptideCast(),
-                        new Decorator(ret => Me.ManaPercent > 85 && healtarget.HealthPercent > 75,
-                            new PrioritySelector(
-                                Spell.Cast(SearingTotem,
-                                    ret => !Totems.Exist(WoWTotemType.Fire) && Me.CurrentTarget.SpellDistance() < Totems.GetTotemRange(WoWTotem.Searing) - 2f),
-                                Spell.Cast(FlameShock,
-                                    on => FlameShockTar,
-                                    ret => FlameShockTar.HasAuraExpired("Flame Shock", 3)),
-                                Spell.Cast(LavaBurst,
-                                    on => LvBShockTar))),
-                        Spell.Cast("Lightning Bolt",
-                            on => BoltTar(), 
-                            ret => TalentManager.HasGlyph("Telluric Currents"), 
-                            cancel => healtarget.HealthPercent < 70 && Me.ManaPercent > 10))));
+            if (!Me.Combat || !healtarget.Combat || Me.Mounted || Me.IsCasting || Me.IsChanneling)
+                return true;
+
+            await Item.CoUseHands();
+
+            if (Me.ManaPercent <= 85)
+                await Item.CoUseTrinkets();
+
+            await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
+
+            await CoRollRiptide();
+            await SaySomething2("Got Past Riptide");
+            await CoTidalWaves();
+            await SaySomething2("Got Past Tidal Waves");
+            //await Dispelling.CoDispell(SlimAI.Dispell);
+            await SaySomething2("Got Past Dispelling");
+
+            await Item.CoUseHS(40);
+            await SaySomething2("Got Past HS");
+
+            await Spell.CoCast(EarthShield, GetBestEarthShieldTargetInstance(), !GetBestEarthShieldTargetInstance().HasAura("Earth Shield"));
+            await SaySomething2("Got Past Earth Shield");
+            await Spell.CoCast(SpiritLinkTotem, healtarget, HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 40 && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= 3 && SlimAI.Burst);
+            await ASHealingWave();
+            await Spell.CoCast(HealingTideTotem, Me.Combat && HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 60 && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2) && SlimAI.Burst);
+            await Spell.CoCast(ManaTideTotem, !Totems.Exist(WoWTotemType.Water) && Me.ManaPercent < 80);
+
+            await Spell.CoCast(ElementalBlast, BoltTar(), healtarget.HealthPercent > 50, healtarget.HealthPercent < 50);
+            await CoHealingRain();
+            await CoChainHeal();
+            await Spell.CoCast(HealingSurge, healtarget, healtarget.HealthPercent < 25, healtarget.HealthPercent > cancelHeal);
+            await Spell.CoCast(GreaterHealingWave, healtarget, healtarget.HealthPercent < 55, healtarget.HealthPercent > cancelHeal);
+            await Spell.CoCast(HealingWave, healtarget, healtarget.HealthPercent < 93, healtarget.HealthPercent > cancelHeal);
+            await Spell.CoCast(Ascendance, HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 50) >= 4 && !Me.HasAura("Ascendance") && SlimAI.Burst);
+            await CoRiptide();
+
+            await Spell.CoCast(SearingTotem, !Totems.Exist(WoWTotemType.Fire) && Me.CurrentTarget.SpellDistance() < Totems.GetTotemRange(WoWTotem.Searing) - 2f && HighManaNoHealNeeded());
+            await Spell.CoCast(FlameShock, FlameShockTar, FlameShockTar.HasAuraExpired("Flame Shock", 3) && HighManaNoHealNeeded());
+            await Spell.CoCast(LavaBurst, LvBShockTar, HighManaNoHealNeeded());
+            await Spell.CoCast(LightningBolt, BoltTar(), TalentManager.HasGlyph("Telluric Currents"), healtarget.HealthPercent < 70 && Me.ManaPercent > 10);
+
+            return false;
         }
+
+        [Behavior(BehaviorType.Combat | BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
+        public static Composite CoRestorationCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+
+        private static async Task<bool> SaySomething2(string message)
+        {
+            await Coroutine.Sleep(500);
+            Logging.Write(message);
+            return false;
+        }
+
+        #endregion
+
+        //[Behavior(BehaviorType.Combat | BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
+        //public static Composite RestorationCombat()
+        //{
+        //    HealerManager.NeedHealTargeting = true;
+        //    //var cancelHeal = Math.Max(95, Math.Max(AvehealingWave(), Math.Max(AvegreaterhealingWave(), AvehealingSurge())));//95,93,55,25
+        //    var cancelHeal = Math.Max(95, Math.Max(93, Math.Max(55, 25)));//95,93,55,25
+        //    return new PrioritySelector(
+        //        Spell.WaitForCastOrChannel(),
+        //        new Decorator(ret => (Me.Combat || healtarget.Combat) && !Me.Mounted,
+        //            new PrioritySelector(
+
+        //                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
+        //                new Decorator(ret => Me.ManaPercent <= 85,
+        //                    new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; })),
+        //                Common.CreateInterruptBehavior(),
+        //                RollRiptide(),
+        //                TidalWaves(),
+        //                new Decorator(ret => SlimAI.Dispell,
+        //                    Dispelling.CreateDispelBehavior()),
+        //                Item.UsePotionAndHealthstone(40),
+        //                new Throttle(1, 1,
+        //                    new PrioritySelector(
+        //                        Spell.Cast(EarthShield, 
+        //                            on => GetBestEarthShieldTargetInstance(),
+        //                            ret => !GetBestEarthShieldTargetInstance().HasAura("Earth Shield")))),
+        //                Spell.Cast(SpiritLinkTotem, 
+        //                    on => healtarget,
+        //                    ret => HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 40 && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= 3 && SlimAI.Burst),
+        //                new Decorator(ret => healtarget.HealthPercent < 25,
+        //                    new Sequence(
+        //                        Spell.Cast(AncestralSwiftness),
+        //                        Spell.Cast(GreaterHealingWave, 
+        //                            on => healtarget))),
+        //                Spell.Cast(HealingTideTotem,
+        //                    ret => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 60 && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2) && SlimAI.Burst),
+        //                Spell.Cast(HealingStreamTotem,
+        //                    ret => Me.Combat && !Totems.Exist(WoWTotemType.Water) && HealerManager.Instance.TargetList.Any(p => p.GetPredictedHealthPercent() < 95 && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+        //                Spell.Cast(ManaTideTotem, 
+        //                    ret => !Totems.Exist(WoWTotemType.Water) && Me.ManaPercent < 80),
+        //                Spell.Cast("Elemental Blast",
+        //                    on => BoltTar(),
+        //                    ret => healtarget.HealthPercent > 50,
+        //                    cancel => healtarget.HealthPercent < 50),
+        //                HealingRainCast(),
+        //                ChainHealCast(),
+        //                Spell.Cast("Healing Surge",
+        //                    on => healtarget,
+        //                    //ret => AvehealingSurge() < Deficit(),//25
+        //                    ret => healtarget.HealthPercent < 25,
+        //                    cancel => healtarget.HealthPercent > cancelHeal),
+        //                Spell.Cast("Greater Healing Wave", 
+        //                    on => healtarget,
+        //                    //ret => AvegreaterhealingWave() < Deficit(),//55
+        //                    ret => healtarget.HealthPercent < 55,
+        //                    cancel => healtarget.HealthPercent > cancelHeal),
+        //                Spell.Cast("Healing Wave",
+        //                    on => healtarget,
+        //                    //ret => AvehealingWave() < Deficit(),//93
+        //                    ret => healtarget.HealthPercent < 93,
+        //                    cancel => healtarget.HealthPercent > cancelHeal),
+        //                Spell.Cast(Ascendance,
+        //                    ret => HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < 50) >= 4 && !Me.HasAura("Ascendance") && SlimAI.Burst),
+        //                RiptideCast(),
+        //                new Decorator(ret => Me.ManaPercent > 85 && healtarget.HealthPercent > 75,
+        //                    new PrioritySelector(
+        //                        Spell.Cast(SearingTotem,
+        //                            ret => !Totems.Exist(WoWTotemType.Fire) && Me.CurrentTarget.SpellDistance() < Totems.GetTotemRange(WoWTotem.Searing) - 2f),
+        //                        Spell.Cast(FlameShock,
+        //                            on => FlameShockTar,
+        //                            ret => FlameShockTar.HasAuraExpired("Flame Shock", 3)),
+        //                        Spell.Cast(LavaBurst,
+        //                            on => LvBShockTar))),
+        //                Spell.Cast("Lightning Bolt",
+        //                    on => BoltTar(), 
+        //                    ret => TalentManager.HasGlyph("Telluric Currents"), 
+        //                    cancel => healtarget.HealthPercent < 70 && Me.ManaPercent > 10))));
+        //}
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
         public static Composite RestorationPreCombatBuffs()
@@ -283,6 +353,11 @@ namespace SlimAI.Class.Shaman
             return unit.HasAura("Earth Shield") || !unit.HasAnyAura("Earth Shield", "Water Shield", "Lightning Shield");
         }
 
+        private static bool HighManaNoHealNeeded()
+        {
+            return Me.ManaPercent > 85 && healtarget.HealthPercent > 75;
+        }
+
         private static Composite HealingRainCast()
         {
             return new PrioritySelector(
@@ -299,6 +374,49 @@ namespace SlimAI.Class.Shaman
                             Spell.CastOnGround("Healing Rain", on => (WoWUnit) on, req => true, false)))));
         }
 
+        #region Coroutine Healing Rain
+
+        private static async Task<bool> CoHealingRain()
+        {
+            if (GetBestHealingRainTarget() == null)
+                return false;
+
+            //if (return await Spell.CoCast(UnleashedElements, unit, IsImbuedForHealing(Me.Inventory.Equipped.MainHand) && (Me.Combat || unit.Combat));)
+            if (!SpellManager.CanCast(UnleashedElements))
+                return false;
+
+            if (!SpellManager.Cast(UnleashedElements, HealerManager.Instance.TargetList.FirstOrDefault()))
+                return false;
+
+            await CommonCoroutines.SleepForLagDuration();
+
+            if (await Coroutine.Wait(1500, () => !Spell.IsGlobalCooldown()))
+                return await Spell.CoCastOnGround(HealingRain, GetBestHealingRainTarget().Location);
+            Logging.WriteDiagnostic("GCD Issues. Exiting Healing Rain Prematurely");
+            return false;
+        }
+
+        #endregion
+
+
+        #region Coroutine Ancestral Swiftness Cast
+
+        private static async Task<bool> ASHealingWave(int health = 25)
+        {
+            if (healtarget.HealthPercent > health)
+                return false;
+
+            if (!SpellManager.CanCast(AncestralSwiftness))
+                return false;
+
+            if (!SpellManager.Cast(AncestralSwiftness))
+                return false;
+
+            return await Spell.CoCast(GreaterHealingWave, healtarget);
+        }
+
+        #endregion
+
         private static Composite ChainHealCast()
         {
             return new PrioritySelector(
@@ -312,6 +430,30 @@ namespace SlimAI.Class.Shaman
                                      new ActionAlwaysFail())),
                         Spell.Cast(ChainHeal, on => (WoWUnit) on))));
         }
+
+        #region Coroutine Chain Heal
+
+        private static async Task<bool> CoChainHeal()
+        {
+            if (GetBestChainHealTarget() == null)
+                return false;
+
+            if (GetBestChainHealTarget().HasAura("Riptide"))
+                return false;
+
+            if (!SpellManager.CanCast(Riptide) || !SpellManager.CanCast(ChainHeal))
+                return false;
+
+            if (!SpellManager.Cast(Riptide, GetBestChainHealTarget()))
+                return false;
+
+            if (await Coroutine.Wait(1500, () => !Spell.IsGlobalCooldown()))
+                return false;
+
+            return await Spell.CoCast(ChainHeal, GetBestChainHealTarget());
+        }
+
+        #endregion
 
         static readonly string[] _doNotHeal = { "Reshape Life", "Parasitic Growth", "Cyclone", "Dominate Mind", "Agressive Behavior", "Beast of Nightmares", "Corrupted Healing" };
         private static Composite RollRiptide()
@@ -328,6 +470,25 @@ namespace SlimAI.Class.Shaman
                 }));
         }
 
+        #region Coroutine RollRiptide
+
+        private static async Task<bool> CoRollRiptide()
+        {
+            return await Spell.CoCast(Riptide, Riptar());
+        }
+
+        private static WoWUnit Riptar()
+        {
+            var unit = GetBestRiptideTankTarget();
+            if (unit != null && Spell.CanCastHack("Riptide", unit, true) && !unit.HasAnyAura(_doNotHeal))
+            {
+                return unit;
+            }
+            return null;
+        }
+
+        #endregion
+
         private static Composite TidalWaves()
         {
             return new Decorator(
@@ -339,6 +500,18 @@ namespace SlimAI.Class.Shaman
                         return unit;
                     }, ret => !GetBestRiptideTarget().HasAura("Riptide"))));
         }
+
+        #region Coroutines TidalWaves
+
+        private static async Task<bool> CoTidalWaves()
+        {
+            if (!IsTidalWavesNeeded)
+                return false;
+
+            return await Spell.CoCast(Riptide, GetBestRiptideTarget(), !GetBestRiptideTarget().HasAura("Riptide"));
+        }
+
+        #endregion
 
         private static bool IsTidalWavesNeeded
         {
@@ -391,6 +564,26 @@ namespace SlimAI.Class.Shaman
                             return unit;
                         }, ret => !GetBestRiptideTarget().HasAura("Riptide"))));
         }
+
+        #region Coroutine Riptide
+
+        private static async Task<bool> CoRiptide()
+        {
+            int rollCount = HealerManager.Instance.TargetList.Count(u => u.IsAlive && u.HasMyAura("Riptide"));
+            return await Spell.CoCast(Riptide, RipTar(), !GetBestRiptideTarget().HasAura("Riptide") && rollCount < 2);
+        }
+
+        private static WoWUnit RipTar()
+        {
+            // if tank needs Riptide, bail out on Rolling as they have priority
+            if (GetBestRiptideTankTarget() != null)
+                return null;
+            // get the best target from all wowunits in our group
+            WoWUnit unit = GetBestRiptideTarget();
+            return unit;
+        }
+
+        #endregion
 
         private static WoWUnit GetBestRiptideTarget()
         {
@@ -487,6 +680,16 @@ namespace SlimAI.Class.Shaman
                 new ActionAlwaysSucceed()
                 );
         }
+
+        #region Coroutines Unleashed Life
+
+        private static async Task<bool> CoUnleashedLife(WoWUnit unit)
+        {
+            return await Spell.CoCast(UnleashedElements, unit, IsImbuedForHealing(Me.Inventory.Equipped.MainHand) && (Me.Combat || unit.Combat));
+        }
+
+        #endregion
+
 
         private static float ChainHealHopRange
         {

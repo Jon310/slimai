@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
 using JetBrains.Annotations;
@@ -53,40 +54,45 @@ namespace SlimAI.Helpers
         #region Coroutine Section
         public static async Task<bool> CoBuff(int spell)
         {
-            return await CoCast(spell, Me, !Me.HasAura(spell));
+            return await CoCast(spell, Me, !Me.HasAura(spell), false);
         }
 
         public static async Task<bool> CoBuff(int spell, bool reqs)
         {
-            return await CoCast(spell, Me, !Me.HasAura(spell) && reqs);
+            return await CoCast(spell, Me, !Me.HasAura(spell) && reqs, false);
         }
 
         public static async Task<bool> CoBuff(int spell, WoWUnit unit)
         {
-            return await CoCast(spell, unit, !unit.HasAura(spell));
+            return await CoCast(spell, unit, !unit.HasAura(spell), false);
         }
 
         public static async Task<bool> CoBuff(int spell, WoWUnit unit, bool reqs)
         {
-            return await CoCast(spell, unit, !unit.HasAura(spell) && reqs);
+            return await CoCast(spell, unit, !unit.HasAura(spell) && reqs, false);
         }
 
         public static async Task<bool> CoCast(int spell)
         {
-            return await CoCast(spell, Me.CurrentTarget, true);
+            return await CoCast(spell, Me.CurrentTarget, true, false);
         }
 
         public static async Task<bool> CoCast(int spell, WoWUnit unit)
         {
-            return await CoCast(spell, unit, true);
+            return await CoCast(spell, unit, true, false);
         }
 
         public static async Task<bool> CoCast(int spell, bool reqs)
         {
-            return await CoCast(spell, Me.CurrentTarget, reqs);
+            return await CoCast(spell, Me.CurrentTarget, reqs, false);
         }
 
         public static async Task<bool> CoCast(int spell, WoWUnit unit, bool reqs)
+        {
+            return await CoCast(spell, unit, reqs, false);
+        }
+
+        public static async Task<bool> CoCast(int spell, WoWUnit unit, bool reqs, bool cancel)
         {
             var sp = WoWSpell.FromId(spell);
             var sname = sp != null ? sp.Name : "#" + spell;
@@ -98,6 +104,13 @@ namespace SlimAI.Helpers
                 return false;
             
             Logging.Write("Casting " + sname + " on " + unit);
+
+            if (!await Coroutine.Wait(GetSpellCastTime(sname), () => cancel))
+            {
+                SpellManager.StopCasting();
+                Logging.Write("Canceling " + sname + ".");
+                return false;
+            }
 
             await CommonCoroutines.SleepForLagDuration();
             return true;

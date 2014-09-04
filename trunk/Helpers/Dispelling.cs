@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
+using Buddy.Coroutines;
 using Styx;
 using SlimAI.Managers;
 using SlimAI.Lists;
@@ -191,9 +193,42 @@ namespace SlimAI.Helpers
             return (chk & GetDispellableTypesOnUnit(unit)) != 0;
         }
 
+        #region Coroutine Dispell
+
+        public static async Task<bool> CoDispell(bool reqs)
+        {
+            if (!reqs)
+                return false;
+
+            _unitDispel = HealerManager.Instance.TargetList.FirstOrDefault(u => u.IsAlive && CanDispel(u));
+
+            if (StyxWoW.Me.Class == WoWClass.Paladin)
+                return await Spell.CoCast("Cleanse", _unitDispel, BossMechs.MechDispell());
+
+            if (StyxWoW.Me.Class == WoWClass.Monk)
+                return await Spell.CoCast("Detox", _unitDispel, BossMechs.MechDispell());
+
+            if (StyxWoW.Me.Class == WoWClass.Priest && (StyxWoW.Me.Specialization == WoWSpec.PriestHoly || StyxWoW.Me.Specialization == WoWSpec.PriestDiscipline))
+                return await Spell.CoCast("Purify", _unitDispel, BossMechs.MechDispell());
+
+            if (StyxWoW.Me.Class == WoWClass.Druid)
+                return StyxWoW.Me.Specialization == WoWSpec.DruidRestoration
+                    ? await Spell.CoCast("Nature's Cure", _unitDispel, BossMechs.MechDispell())
+                    : await Spell.CoCast("Remove Corruption", _unitDispel, BossMechs.MechDispell());
+
+            if (StyxWoW.Me.Class == WoWClass.Shaman && StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration)
+                return await Spell.CoCast("Purify Spirit", _unitDispel, BossMechs.MechDispell());
+
+            if (StyxWoW.Me.Class == WoWClass.Mage)
+                return await Spell.CoCast("Remove Curse", _unitDispel, BossMechs.MechDispell());
+            
+            return false;
+        }
+
+        #endregion
+
 
         public static WoWUnit _unitDispel;
-
 
         public static Composite CreateDispelBehavior()
         {
