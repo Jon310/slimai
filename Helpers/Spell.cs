@@ -105,7 +105,7 @@ namespace SlimAI.Helpers
             
             Logging.Write("Casting " + sname + " on " + unit);
 
-            if (!await Coroutine.Wait(GetSpellCastTime(sname), () => cancel))
+            if (!await Coroutine.Wait(GetSpellCastTime(sname), () => cancel) && GetSpellCastTime(sname).TotalSeconds > 0)
             {
                 SpellManager.StopCasting();
                 Logging.Write("Canceling " + sname + ".");
