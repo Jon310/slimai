@@ -27,13 +27,13 @@ namespace SlimAI.Helpers
                     return false;
 
                 if (Me.GotTarget)
-                    return Me.CurrentTarget.IsBoss();
+                    return Me.CurrentTarget.IsBoss;
 
-                if (Me.CurrentTarget.IsPlayer)
-                    return Me.CurrentTarget.TimeToDeath() > 3;
+                //if (Me.CurrentTarget.IsPlayer)
+                //    return Me.CurrentTarget.TimeToDeath() > 3;
 
-                if (Me.CurrentTarget.TimeToDeath() > 30)
-                    return true;
+                //if (Me.CurrentTarget.TimeToDeath() > 30)
+                //    return true;
 
                 return Unit.NearbyUnitsInCombatWithMe.Count(u => u.Guid != Me.CurrentTargetGuid) >= 3;
             }
@@ -142,7 +142,7 @@ namespace SlimAI.Helpers
             if ( Me.Class == WoWClass.Rogue)
             {
                 prioSpell.AddChild( Spell.Cast("Kick", ctx => _unitInterrupt, true));
-                prioSpell.AddChild( Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && Me.IsSafelyFacing(_unitInterrupt)));
+                prioSpell.AddChild( Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss && Me.IsSafelyFacing(_unitInterrupt)));
             }
 
             if ( Me.Class == WoWClass.Warrior)
@@ -156,7 +156,7 @@ namespace SlimAI.Helpers
                 // Spell.Cast("Skull Bash (Cat)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat));
                 // Spell.Cast("Skull Bash (Bear)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear));
                 prioSpell.AddChild( Spell.Cast("Skull Bash", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear || StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat, true));
-                prioSpell.AddChild( Spell.Cast("Mighty Bash", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && _unitInterrupt.IsWithinMeleeRange));
+                prioSpell.AddChild( Spell.Cast("Mighty Bash", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss && _unitInterrupt.IsWithinMeleeRange));
             }
 
             if ( Me.Class == WoWClass.DeathKnight)
@@ -173,7 +173,7 @@ namespace SlimAI.Helpers
                 prioSpell.AddChild(Spell.Cast("Arcane Torrent", ctx => _unitInterrupt, req => _unitInterrupt.Distance < 8 && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage( 8f)), true));
 
             if ( Me.Race == WoWRace.Tauren)
-                prioSpell.AddChild(Spell.Cast("War Stomp", ctx => _unitInterrupt, ret => _unitInterrupt.Distance < 8 && !_unitInterrupt.IsBoss() && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage( 8f))));
+                prioSpell.AddChild(Spell.Cast("War Stomp", ctx => _unitInterrupt, ret => _unitInterrupt.Distance < 8 && !_unitInterrupt.IsBoss && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage( 8f))));
 
             #endregion
 
@@ -204,7 +204,7 @@ namespace SlimAI.Helpers
 
             if (Me.Class == WoWClass.Shaman)
                 // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
-                prioSpell.AddChild( Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret => TalentManager.HasGlyph("Gag Order") && !_unitInterrupt.IsBoss()));
+                prioSpell.AddChild( Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret => TalentManager.HasGlyph("Gag Order") && !_unitInterrupt.IsBoss));
 
             if ( Me.Class == WoWClass.Priest ) 
                 prioSpell.AddChild( Spell.Cast("Silence", ctx => _unitInterrupt, true));

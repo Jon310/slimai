@@ -27,7 +27,7 @@ namespace SlimAI.Class.Paladin
 
             var cancelHeal = Math.Max(95, Math.Max(93, Math.Max(55, 25)));//95,93,55,25
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
+                //Spell.WaitForCastOrChannel(),
                 new Decorator(ret => (Me.Combat || healtarget.Combat) && !Me.Mounted,
                     new PrioritySelector(
 

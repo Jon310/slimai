@@ -73,7 +73,8 @@ namespace SlimAI.Managers
         {
             bool foundMe = false;
             bool isHorde = StyxWoW.Me.IsHorde;
-            ulong focusGuid = Me.FocusedUnitGuid;
+            //6.0
+            //ulong focusGuid = Me.FocusedUnitGuid;
             bool foundFocus = false;
 
             foreach (WoWObject incomingUnit in incomingUnits)
@@ -82,8 +83,9 @@ namespace SlimAI.Managers
                 {
                     if (incomingUnit.IsMe)
                         foundMe = true;
-                    else if (incomingUnit.Guid == focusGuid)
-                        foundFocus = true;
+                    //6.0
+                    //else if (incomingUnit.Guid == focusGuid)
+                    //    foundFocus = true;
 
                     outgoingUnits.Add(incomingUnit);
 
@@ -195,7 +197,7 @@ namespace SlimAI.Managers
 
         protected override void DefaultTargetWeight(List<TargetPriority> units)
         {
-            var tanks = GetMainTankGuids();
+            //var tanks = GetMainTankGuids();
             var inBg = Battlegrounds.IsInsideBattleground;
             var amHolyPally = StyxWoW.Me.Specialization == WoWSpec.PaladinHoly;
             var myLoc = Me.Location;
@@ -230,12 +232,13 @@ namespace SlimAI.Managers
                     }
 
                     // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                    if (tanks.Contains(u.Guid) && u.HealthPercent != 100 &&
-                        // Ignore giving more weight to the tank if we have Beacon of Light on it.
-                        (!amHolyPally || !u.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid)))
-                    {
-                        prio.Score += 100f;
-                    }
+                    //6.0
+                    //if (tanks.Contains(u.Guid) && u.HealthPercent != 100 &&
+                    //    // Ignore giving more weight to the tank if we have Beacon of Light on it.
+                    //    (!amHolyPally || !u.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid)))
+                    //{
+                    //    prio.Score += 100f;
+                    //}
 
                     // Give flag carriers more weight in battlegrounds. We need to keep them alive!
                     if (inBg && u.IsPlayer && u.Auras.Keys.Any(a => a.ToLowerInvariant().Contains("flag")))
@@ -331,15 +334,16 @@ namespace SlimAI.Managers
         //        base.Pulse();
         //}
 
-        private static HashSet<ulong> GetMainTankGuids()
-        {
-            var infos = StyxWoW.Me.GroupInfo.RaidMembers;
+        //6.0
+        //private static HashSet<ulong> GetMainTankGuids()
+        //{
+        //    var infos = StyxWoW.Me.GroupInfo.RaidMembers;
 
-            return new HashSet<ulong>(
-                from pi in infos
-                where (pi.Role & WoWPartyMember.GroupRole.Tank) != 0
-                select pi.Guid);
-        }
+        //    return new HashSet<ulong>(
+        //        from pi in infos
+        //        where (pi.Role & WoWPartyMember.GroupRole.Tank) != 0
+        //        select pi.Guid);
+        //}
 
         /// <summary>
         /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in 
@@ -421,7 +425,7 @@ namespace SlimAI.Managers
             {
                 if (t.Count >= minCount)
                 {
-                    Logging.WriteDiagnostic("GetBestCoverageTarget('{0}'): found {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
+                    Logging.WriteDiagnostic("GetBestCoverageTarget('{0}'): found {1} with {2} nearby under {3}%", spell, t.Count, health);
                     //Logger.WriteDebug("GetBestCoverageTarget('{0}'): found {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
                     return t.Player;
                 }
@@ -441,7 +445,7 @@ namespace SlimAI.Managers
             WoWUnit hotTarget = null;
             hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.HealthPercent < health && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
             if (hotTarget != null)
-                Logging.WriteDiagnostic("GetBestTankTargetForHOT('{0}'): found tank {1} @ {2:F1}%, hasmyaura={3} with {4} ms left", hotName, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft(hotName).TotalMilliseconds);
+                Logging.WriteDiagnostic("GetBestTankTargetForHOT('{0}'): found tank {1} @ {2:F1}%, hasmyaura={3} with {4} ms left", hotName, hotTarget.Name, hotTarget.HealthPercent, hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft(hotName).TotalMilliseconds);
             return hotTarget;
         }
 
@@ -453,7 +457,7 @@ namespace SlimAI.Managers
 
             hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.HealthPercent < health && u.DistanceSqr < 40 * 40 && !u.HasAura(hotName) && !u.HasAura(hotDebuff) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
             if (hotTarget != null)
-                Logging.WriteDiagnostic("GetBestTankTargetForPWS('{0}'): found tank {1} @ {2:F1}%, hasmyaura={3} with {4} ms left", hotName, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft(hotName).TotalMilliseconds);
+                Logging.WriteDiagnostic("GetBestTankTargetForPWS('{0}'): found tank {1} @ {2:F1}%, hasmyaura={3} with {4} ms left", hotName, hotTarget.Name, hotTarget.HealthPercent, hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft(hotName).TotalMilliseconds);
             return hotTarget;
         }
 

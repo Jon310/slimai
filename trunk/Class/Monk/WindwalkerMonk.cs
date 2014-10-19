@@ -36,8 +36,8 @@ namespace SlimAI.Class.Monk
                     new ActionAlwaysSucceed()),
                 CreateInterruptSpellCast(),
                 Common.CreateInterruptBehavior(),
-                Spell.WaitForCastOrChannel(),
-                Item.UsePotionAndHealthstone(40),
+                //Spell.WaitForCastOrChannel(),
+                //Item.UsePotionAndHealthstone(40),
 
 
                 //Detox
@@ -87,9 +87,10 @@ namespace SlimAI.Class.Monk
         {
             return new PrioritySelector(
                 new Decorator(ret => Me.Mounted,
-                    new ActionAlwaysSucceed()),
-                PartyBuff.BuffGroup("Legacy of the Emperor"),
-                PartyBuff.BuffGroup("Legacy of the White Tiger"));
+                    new ActionAlwaysSucceed())
+                //PartyBuff.BuffGroup("Legacy of the Emperor"),
+                //PartyBuff.BuffGroup("Legacy of the White Tiger")
+                );
         }
 
         #region PvP
@@ -97,10 +98,10 @@ namespace SlimAI.Class.Monk
         {
             return new PrioritySelector(
 
-                Spell.WaitForCastOrChannel(),
+                //Spell.WaitForCastOrChannel(),
                 ZenMed(),
                 ParalysisFocus(),
-                Item.UsePotionAndHealthstone(40),
+                //Item.UsePotionAndHealthstone(40),
 
                 new Decorator(ret => !Me.Combat || Me.Mounted,
                     new ActionAlwaysSucceed()),

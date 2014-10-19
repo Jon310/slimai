@@ -23,7 +23,7 @@ namespace SlimAI.Class.Deathknight
         public static Composite FrostDKCombat()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
+                //Spell.WaitForCastOrChannel(),
                 Common.CreateInterruptBehavior(),
                 
                 //Staying Alive

@@ -67,7 +67,7 @@ namespace SlimAI.Class.Mage
                 return new PrioritySelector(
                     new Decorator(ret => Me.Mounted,
                         new ActionAlwaysSucceed()),
-                    PartyBuff.BuffGroup("Arcane Brilliance"),
+                    //PartyBuff.BuffGroup("Arcane Brilliance"),
                     new Throttle(3,
                     Spell.Cast("Mage Armor", ret => !Me.HasAura("Mage Armor"))),
                     Spell.BuffSelf("Conjure Mana Gem", ret => !HaveManaGem)
@@ -81,7 +81,7 @@ namespace SlimAI.Class.Mage
 
                 Spell.Cast("Nether Tempest", ret => !Me.CurrentTarget.HasMyAura("Nether Tempest")),
                 Spell.Cast("Frost Bomb", ret => !Me.IsMoving),
-                Spell.Cast("Living Bomb", ret => (Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds < 2 || !Me.CurrentTarget.HasAura("Living Bomb")) && Me.CurrentTarget.TimeToDeath() > 6)
+                Spell.Cast("Living Bomb", ret => (Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds < 2 || !Me.CurrentTarget.HasAura("Living Bomb")))
                 );
         }
         #endregion

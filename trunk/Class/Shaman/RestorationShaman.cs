@@ -48,7 +48,7 @@ namespace SlimAI.Class.Shaman
             //await Dispelling.CoDispell(SlimAI.Dispell);
             await SaySomething2("Got Past Dispelling");
 
-            await Item.CoUseHS(40);
+            //await Item.CoUseHS(40);
             await SaySomething2("Got Past HS");
 
             await Spell.CoCast(EarthShield, GetBestEarthShieldTargetInstance(), !GetBestEarthShieldTargetInstance().HasAura("Earth Shield"));
@@ -228,7 +228,8 @@ namespace SlimAI.Class.Shaman
                 }
             }
 
-            guidLastEarthShield = target != null ? target.Guid : 0;
+            //6.0
+            //guidLastEarthShield = target != null ? target.Guid : 0;
             return target;
         }
         #endregion
@@ -347,7 +348,7 @@ namespace SlimAI.Class.Shaman
         #region Heal Stuff
         private static bool IsValidEarthShieldTarget(WoWUnit unit)
         {
-            if (unit == null || !unit.IsValid || !unit.IsAlive || Unit.GroupMembers.All(g => g.Guid != unit.Guid) || unit.Distance > 99)
+            if (unit == null || !unit.IsValid || !unit.IsAlive || /*Unit.GroupMembers.All(g => g.Guid != unit.Guid) || */unit.Distance > 99)
                 return false;
 
             return unit.HasAura("Earth Shield") || !unit.HasAnyAura("Earth Shield", "Water Shield", "Lightning Shield");

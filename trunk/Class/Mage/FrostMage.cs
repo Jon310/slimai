@@ -34,7 +34,7 @@ namespace SlimAI.Class.Mage
 
                     // Interrupt please.
                     Spell.Cast("Counterspell", ret => Me.CurrentTarget.IsCasting && Me.CurrentTarget.CanInterruptCurrentSpellCast),
-                    Spell.WaitForCastOrChannel(),
+                    //Spell.WaitForCastOrChannel(),
                     //cancel_buff,name=alter_time,moving=1
                     Spell.Cast("Alter Time", ret => Me.HasAura("Alter Time") && Me.IsMoving),
 
@@ -116,7 +116,7 @@ namespace SlimAI.Class.Mage
             return new PrioritySelector(
                 new Decorator(ret => Me.Mounted,
                     new ActionAlwaysSucceed()),
-                PartyBuff.BuffGroup("Arcane Brilliance"),
+                //PartyBuff.BuffGroup("Arcane Brilliance"),
                 new Throttle(3,
                 Spell.Cast("Frost Armor", ret => !Me.HasAura("Frost Armor")))
                 );

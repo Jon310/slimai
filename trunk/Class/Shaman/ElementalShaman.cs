@@ -23,16 +23,16 @@ namespace SlimAI.Class.Shaman
         {
             return new PrioritySelector(
                 Common.CreateInterruptBehavior(),
-                new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.IsBoss(),
+                new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.IsBoss,
                     new PrioritySelector(
                         Spell.Cast(ElementalMastery),
                         Spell.Cast(FlameShock, ret => Me.CurrentTarget.HasAuraExpired("Flame Shock") && Me.HasAura(Ascendance)),
                         Spell.Cast(Ascendance, ret => Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds > 18),
-                        Spell.Cast(FireElementalTotem, ret => Me.CurrentTarget.TimeToDeath() > (TalentManager.HasGlyph("Fire Elemental Totem") ? 30 : 60)),
-                        Spell.Cast(EarthElementalTotem, ret => Me.CurrentTarget.TimeToDeath() > 60 && Spell.GetSpellCooldown("Fire Elemental Totem").TotalSeconds > 61),
+                        Spell.Cast(FireElementalTotem),
+                        Spell.Cast(EarthElementalTotem, ret => Spell.GetSpellCooldown("Fire Elemental Totem").TotalSeconds > 61),
                         Spell.Cast(StormlashTotem, ret => !PartyBuff.WeHaveBloodlust))),
                 
-                Spell.WaitForCast(),
+                //Spell.WaitForCast(),
                 Spell.Cast(Thunderstorm, ret => Me.ManaPercent < 60 && TalentManager.HasGlyph("Thunderstorm")),
 
                 new Decorator(ret => Unit.UnfriendlyUnitsNearTargetFacing(10).Count() >= 4 && SlimAI.AOE,

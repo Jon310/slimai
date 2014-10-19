@@ -72,81 +72,82 @@ namespace SlimAI.Helpers
             return null;
         }
 
-        public static Composite HorridonHeroic()
-        {
-            switch (StyxWoW.Me.Class)
-            {
-                case WoWClass.DeathKnight:
-                    return new PrioritySelector(
-                        new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                        Spell.Cast("Howling Blast", on => Me.FocusedUnit),
-                        Spell.Cast("Death Coil", on => Me.FocusedUnit),
-                        Spell.Cast("Icy Touch", on => Me.FocusedUnit));
-                case WoWClass.Druid:
-                    return new PrioritySelector(
-                            new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                            Spell.Cast("Growl", on => Me.FocusedUnit),
-                            Spell.Cast("Faerie Fire", on => Me.FocusedUnit));
-                case WoWClass.Hunter:
-                    return new PrioritySelector(
-                            new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                            Spell.Cast("Arcane Shot", on => Me.FocusedUnit));
-                case WoWClass.Mage:
-                    return new Throttle(1, 1,
-                        new PrioritySelector(
-                            new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                            Spell.Cast("Ice Lance", on => Me.FocusedUnit)));
-                case WoWClass.Monk:
-                    return new PrioritySelector(
-                            new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                            Spell.Cast("Provoke", on => Me.FocusedUnit),
-                            Spell.Cast("Chi Wave", on => Me.FocusedUnit));
-                case WoWClass.Paladin:
-                    return new PrioritySelector(
-                            new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                            Spell.Cast("Judgement", on => Me.FocusedUnit),
-                            Spell.Cast("Avenger's Shield", on => Me.FocusedUnit));
-                case WoWClass.Priest:
-                    return new PrioritySelector(
-                            new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                            Spell.Cast("Shadow Word: Pain", on => Me.FocusedUnit, ret => Me.Specialization == WoWSpec.PriestShadow && !Me.FocusedUnit.HasMyAura("Shadow Word: Pain")),
-                            Spell.Cast("Vampiric Touch", on => Me.FocusedUnit, ret => Me.Specialization == WoWSpec.PriestShadow && !Me.FocusedUnit.HasMyAura("Shadow Word: Pain")),
-                            Spell.Cast("Holy Fire", on => Me.FocusedUnit),
-                            Spell.Cast("Power Word: Solace", on => Me.FocusedUnit),
-                            Spell.Cast("Smite", on => Me.FocusedUnit),
-                            Spell.Cast("Chi Wave", on => Me.FocusedUnit));
-                case WoWClass.Rogue:
-                    return new PrioritySelector(
-                            new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                            Spell.Cast("Throw", on => Me.FocusedUnit));
-                case WoWClass.Shaman:
-                    return new PrioritySelector(
-                            new Decorator(ret => Me.FocusedUnitGuid == 0,
-                                SetFocusDino()),
-                            Spell.Cast("Purge", on => Me.FocusedUnit),
-                            Spell.Cast("Unleashed Elements", on => Me.FocusedUnit),
-                            Spell.Cast("Lightning Bolt", on => Me.FocusedUnit));
-                case WoWClass.Warlock:
-                    return new PrioritySelector(
-                        new Decorator(ret => Me.FocusedUnitGuid == 0,
-                            SetFocusDino()),
-                        Spell.Cast("Fel Flame", on => Me.FocusedUnit));
-                case WoWClass.Warrior:
-                    return new PrioritySelector(
-                        new Decorator(ret => Me.FocusedUnitGuid == 0,
-                            SetFocusDino()),
-                        Spell.Cast("Throw", on => Me.FocusedUnit));
-            }
-            return null;
-        }
+        //6.0
+        //public static Composite HorridonHeroic()
+        //{
+        //    switch (StyxWoW.Me.Class)
+        //    {
+        //        case WoWClass.DeathKnight:
+        //            return new PrioritySelector(
+        //                new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                Spell.Cast("Howling Blast", on => Me.FocusedUnit),
+        //                Spell.Cast("Death Coil", on => Me.FocusedUnit),
+        //                Spell.Cast("Icy Touch", on => Me.FocusedUnit));
+        //        case WoWClass.Druid:
+        //            return new PrioritySelector(
+        //                    new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                    Spell.Cast("Growl", on => Me.FocusedUnit),
+        //                    Spell.Cast("Faerie Fire", on => Me.FocusedUnit));
+        //        case WoWClass.Hunter:
+        //            return new PrioritySelector(
+        //                    new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                    Spell.Cast("Arcane Shot", on => Me.FocusedUnit));
+        //        case WoWClass.Mage:
+        //            return new Throttle(1, 1,
+        //                new PrioritySelector(
+        //                    new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                    Spell.Cast("Ice Lance", on => Me.FocusedUnit)));
+        //        case WoWClass.Monk:
+        //            return new PrioritySelector(
+        //                    new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                    Spell.Cast("Provoke", on => Me.FocusedUnit),
+        //                    Spell.Cast("Chi Wave", on => Me.FocusedUnit));
+        //        case WoWClass.Paladin:
+        //            return new PrioritySelector(
+        //                    new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                    Spell.Cast("Judgement", on => Me.FocusedUnit),
+        //                    Spell.Cast("Avenger's Shield", on => Me.FocusedUnit));
+        //        case WoWClass.Priest:
+        //            return new PrioritySelector(
+        //                    new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                    Spell.Cast("Shadow Word: Pain", on => Me.FocusedUnit, ret => Me.Specialization == WoWSpec.PriestShadow && !Me.FocusedUnit.HasMyAura("Shadow Word: Pain")),
+        //                    Spell.Cast("Vampiric Touch", on => Me.FocusedUnit, ret => Me.Specialization == WoWSpec.PriestShadow && !Me.FocusedUnit.HasMyAura("Shadow Word: Pain")),
+        //                    Spell.Cast("Holy Fire", on => Me.FocusedUnit),
+        //                    Spell.Cast("Power Word: Solace", on => Me.FocusedUnit),
+        //                    Spell.Cast("Smite", on => Me.FocusedUnit),
+        //                    Spell.Cast("Chi Wave", on => Me.FocusedUnit));
+        //        case WoWClass.Rogue:
+        //            return new PrioritySelector(
+        //                    new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                    Spell.Cast("Throw", on => Me.FocusedUnit));
+        //        case WoWClass.Shaman:
+        //            return new PrioritySelector(
+        //                    new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                        SetFocusDino()),
+        //                    Spell.Cast("Purge", on => Me.FocusedUnit),
+        //                    Spell.Cast("Unleashed Elements", on => Me.FocusedUnit),
+        //                    Spell.Cast("Lightning Bolt", on => Me.FocusedUnit));
+        //        case WoWClass.Warlock:
+        //            return new PrioritySelector(
+        //                new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                    SetFocusDino()),
+        //                Spell.Cast("Fel Flame", on => Me.FocusedUnit));
+        //        case WoWClass.Warrior:
+        //            return new PrioritySelector(
+        //                new Decorator(ret => Me.FocusedUnitGuid == 0,
+        //                    SetFocusDino()),
+        //                Spell.Cast("Throw", on => Me.FocusedUnit));
+        //    }
+        //    return null;
+        //}
 
 
         public static bool Jinrok()

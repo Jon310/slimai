@@ -309,10 +309,11 @@ namespace SlimAI.Helpers
         /// <param name="name">spell name of buff</param>
         /// <param name="myMutexBuffs">list of your buffs which are mutually exclusive to 'name'.  For example, BuffGroup("Blessing of Kings", ret => true, "Blessing of Might") </param>
         /// <returns></returns>
-        public static Composite BuffGroup(string name, params string[] myMutexBuffs)
-        {
-            return BuffGroup(name, ret => true, myMutexBuffs);
-        }
+        /// 6.0
+        //public static Composite BuffGroup(string name, params string[] myMutexBuffs)
+        //{
+        //    return BuffGroup(name, ret => true, myMutexBuffs);
+        //}
 
         /// <summary>
         /// checks group members in range if they have a buff providing the benefits 
@@ -325,18 +326,19 @@ namespace SlimAI.Helpers
         /// <param name="requirements">requirements delegate that must be true for cast to occur</param>
         /// <param name="myMutexBuffs">list of your buffs which are mutually exclusive to 'name'.  For example, BuffGroup("Blessing of Kings", ret => true, "Blessing of Might") </param>
         /// <returns></returns>
-        public static Composite BuffGroup(string name, SimpleBooleanDelegate requirements, params string[] myMutexBuffs)
-        {
-            return
-                new Decorator(ret => IsItTimeToBuff() 
-                                    && SpellManager.HasSpell(name)
-                                    && !StyxWoW.Me.Mounted,
-                    new PrioritySelector(
-                        ctx => Unit.GroupMembers.FirstOrDefault(m => m.IsAlive && m.DistanceSqr < 30 * 30 && (PartyBuffType.None != (m.GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))),
-                        BuffUnit(name, ctx => (WoWUnit)ctx, requirements, myMutexBuffs)
-                        )
-                    );
-        }
+        /// 6.0
+        //public static Composite BuffGroup(string name, SimpleBooleanDelegate requirements, params string[] myMutexBuffs)
+        //{
+        //    return
+        //        new Decorator(ret => IsItTimeToBuff() 
+        //                            && SpellManager.HasSpell(name)
+        //                            && !StyxWoW.Me.Mounted,
+        //            new PrioritySelector(
+        //                ctx => Unit.GroupMembers.FirstOrDefault(m => m.IsAlive && m.DistanceSqr < 30 * 30 && (PartyBuffType.None != (m.GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))),
+        //                BuffUnit(name, ctx => (WoWUnit)ctx, requirements, myMutexBuffs)
+        //                )
+        //            );
+        //}
 
         //"Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria"
         /// <summary>

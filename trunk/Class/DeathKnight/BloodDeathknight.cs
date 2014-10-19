@@ -37,7 +37,7 @@ namespace SlimAI.Class.Deathknight
             BloodCombatBuffs(),
             new Decorator(ret => SlimAI.AFK,
                 CreateAFK()),
-            Item.UsePotionAndHealthstone(40),
+            //Item.UsePotionAndHealthstone(40),
             new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
 
             Spell.Cast(DeathStrike, ret => ShouldDeathStrike),
@@ -107,7 +107,7 @@ namespace SlimAI.Class.Deathknight
         {
             return new Throttle(
                 new PrioritySelector(
-                    Spell.Cast(UnholyBlight, ret => SlimAI.AOE && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss()) &&
+                    Spell.Cast(UnholyBlight, ret => SlimAI.AOE && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss) &&
                                                        u.Distance < 10 && u.HasAuraExpired("Blood Plague"))),
                     Spell.Cast(Outbreak),
                     new Decorator(ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3,

@@ -18,9 +18,9 @@ namespace SlimAI.Class.Paladin
         {
             return new Throttle(
                 new PrioritySelector(
-                    new Throttle(1, 1,
-                        new Decorator(ret => Me.HasAura("Dire Fixation"),
-                            BossMechs.HorridonHeroic())),
+                    //new Throttle(1, 1,
+                        //new Decorator(ret => Me.HasAura("Dire Fixation"),
+                            //BossMechs.HorridonHeroic())),
                     Common.CreateInterruptBehavior(),
                     Dispelling.CreateDispelBehavior(),
                     Spell.Cast("Inquisition", ret => (!Me.HasAura("Inquisition") || Me.HasAuraExpired("Inquisition", 2)) && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose"))),

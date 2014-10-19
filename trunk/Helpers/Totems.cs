@@ -107,10 +107,10 @@ namespace SlimAI.Helpers
                     })
                     ),
 
-
-                Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
-                    ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < GetTotemRange(WoWTotem.Tremor))
-                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
+                    //6.0
+                //Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
+                //    ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < GetTotemRange(WoWTotem.Tremor))
+                //        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
 
                 new Decorator(
                     ret => ShouldWeDropTotemsYet,
@@ -201,7 +201,7 @@ namespace SlimAI.Helpers
                         return RunStatus.Failure;
                         }),
 
-                    Spell.BuffSelf("Fire Elemental", ret => Me.CurrentTarget.IsBoss()),
+                    Spell.BuffSelf("Fire Elemental", ret => Me.CurrentTarget.IsBoss),
 
                     // Magma handled within each specs AoE support
 
@@ -217,9 +217,10 @@ namespace SlimAI.Helpers
             // now 
             return new PrioritySelector(
 
-                Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
-                    ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < GetTotemRange(WoWTotem.Tremor))
-                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
+                //6.0
+                //Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
+                //    ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < GetTotemRange(WoWTotem.Tremor))
+                //        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
 
                 new Decorator(
                     ret => ShouldWeDropTotemsYet,

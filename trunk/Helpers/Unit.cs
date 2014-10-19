@@ -112,22 +112,23 @@ namespace SlimAI.Helpers
         /// <summary>
         /// List of WoWPlayer in your Group. Deals with Party / Raid in a list independent manner and does not restrict distance
         /// </summary>
-        public static IEnumerable<WoWPlayer> GroupMembers
-        {
-            get
-            {
-                ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
-                    .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
-                    .Union(new[] { StyxWoW.Me.Guid })
-                    .Distinct()
-                    .ToArray();
+        /// 6.0
+        //public static IEnumerable<WoWPlayer> GroupMembers
+        //{
+        //    get
+        //    {
+        //        ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
+        //            .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
+        //            .Union(new[] { StyxWoW.Me.Guid })
+        //            .Distinct()
+        //            .ToArray();
 
-                return (  // must check inheritance in getobj because of LocalPlayer
-                    from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
-                    where p.IsFriendly && guids.Any(g => g == p.Guid)
-                    select p).ToList();
-            }
-        }
+        //        return (  // must check inheritance in getobj because of LocalPlayer
+        //            from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
+        //            where p.IsFriendly && guids.Any(g => g == p.Guid)
+        //            select p).ToList();
+        //    }
+        //}
 
         public static IEnumerable<WoWUnit> HealList
         {
@@ -151,28 +152,29 @@ namespace SlimAI.Helpers
             }
         }
 
-        public static IEnumerable<WoWUnit> GroupMembersAndPets
-        {
-            get
-            {
-                ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
-                    .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
-                    .Union(new[] { StyxWoW.Me.Guid })
-                    .Distinct()
-                    .ToArray();
+        //6.0
+        //public static IEnumerable<WoWUnit> GroupMembersAndPets
+        //{
+        //    get
+        //    {
+        //        ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
+        //            .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
+        //            .Union(new[] { StyxWoW.Me.Guid })
+        //            .Distinct()
+        //            .ToArray();
 
-                guids = guids
-                    .Union(ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
-                        .Where(p => p.GotAlivePet && p.IsInMyPartyOrRaid )
-                        .Select(p => p.Pet.Guid))
-                    .ToArray();
+        //        guids = guids
+        //            .Union(ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
+        //                .Where(p => p.GotAlivePet && p.IsInMyPartyOrRaid )
+        //                .Select(p => p.Pet.Guid))
+        //            .ToArray();
 
-                return (  // must check inheritance in getobj because of LocalPlayer
-                    from p in ObjectManager.GetObjectsOfType<WoWUnit>(true, true)
-                    where p.IsFriendly && guids.Any(g => g == p.Guid)
-                    select p).ToList();
-            }
-        }
+        //        return (  // must check inheritance in getobj because of LocalPlayer
+        //            from p in ObjectManager.GetObjectsOfType<WoWUnit>(true, true)
+        //            where p.IsFriendly && guids.Any(g => g == p.Guid)
+        //            select p).ToList();
+        //    }
+        //}
 
 
         /// <summary>
@@ -183,21 +185,22 @@ namespace SlimAI.Helpers
             get { return StyxWoW.Me.GroupInfo.RaidMembers.Union(StyxWoW.Me.GroupInfo.PartyMembers).Distinct(); }
         }
 
-        public static IEnumerable<WoWPlayer> NearbyGroupMembers
-        {
-            get
-            {
-                return GroupMembers.Where(p => p.DistanceSqr <= 40 * 40).ToList();
-            }
-        }
+        //6.0
+        //public static IEnumerable<WoWPlayer> NearbyGroupMembers
+        //{
+        //    get
+        //    {
+        //        return GroupMembers.Where(p => p.DistanceSqr <= 40 * 40).ToList();
+        //    }
+        //}
 
-        public static IEnumerable<WoWUnit> NearbyGroupMembersAndPets
-        {
-            get
-            {
-                return GroupMembersAndPets.Where(p => p.DistanceSqr <= 40 * 40).ToList();
-            }
-        }
+        //public static IEnumerable<WoWUnit> NearbyGroupMembersAndPets
+        //{
+        //    get
+        //    {
+        //        return GroupMembersAndPets.Where(p => p.DistanceSqr <= 40 * 40).ToList();
+        //    }
+        //}
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMeOrMyStuff
         {
@@ -294,7 +297,7 @@ namespace SlimAI.Helpers
                 return false;
             
             // Dummies/bosses are valid by default. Period.
-            if (p.IsTrainingDummy() || p.IsBoss())
+            if (p.IsTrainingDummy() )// 6.0 || p.IsBoss())
                 return true;
 
             // If it is a pet/minion/totem, lets find the root of ownership chain
@@ -655,16 +658,17 @@ namespace SlimAI.Helpers
         /// </summary>
         /// <param name="unit">unit to test if they are a known boss</param>
         /// <returns>true: if boss</returns>
-        public static bool IsBoss(this WoWUnit unit)
-        {
-            ulong guid = unit == null ? 0 : unit.Guid;
-            if ( guid == _lastIsBossGuid )
-                return _lastIsBossResult;
+        /// 6.0
+        //public static bool IsBoss(this WoWUnit unit)
+        //{
+        //    ulong guid = unit == null ? 0 : unit.Guid;
+        //    if ( guid == _lastIsBossGuid )
+        //        return _lastIsBossResult;
 
-            _lastIsBossGuid = guid;
-            _lastIsBossResult = unit != null && (Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry));
-            return _lastIsBossResult;
-        }
+        //    _lastIsBossGuid = guid;
+        //    _lastIsBossResult = unit != null && (Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry));
+        //    return _lastIsBossResult;
+        //}
 
         public static bool IsTrainingDummy(this WoWUnit unit)
         {
@@ -841,34 +845,35 @@ namespace SlimAI.Helpers
         private static double distLastMovingAwayCheck = 0f;
         private static readonly WaitTimer MovingAwayTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
 
-        public static bool CurrentTargetIsMovingAwayFromMe
-        {
-            get
-            {
-                if (guidLastMovingAwayCheck != StyxWoW.Me.CurrentTargetGuid || StyxWoW.Me.CurrentTargetGuid == 0)
-                {
-                    lastMovingAwayAnswer = false;
-                    if (StyxWoW.Me.CurrentTarget == null)
-                        guidLastMovingAwayCheck = 0;
-                    else
-                    {
-                        guidLastMovingAwayCheck = StyxWoW.Me.CurrentTargetGuid;
-                        distLastMovingAwayCheck = StyxWoW.Me.CurrentTarget.Distance;
-                        MovingAwayTimer.Reset();
-                    }
-                }
-                else if ( MovingAwayTimer.IsFinished )
-                {
-                    double currentDistance = StyxWoW.Me.CurrentTarget.Distance;
-                    double changeInDistance = currentDistance - distLastMovingAwayCheck;
-                    lastMovingAwayAnswer = changeInDistance > 0;
-                    distLastMovingAwayCheck = currentDistance;
-                    MovingAwayTimer.Reset();
-                }
+        //6.0
+        //public static bool CurrentTargetIsMovingAwayFromMe
+        //{
+        //    get
+        //    {
+        //        if (guidLastMovingAwayCheck != StyxWoW.Me.CurrentTargetGuid || StyxWoW.Me.CurrentTargetGuid == 0)
+        //        {
+        //            lastMovingAwayAnswer = false;
+        //            if (StyxWoW.Me.CurrentTarget == null)
+        //                guidLastMovingAwayCheck = 0;
+        //            else
+        //            {
+        //                guidLastMovingAwayCheck = StyxWoW.Me.CurrentTargetGuid;
+        //                distLastMovingAwayCheck = StyxWoW.Me.CurrentTarget.Distance;
+        //                MovingAwayTimer.Reset();
+        //            }
+        //        }
+        //        else if ( MovingAwayTimer.IsFinished )
+        //        {
+        //            double currentDistance = StyxWoW.Me.CurrentTarget.Distance;
+        //            double changeInDistance = currentDistance - distLastMovingAwayCheck;
+        //            lastMovingAwayAnswer = changeInDistance > 0;
+        //            distLastMovingAwayCheck = currentDistance;
+        //            MovingAwayTimer.Reset();
+        //        }
 
-                return lastMovingAwayAnswer ;
-            }
-        }
+        //        return lastMovingAwayAnswer ;
+        //    }
+        //}
 
     }
 
@@ -893,71 +898,72 @@ namespace SlimAI.Helpers
         /// <param name="target">unit to monitor</param>
         /// <param name="indeterminateValue">return value if death cannot be calculated ( -1 or int.MaxValue are common)</param>
         /// <returns>number of seconds </returns>
-        public static long TimeToDeath(this WoWUnit target, long indeterminateValue = -1)
-        {
-            if (target == null || !target.IsValid || !target.IsAlive)
-            {
-                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) is dead!", target.SafeName(), target.Guid, target.Entry);
-                return 0;
-            }
+        /// 6.0
+        //public static long TimeToDeath(this WoWUnit target, long indeterminateValue = -1)
+        //{
+        //    if (target == null || !target.IsValid || !target.IsAlive)
+        //    {
+        //        //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) is dead!", target.SafeName(), target.Guid, target.Entry);
+        //        return 0;
+        //    }
 
-            if (StyxWoW.Me.CurrentTarget.IsTrainingDummy())
-            {
-                return 111;     // pick a magic number since training dummies dont die
-            }
+        //    if (StyxWoW.Me.CurrentTarget.IsTrainingDummy())
+        //    {
+        //        return 111;     // pick a magic number since training dummies dont die
+        //    }
 
-            //Fill variables on new target or on target switch, this will loose all calculations from last target
-            if (guid != target.Guid || (guid == target.Guid && target.CurrentHealth == _firstLifeMax))
-            {
-                guid = target.Guid;
-                _firstLife = target.CurrentHealth;
-                _firstLifeMax = target.MaxHealth;
-                _firstTime = ConvDate2Timestam(DateTime.Now);
-                //Lets do a little trick and calculate with seconds / u know Timestamp from unix? we'll do so too
-            }
-            _currentLife = target.CurrentHealth;
-            _currentTime = ConvDate2Timestam(DateTime.Now);
-            int timeDiff = _currentTime - _firstTime;
-            uint hpDiff = _firstLife - _currentLife;
-            if (hpDiff > 0)
-            {
-                /*
-                * Rule of three (Dreisatz):
-                * If in a given timespan a certain value of damage is done, what timespan is needed to do 100% damage?
-                * The longer the timespan the more precise the prediction
-                * time_diff/hp_diff = x/first_life_max
-                * x = time_diff*first_life_max/hp_diff
-                * 
-                * For those that forgot, http://mathforum.org/library/drmath/view/60822.html
-                */
-                long fullTime = timeDiff * _firstLifeMax / hpDiff;
-                long pastFirstTime = (_firstLifeMax - _firstLife) * timeDiff / hpDiff;
-                long calcTime = _firstTime - pastFirstTime + fullTime - _currentTime;
-                if (calcTime < 1) calcTime = 1;
-                //calc_time is a int value for time to die (seconds) so there's no need to do SecondsToTime(calc_time)
-                long timeToDie = calcTime;
-                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}, you are dpsing with {4} dps", target.SafeName(), target.Guid, target.Entry, timeToDie, dps);
-                return timeToDie;
-            }
-            if (hpDiff <= 0)
-            {
-                //unit was healed,resetting the initial values
-                guid = target.Guid;
-                _firstLife = target.CurrentHealth;
-                _firstLifeMax = target.MaxHealth;
-                _firstTime = ConvDate2Timestam(DateTime.Now);
-                //Lets do a little trick and calculate with seconds / u know Timestamp from unix? we'll do so too
-                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) was healed, resetting data.", target.SafeName(), target.Guid, target.Entry);
-                return indeterminateValue;
-            }
-            if (_currentLife == _firstLifeMax)
-            {
-                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) is at full health.", target.SafeName(), target.Guid, target.Entry);
-                return indeterminateValue;
-            }
-            //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) no damage done, nothing to calculate.", target.SafeName(), target.Guid, target.Entry);
-            return indeterminateValue;
-        }
+        //    //Fill variables on new target or on target switch, this will loose all calculations from last target
+        //    if (guid != target.Guid || (guid == target.Guid && target.CurrentHealth == _firstLifeMax))
+        //    {
+        //        guid = target.Guid;
+        //        _firstLife = target.CurrentHealth;
+        //        _firstLifeMax = target.MaxHealth;
+        //        _firstTime = ConvDate2Timestam(DateTime.Now);
+        //        //Lets do a little trick and calculate with seconds / u know Timestamp from unix? we'll do so too
+        //    }
+        //    _currentLife = target.CurrentHealth;
+        //    _currentTime = ConvDate2Timestam(DateTime.Now);
+        //    int timeDiff = _currentTime - _firstTime;
+        //    uint hpDiff = _firstLife - _currentLife;
+        //    if (hpDiff > 0)
+        //    {
+        //        /*
+        //        * Rule of three (Dreisatz):
+        //        * If in a given timespan a certain value of damage is done, what timespan is needed to do 100% damage?
+        //        * The longer the timespan the more precise the prediction
+        //        * time_diff/hp_diff = x/first_life_max
+        //        * x = time_diff*first_life_max/hp_diff
+        //        * 
+        //        * For those that forgot, http://mathforum.org/library/drmath/view/60822.html
+        //        */
+        //        long fullTime = timeDiff * _firstLifeMax / hpDiff;
+        //        long pastFirstTime = (_firstLifeMax - _firstLife) * timeDiff / hpDiff;
+        //        long calcTime = _firstTime - pastFirstTime + fullTime - _currentTime;
+        //        if (calcTime < 1) calcTime = 1;
+        //        //calc_time is a int value for time to die (seconds) so there's no need to do SecondsToTime(calc_time)
+        //        long timeToDie = calcTime;
+        //        //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}, you are dpsing with {4} dps", target.SafeName(), target.Guid, target.Entry, timeToDie, dps);
+        //        return timeToDie;
+        //    }
+        //    if (hpDiff <= 0)
+        //    {
+        //        //unit was healed,resetting the initial values
+        //        guid = target.Guid;
+        //        _firstLife = target.CurrentHealth;
+        //        _firstLifeMax = target.MaxHealth;
+        //        _firstTime = ConvDate2Timestam(DateTime.Now);
+        //        //Lets do a little trick and calculate with seconds / u know Timestamp from unix? we'll do so too
+        //        //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) was healed, resetting data.", target.SafeName(), target.Guid, target.Entry);
+        //        return indeterminateValue;
+        //    }
+        //    if (_currentLife == _firstLifeMax)
+        //    {
+        //        //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) is at full health.", target.SafeName(), target.Guid, target.Entry);
+        //        return indeterminateValue;
+        //    }
+        //    //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) no damage done, nothing to calculate.", target.SafeName(), target.Guid, target.Entry);
+        //    return indeterminateValue;
+        //}
 
 
         private static readonly DateTime timeOrigin = new DateTime(2012, 1, 1); // Refernzdatum (festgelegt)

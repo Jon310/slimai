@@ -33,7 +33,7 @@ namespace SlimAI.Class.Druid
                     new ActionAlwaysSucceed()),
                 Tranq(),
                 Common.CreateInterruptBehavior(),
-                Spell.WaitForCastOrChannel(),
+                //Spell.WaitForCastOrChannel(),
                 new Decorator(ret => Me.HasAura("Tiger's Fury"),
                     new PrioritySelector(
                         new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
@@ -133,7 +133,7 @@ namespace SlimAI.Class.Druid
         private static Composite CreatePvP()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
+                //Spell.WaitForCastOrChannel(),
                 CloneFocus(),
                 Tranq(),
                 new Decorator(ret => !Me.Combat || Me.Mounted,
@@ -187,8 +187,9 @@ namespace SlimAI.Class.Druid
         {
             return new PrioritySelector(
                 new Decorator(ret => Me.Mounted || Me.Combat,
-                    new ActionAlwaysSucceed()),
-                PartyBuff.BuffGroup("Mark of the Wild"));
+                    new ActionAlwaysSucceed())
+                //PartyBuff.BuffGroup("Mark of the Wild")
+                );
         }
 
         private static Composite CreateFiller()

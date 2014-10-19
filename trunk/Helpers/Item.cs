@@ -58,31 +58,33 @@ namespace SlimAI.Helpers
 
         }
 
-        public static Composite UsePotionAndHealthstone(double healthPercent)
-        {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => StyxWoW.Me.HealthPercent < healthPercent,
-                    new PrioritySelector(
-                            ctx => FindFirstUsableItemBySpell("Healthstone", "Life Spirit"),
-                            new Decorator(
-                                ret => ret != null,
-                                new Sequence(
-                                        new Action(ret => ((WoWItem)ret).UseContainerItem()))))));
-        }
+        //6.0
+        //public static Composite UsePotionAndHealthstone(double healthPercent)
+        //{
+        //    return new PrioritySelector(
+        //        new Decorator(
+        //            ret => StyxWoW.Me.HealthPercent < healthPercent,
+        //            new PrioritySelector(
+        //                    ctx => FindFirstUsableItemBySpell("Healthstone", "Life Spirit"),
+        //                    new Decorator(
+        //                        ret => ret != null,
+        //                        new Sequence(
+        //                                new Action(ret => ((WoWItem)ret).UseContainerItem()))))));
+        //}
 
         #region Coroutine Healthstone Useage
-        public static async Task<bool> CoUseHS(double healthPercent)
-        {
-            if (Me.HealthPercent < healthPercent && FindFirstUsableItemBySpell("Healthstone", "Life Spirit") != null)
-            {
-                await Coroutine.ExternalTask(Task.Run(() =>
-                    FindFirstUsableItemBySpell("Healthstone", "Life Spirit").UseContainerItem()));
-                return true;
-            }
+        //6.0
+        //public static async Task<bool> CoUseHS(double healthPercent)
+        //{
+        //    if (Me.HealthPercent < healthPercent && FindFirstUsableItemBySpell("Healthstone", "Life Spirit") != null)
+        //    {
+        //        await Coroutine.ExternalTask(Task.Run(() =>
+        //            FindFirstUsableItemBySpell("Healthstone", "Life Spirit").UseContainerItem()));
+        //        return true;
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
         #endregion
 
         public static void UseTrinkets()
@@ -197,23 +199,24 @@ namespace SlimAI.Helpers
         /// </summary>
         /// <param name="spellNames"> Array of spell names to be check.</param>
         /// <returns></returns>
-        public static WoWItem FindFirstUsableItemBySpell(params string[] spellNames)
-        {
-            List<WoWItem> carried = StyxWoW.Me.CarriedItems;
-            // Yes, this is a bit of a hack. But the cost of creating an object each call, is negated by the speed of the Contains from a hash set.
-            // So take your optimization bitching elsewhere.
-            var spellNameHashes = new HashSet<string>(spellNames);
+        /// 6.0
+        //public static WoWItem FindFirstUsableItemBySpell(params string[] spellNames)
+        //{
+        //    List<WoWItem> carried = StyxWoW.Me.CarriedItems;
+        //    // Yes, this is a bit of a hack. But the cost of creating an object each call, is negated by the speed of the Contains from a hash set.
+        //    // So take your optimization bitching elsewhere.
+        //    var spellNameHashes = new HashSet<string>(spellNames);
 
-            return (from i in carried
-                    let spells = i.ItemSpells
-                    where i.ItemInfo != null && spells != null && spells.Count != 0 &&
-                          i.Usable &&
-                          i.Cooldown == 0 &&
-                          i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level &&
-                          spells.Any(s => s.IsValid && s.ActualSpell != null && spellNameHashes.Contains(s.ActualSpell.Name))
-                    orderby i.ItemInfo.Level descending
-                    select i).FirstOrDefault();
-        }
+        //    return (from i in carried
+        //            let spells = i.ItemSpells
+        //            where i.ItemInfo != null && spells != null && spells.Count != 0 &&
+        //                  i.Usable &&
+        //                  i.Cooldown == 0 &&
+        //                  i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level &&
+        //                  spells.Any(s => s.IsValid && s.ActualSpell != null && spellNameHashes.Contains(s.ActualSpell.Name))
+        //            orderby i.ItemInfo.Level descending
+        //            select i).FirstOrDefault();
+        //}
 
         /// <summary>
         ///  Returns true if you have a wand equipped, false otherwise.
@@ -233,33 +236,34 @@ namespace SlimAI.Helpers
         /// <param name = "healthPercent">Healthpercent to use health potions and healthstone</param>
         /// <param name = "manaPercent">Manapercent to use mana potions</param>
         /// <returns></returns>
-        public static Composite CreateUsePotionAndHealthstone(double healthPercent, double manaPercent)
-        {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => StyxWoW.Me.HealthPercent < healthPercent,
-                    new PrioritySelector(
-                        ctx => FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
-                        new Decorator(
-                            ret => ret != null,
-                            new Sequence(
-                                new Action(ret => Logging.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                    //Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                Helpers.Common.CreateWaitForLagDuration()))
-                        )),
-                new Decorator(
-                    ret => Me.PowerType == WoWPowerType.Mana && StyxWoW.Me.ManaPercent < manaPercent,
-                    new PrioritySelector(
-                        ctx => FindFirstUsableItemBySpell("Restore Mana", "Water Spirit"),
-                        new Decorator(
-                            ret => ret != null,
-                            new Sequence(
-                                new Action(ret => Logging.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                Helpers.Common.CreateWaitForLagDuration()))))
-                );
-        }
+        /// 6.0
+        //public static Composite CreateUsePotionAndHealthstone(double healthPercent, double manaPercent)
+        //{
+        //    return new PrioritySelector(
+        //        new Decorator(
+        //            ret => StyxWoW.Me.HealthPercent < healthPercent,
+        //            new PrioritySelector(
+        //                ctx => FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
+        //                new Decorator(
+        //                    ret => ret != null,
+        //                    new Sequence(
+        //                        new Action(ret => Logging.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+        //                            //Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+        //                        new Action(ret => ((WoWItem)ret).UseContainerItem()),
+        //                        Helpers.Common.CreateWaitForLagDuration()))
+        //                )),
+        //        new Decorator(
+        //            ret => Me.PowerType == WoWPowerType.Mana && StyxWoW.Me.ManaPercent < manaPercent,
+        //            new PrioritySelector(
+        //                ctx => FindFirstUsableItemBySpell("Restore Mana", "Water Spirit"),
+        //                new Decorator(
+        //                    ret => ret != null,
+        //                    new Sequence(
+        //                        new Action(ret => Logging.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+        //                        new Action(ret => ((WoWItem)ret).UseContainerItem()),
+        //                        Helpers.Common.CreateWaitForLagDuration()))))
+        //        );
+        //}
 
 
         public static Composite CreateUseAlchemyBuffsBehavior()
