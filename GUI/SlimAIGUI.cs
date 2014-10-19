@@ -170,7 +170,7 @@ namespace SlimAI.GUI
             }
 
             if (o != null)
-                sb.Append(" @ " + o.Distance.ToString("F1") + " yds - " + o.SafeName());
+                sb.Append(" @ " + o.Distance.ToString("F1") + " yds - " + o.Name);
             else if (BotPoi.Current.Type != PoiType.None)
                 sb.Append(" @ " + BotPoi.Current.Location.Distance(StyxWoW.Me.Location).ToString("F1") + " yds - " + BotPoi.Current.Name);
 
@@ -182,7 +182,7 @@ namespace SlimAI.GUI
             {
                 try
                 {
-                    sb.AppendLine(u.SafeName().AlignLeft(20) + " " + u.HealthPercent.ToString("F1").AlignRight(5) + "%  " + u.Distance.ToString("F1").AlignRight(5) + " yds");
+                    sb.AppendLine(u.Name.AlignLeft(20) + " " + u.HealthPercent.ToString("F1").AlignRight(5) + "%  " + u.Distance.ToString("F1").AlignRight(5) + " yds");
                     if (++i == 5)
                         break;
                 }
@@ -204,7 +204,7 @@ namespace SlimAI.GUI
                 {
                     try
                     {
-                        sb.AppendLine(u.SafeName().AlignLeft(22) + "- " + u.HealthPercent.ToString("F1").AlignRight(5) + "% @ " + u.Distance.ToString("F1").AlignRight(5) + " yds");
+                        sb.AppendLine(u.Name.AlignLeft(22) + "- " + u.HealthPercent.ToString("F1").AlignRight(5) + "% @ " + u.Distance.ToString("F1").AlignRight(5) + " yds");
                         if (++i == 5)
                             break;
                     }

@@ -30,7 +30,7 @@ namespace SlimAI.Class.Rogue
 //F	4.33	shadow_blades
             new Decorator(ret => SlimAI.Burst,
                 new PrioritySelector(
-                    Spell.Cast("Shadow Blades", ret => Me.CurrentTarget.TimeToDeath() > 5),
+                    Spell.Cast("Shadow Blades"),
                     Spell.Cast("Premeditation", ret => Me.ComboPoints < 3))),
 //G	13.26	premeditation,if=combo_points<3|(talent.anticipation.enabled&anticipation_charges<3)
 //H	49.44	pool_resource,for_next=1
@@ -68,7 +68,7 @@ namespace SlimAI.Class.Rogue
                 new Decorator(ret => Me.ComboPoints == 5 && (!SpellManager.HasSpell("Anticipation") 
                     /* || cooldown.shadow_blades.remains<=11|anticipation_charges>=4|(buff.shadow_blades.up&anticipation_charges>=3)*/),
                     new PrioritySelector(
-                        Spell.Cast("Rupture", ret => DebuffTimeLeft(1943, Me.CurrentTarget) < 4 && Me.CurrentTarget.TimeToDeath() >= 26 && Unit.UnfriendlyUnits(10).Count() < 3),
+                        Spell.Cast("Rupture", ret => DebuffTimeLeft(1943, Me.CurrentTarget) < 4 && Unit.UnfriendlyUnits(10).Count() < 3),
                         Spell.Cast("Crimson Tempest", ret => Unit.UnfriendlyUnits(8).Count() > 1 && SlimAI.AOE),
                         Spell.Cast("Eviscerate")
                         )));

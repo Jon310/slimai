@@ -31,7 +31,7 @@ namespace SlimAI.Class.Druid
             if (Me.IsCasting || Me.IsChanneling || !Me.GotTarget || Me.Mounted) return true;
             //cooldowns
             //if (IsCurrentTank() && SlimAI.AFK){if (await Item.CoUseHands()) return true;}
-            if (await Item.CoUseHS(40)) return true;
+            //if (await Item.CoUseHS(40)) return true;
             if (await Spell.CoCast(Rejuvenation, Me, Me.HasAura(HeartoftheWildBuff) && !Me.HasAura(Rejuvenation))) return true;
             if (await Spell.CoCast(CenarionWard, Me)) return true;
             if (await Spell.CoCast("Bone Shield", IsCurrentTank() && !Me.HasAura("Bone Shield"))) return true;
@@ -108,7 +108,7 @@ namespace SlimAI.Class.Druid
                 //        Spell.Cast(SurvivalInstincts, ret => Me.HealthPercent <= 50 && !Me.HasAura("Might of Ursoc")),
                 //        Spell.Cast(MightofUrsoc, ret => Me.HealthPercent <= 30 && !Me.HasAura("Survival Instincts")))),
                 //Spell.Cast(Renewal, ret => Me.HealthPercent <= 50 || Me.HasAura("Might of Ursoc")),
-                Item.UsePotionAndHealthstone(40),
+                //Item.UsePotionAndHealthstone(40),
                 Spell.Cast(FrenziedRegeneration, ret => Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration")),
                 Spell.Cast(SavageDefense, ret => IsCurrentTank())
                     );
@@ -128,8 +128,9 @@ namespace SlimAI.Class.Druid
         {
             return new PrioritySelector(
                 new Decorator(ret => Me.Mounted || Me.Combat,
-                    new ActionAlwaysSucceed()),
-                PartyBuff.BuffGroup("Mark of the Wild"));
+                    new ActionAlwaysSucceed())
+                //PartyBuff.BuffGroup("Mark of the Wild")
+                );
         }
 
         static bool IsCurrentTank()

@@ -32,8 +32,8 @@ namespace SlimAI.Class.Priest
                 
                 new Decorator(ret => Me.ChanneledSpell != null,
                     new PrioritySelector(
-                        new Decorator(ret => Me.ChanneledSpell.Name == "Hymn of Hope",
-                            Spell.WaitForCastOrChannel()))),
+                        //new Decorator(ret => Me.ChanneledSpell.Name == "Hymn of Hope",
+                            //Spell.WaitForCastOrChannel()))),
                 
                 Hymn(),
                 MassDispel(),
@@ -43,7 +43,7 @@ namespace SlimAI.Class.Priest
                         Spell.Cast("Lifeblood"),
                         new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
                         new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
-                            new Decorator(ret => Me.CurrentTarget.IsBoss(),
+                            new Decorator(ret => Me.CurrentTarget.IsBoss,
                                 new PrioritySelector(
                                     Spell.Cast(Shadowfiend, ret => Spell.GetSpellCooldown("Shadowfiend").TotalMilliseconds < 10),
                                     Spell.Cast(Mindbender, ret => Spell.GetSpellCooldown("Mindbender").TotalMilliseconds < 10),
@@ -61,7 +61,7 @@ namespace SlimAI.Class.Priest
                             ret => Me.ChanneledSpell.Name == "Mind Flay"
                                 && CMF && !SpellManager.HasSpell("Solace and Insanity"),
                             new Sequence(
-                                new Action(ret => Logging.WriteDiagnostic("/cancel Mind Flay on {0} @ {1:F1}%", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HealthPercent)),
+                                //new Action(ret => Logging.WriteDiagnostic("/cancel Mind Flay on {0} @ {1:F1}%", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HealthPercent)),
                                 new Action(ret => SpellManager.StopCasting()),
                                 new WaitContinue(TimeSpan.FromMilliseconds(500), ret => Me.ChanneledSpell == null, new ActionAlwaysSucceed()))))),
 
@@ -92,7 +92,7 @@ namespace SlimAI.Class.Priest
                 //    new PrioritySelector(
                 Spell.Cast(MindFlay, on => Me.CurrentTarget, ret => !CMF),
                 Spell.Cast(ShadowWordDeath, ret => Me.IsMoving),
-                Spell.Cast(ShadowWordPain, ret => Me.IsMoving));
+                Spell.Cast(ShadowWordPain, ret => Me.IsMoving))));
         }
 
          [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Priest, WoWSpec.PriestShadow)]
@@ -101,7 +101,7 @@ namespace SlimAI.Class.Priest
             return new PrioritySelector(
                 //new Decorator(ret => AdvancedAI.PvPRot,
                 //    ShadowPriestPvP.CreateSPPvPBuffs),
-                PartyBuff.BuffGroup("Power Word: Fortitude"),
+                //PartyBuff.BuffGroup("Power Word: Fortitude"),
                 Spell.Cast(Shadowform, ret => !Me.HasAura("Shadowform")),
                 Spell.Cast(InnerFire, ret => !Me.HasAura("Inner Fire")));
         }

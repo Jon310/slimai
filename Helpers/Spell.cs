@@ -635,45 +635,47 @@ namespace SlimAI.Helpers
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <param name = "allow">Whether or not to allow lag tollerance for spell queueing</param>
         /// <returns></returns>
-        public static Composite WaitForCast(LagTolerance allow = LagTolerance.Yes)
-        {
-            return new PrioritySelector(
-                new Action(ret =>
-                {
-                    if (IsCasting(allow))
-                        return RunStatus.Success;
+        /// 6.0
+        //public static Composite WaitForCast(LagTolerance allow = LagTolerance.Yes)
+        //{
+        //    return new PrioritySelector(
+        //        new Action(ret =>
+        //        {
+        //            if (IsCasting(allow))
+        //                return RunStatus.Success;
 
-                    return RunStatus.Failure;
-                })
-                );
-        }
+        //            return RunStatus.Failure;
+        //        })
+        //        );
+        //}
 
-        public static bool IsCasting(LagTolerance allow = LagTolerance.Yes)
-        {
-            if (!StyxWoW.Me.IsCasting)
-                return false;
+        //6.0
+        //public static bool IsCasting(LagTolerance allow = LagTolerance.Yes)
+        //{
+        //    if (!StyxWoW.Me.IsCasting)
+        //        return false;
 
-            //if (StyxWoW.Me.IsWanding())
-            //    return RunStatus.Failure;
+        //    //if (StyxWoW.Me.IsWanding())
+        //    //    return RunStatus.Failure;
 
-            // following logic previously existed to let channels pass thru -- keeping for now
-            if (StyxWoW.Me.ChannelObjectGuid > 0)
-                return false;
+        //    // following logic previously existed to let channels pass thru -- keeping for now
+        //    if (StyxWoW.Me.ChannelObjectGuid > 0)
+        //        return false;
 
-            uint latency = StyxWoW.WoWClient.Latency * 2;
-            TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
-            if (allow == LagTolerance.Yes // && castTimeLeft != TimeSpan.Zero 
-                && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
-                return false;
+        //    uint latency = StyxWoW.WoWClient.Latency * 2;
+        //    TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
+        //    if (allow == LagTolerance.Yes // && castTimeLeft != TimeSpan.Zero 
+        //        && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
+        //        return false;
 
-            /// -- following code does nothing since the behaviors created are not linked to execution tree
-            /// 
-            // if (faceDuring && StyxWoW.Me.ChanneledSpell == null) // .ChanneledCastingSpellId == 0)
-            //    Movement.CreateFaceTargetBehavior();
+        //    /// -- following code does nothing since the behaviors created are not linked to execution tree
+        //    /// 
+        //    // if (faceDuring && StyxWoW.Me.ChanneledSpell == null) // .ChanneledCastingSpellId == 0)
+        //    //    Movement.CreateFaceTargetBehavior();
 
-            // return RunStatus.Running;
-            return true;
-        }
+        //    // return RunStatus.Running;
+        //    return true;
+        //}
 
         /// <summary>
         ///   Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
@@ -711,27 +713,30 @@ namespace SlimAI.Helpers
             return true;
         }
 
-        public static bool IsCastingOrChannelling(LagTolerance allow = LagTolerance.Yes)
-        {
-            return IsCasting(allow) || IsChannelling();
-        }
+        //6.0
+        //public static bool IsCastingOrChannelling(LagTolerance allow = LagTolerance.Yes)
+        //{
+        //    return IsCasting(allow) || IsChannelling();
+        //}
 
-        public static Composite WaitForCastOrChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
-        {
-            return new PrioritySelector(
-                WaitForCast(allow),
-                WaitForChannel(allow)
-                );
-        }
+        //6.0
+        //public static Composite WaitForCastOrChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
+        //{
+        //    return new PrioritySelector(
+        //        WaitForCast(allow),
+        //        WaitForChannel(allow)
+        //        );
+        //}
 
-        public static Composite WaitForGcdOrCastOrChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
-        {
-            return new PrioritySelector(
-                WaitForGlobalCooldown(allow),
-                WaitForCast(allow),
-                WaitForChannel(allow)
-                );
-        }
+        //6.0
+        //public static Composite WaitForGcdOrCastOrChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
+        //{
+        //    return new PrioritySelector(
+        //        WaitForGlobalCooldown(allow),
+        //        WaitForCast(allow),
+        //        WaitForChannel(allow)
+        //        );
+        //}
 
         #endregion
 
@@ -890,7 +895,7 @@ namespace SlimAI.Helpers
                             new Action(ret =>
                             {
                                 wasMonkSpellQueued = (Spell.GcdActive || Me.IsCasting || Me.ChanneledSpell != null);
-                                Logging.Write(string.Format("*{0} on {1} at {2:F1} yds at {3:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).Distance, onUnit(ret).HealthPercent));
+                                Logging.Write(string.Format("*{0} on at {2:F1} yds at {3:F1}%", name, onUnit(ret).Distance, onUnit(ret).HealthPercent));
                                 SpellManager.Cast(name, onUnit(ret));
                             }),
                 // if spell was in progress before cast (we queued this one) then wait in progress one to finish
@@ -958,11 +963,11 @@ namespace SlimAI.Helpers
                 }
             }
 
-            if (Me.CurrentPower < spell.PowerCost)
-            {
-                Logging.WriteDiagnostic("CanCastSpell: wowSpell {0} requires {1} power but only {2} available", spell.Name, spell.PowerCost, Me.CurrentMana);
-                return false;
-            }
+            //if (Me.CurrentPower < spell.PowerCost)
+            //{
+            //    Logging.WriteDiagnostic("CanCastSpell: wowSpell {0} requires {1} power but only {2} available", spell.Name, spell.PowerCost, Me.CurrentMana);
+            //    return false;
+            //}
 
             if (Me.IsMoving && spell.CastTime > 0)
             {
@@ -1078,25 +1083,26 @@ namespace SlimAI.Helpers
             return guid.ToString("X") + "-" + spellName;
         }
 
-        public static string DoubleCastKey(WoWUnit unit, string spell)
-        {
-            return DoubleCastKey(unit.Guid, spell);
-        }
+        //6.0
+        //public static string DoubleCastKey(WoWUnit unit, string spell)
+        //{
+        //    return DoubleCastKey(unit.Guid, spell);
+        //}
 
-        public static bool Contains(this Dictionary<string, DateTime> dict, WoWUnit unit, string spellName)
-        {
-            return dict.ContainsKey(DoubleCastKey(unit, spellName));
-        }
+        //public static bool Contains(this Dictionary<string, DateTime> dict, WoWUnit unit, string spellName)
+        //{
+        //    return dict.ContainsKey(DoubleCastKey(unit, spellName));
+        //}
 
-        public static bool ContainsAny(this Dictionary<string, DateTime> dict, WoWUnit unit, params string[] spellNames)
-        {
-            return spellNames.Any(s => dict.ContainsKey(DoubleCastKey(unit, s)));
-        }
+        //public static bool ContainsAny(this Dictionary<string, DateTime> dict, WoWUnit unit, params string[] spellNames)
+        //{
+        //    return spellNames.Any(s => dict.ContainsKey(DoubleCastKey(unit, s)));
+        //}
 
-        public static bool ContainsAll(this Dictionary<string, DateTime> dict, WoWUnit unit, params string[] spellNames)
-        {
-            return spellNames.All(s => dict.ContainsKey(DoubleCastKey(unit, s)));
-        }
+        //public static bool ContainsAll(this Dictionary<string, DateTime> dict, WoWUnit unit, params string[] spellNames)
+        //{
+        //    return spellNames.All(s => dict.ContainsKey(DoubleCastKey(unit, s)));
+        //}
 
         public static readonly Dictionary<string, DateTime> DoubleCastPreventionDict =
             new Dictionary<string, DateTime>();
@@ -1221,8 +1227,9 @@ namespace SlimAI.Helpers
                     if (_buffName == null)
                         return false;
 
-                    if (DoubleCastPreventionDict.Contains(_buffUnit, _buffName))
-                        return false;
+                    //6.0
+                    //if (DoubleCastPreventionDict.Contains(_buffUnit, _buffName))
+                    //    return false;
 
                     if (!buffNames.Any())
                         return !(myBuff ? _buffUnit.HasMyAura(_buffName) : _buffUnit.HasAura(_buffName));
@@ -1264,8 +1271,9 @@ namespace SlimAI.Helpers
                     if (_buffName == null)
                         return false;
 
-                    if (DoubleCastPreventionDict.Contains(onUnit(ret), name(ret)))
-                        return false;
+                    //6.0
+                    //if (DoubleCastPreventionDict.Contains(onUnit(ret), name(ret)))
+                    //    return false;
 
                     if (!buffNames.Any())
                     {
@@ -1287,18 +1295,17 @@ namespace SlimAI.Helpers
                 );
         }
 
-
         public static void UpdateDoubleCastDict(string spellName, WoWUnit unit)
         {
             if (unit == null)
                 return;
 
-            DateTime expir = DateTime.UtcNow + TimeSpan.FromSeconds(3);
-            string key = DoubleCastKey(unit.Guid, spellName);
-            if (DoubleCastPreventionDict.ContainsKey(key))
-                DoubleCastPreventionDict[key] = expir;
+            //DateTime expir = DateTime.UtcNow + TimeSpan.FromSeconds(3);
+            //string key;//DoubleCastKey(unit, spellName);
+            //if (DoubleCastPreventionDict.ContainsKey(key))
+            //    DoubleCastPreventionDict[key] = expir;
 
-            DoubleCastPreventionDict.Add(key, expir);
+            //DoubleCastPreventionDict.Add(key, expir);
         }
 
         #endregion
@@ -1574,10 +1581,10 @@ namespace SlimAI.Helpers
                                 _IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
                                 //LogCast(spell.Name, _castOnUnit);
-                                Logging.Write("{0} on {1}", spell.Name, _castOnUnit.SafeName());
+                                //Logging.Write("{0} on {1}", spell.Name, _castOnUnit.SafeName());
                                 if (!SpellManager.Cast(spell, _castOnUnit))
                                 {
-                                    Logging.Write("cast of {0} on {1} failed!", spell.Name, _castOnUnit.SafeName());
+                                    //Logging.Write("cast of {0} on {1} failed!", spell.Name, _castOnUnit.SafeName());
                                     //Logger.WriteDebug(Color.LightPink, "cast of {0} on {1} failed!", spell.Name, _castOnUnit.SafeName());
                                     return RunStatus.Failure;
                                 }
@@ -1617,17 +1624,17 @@ namespace SlimAI.Helpers
                                     {
                                         
                                         // Interrupted or finished casting. 
-                                        if (!Spell.IsCastingOrChannelling(allow))
-                                        {
-                                            // Logger.WriteDebug("Spell.Cast(\"{0}\"): cast has ended", name(ret));
-                                            return true;
-                                        }
+                                        //if (!Spell.IsCastingOrChannelling(allow))
+                                        //{
+                                        //    // Logger.WriteDebug("Spell.Cast(\"{0}\"): cast has ended", name(ret));
+                                        //    return true;
+                                        //}
 
                                         // check cancel delegate if we are finished
                                         if (cancel(ret))
                                         {
                                             SpellManager.StopCasting();
-                                            Logging.Write("/cancel {0} on {1} @ {2:F1}%", name(ret), _castOnUnit.SafeName(), _castOnUnit.HealthPercent);
+                                            //Logging.Write("/cancel {0} on {1} @ {2:F1}%", name(ret), _castOnUnit.SafeName(), _castOnUnit.HealthPercent);
                                             //Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name(ret), _castOnUnit.SafeName(), _castOnUnit.HealthPercent);
                                             return true;
                                         }
@@ -1784,7 +1791,7 @@ namespace SlimAI.Helpers
                     new PrioritySelector(
                         new Decorator(
                             ret => _castOnUnit != null && _castOnUnit.Distance < Spell.ActualMaxRange(spell, _castOnUnit),
-                            CastOnGround(spell, loc => _castOnUnit.Location, requirements, waitForSpell, desc => string.Format("{0} @ {1:F1}%", _castOnUnit.SafeName(), _castOnUnit.HealthPercent))
+                            CastOnGround(spell, loc => _castOnUnit.Location, requirements, waitForSpell, desc => string.Format(" @ {1:F1}%", _castOnUnit.HealthPercent))
                             ),
                         new Action(r => { _castOnUnit = null; return RunStatus.Failure; })
                         ),
@@ -1977,18 +1984,20 @@ namespace SlimAI.Helpers
                         formSwitch = true;
                         currentPower = Me.CurrentMana;
                     }
-                     if (spell.PowerCost >= 100)
-                    {
-                        formSwitch = true;
-                        currentPower = Me.CurrentMana;
-                    }
+                    //6.0
+                    // if (spell.PowerCost >= 100)
+                    //{
+                    //    formSwitch = true;
+                    //    currentPower = Me.CurrentMana;
+                    //}
                 }
             }
 
-            if (currentPower < (uint) spell.PowerCost)
-            {
-                return false;
-            }
+            //6.0
+            //if (currentPower < (uint) spell.PowerCost)
+            //{
+            //    return false;
+            //}
 
             // override spell will sometimes always have cancast=false, so check original also
             if (!skipWowCheck && !spell.CanCast && (sfr.Override == null || !sfr.Original.CanCast))
@@ -2047,7 +2056,7 @@ namespace SlimAI.Helpers
                 ret => onUnit != null
                     && onUnit(ret) != null
                     && castName != null
-                    && !DoubleCastPreventionDict.Contains(onUnit(ret), castName)
+                    //&& !DoubleCastPreventionDict.Contains(onUnit(ret), castName)
                     && !onUnit(ret).HasAura(castName),
                 new Sequence(
                     CastHack(castName, onUnit, requirements),

@@ -31,10 +31,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="GreyMagic">
-      <HintPath>..\..\GreyMagic.dll</HintPath>
+      <HintPath>..\..\..\HBTest\GreyMagic.dll</HintPath>
     </Reference>
     <Reference Include="Honorbuddy">
-      <HintPath>..\..\Honorbuddy.exe</HintPath>
+      <HintPath>..\..\..\HBTest\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\Newtonsoft.Json.dll</HintPath>

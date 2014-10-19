@@ -56,7 +56,7 @@ namespace SlimAI.Managers
                 PetSummonAfterDismountTimer.Reset();
             }
 
-            if (StyxWoW.Me.Pet != null && _petGuid != StyxWoW.Me.Pet.Guid)
+            if (StyxWoW.Me.Pet != null)
             {
                 // clear any existing spells
                 PetSpells.Clear();
@@ -68,7 +68,7 @@ namespace SlimAI.Managers
                     // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
                     PetSpells.AddRange(StyxWoW.Me.PetSpells);
                     PetSummonAfterDismountTimer.Reset();
-                    _petGuid = StyxWoW.Me.Pet.Guid;
+                    //_petGuid = StyxWoW.Me.Pet.Guid;
 
                     Logging.WriteDiagnostic("---PetSpells Loaded---");
                     //Logger.WriteDebug("---PetSpells Loaded---");
@@ -127,12 +127,11 @@ namespace SlimAI.Managers
             if (spell == null)
                 return;
 
-            Logging.Write(string.Format("[Pet] Casting {0} on {1}", action, on.SafeName()));
+            Logging.Write(string.Format("[Pet] Casting {0} on {1}", action, on.Name));
             //Logger.Write(string.Format("[Pet] Casting {0} on {1}", action, on.SafeName()));
             WoWUnit save = StyxWoW.Me.FocusedUnit;
             StyxWoW.Me.SetFocus(on);
             Lua.DoString("CastPetAction({0}, 'focus')", spell.ActionBarIndex + 1);
-            StyxWoW.Me.SetFocus( save == null ? 0 : save.Guid );           
         }
 
         /// <summary>

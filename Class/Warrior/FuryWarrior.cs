@@ -59,7 +59,7 @@ namespace SlimAI.Class.Warrior
             //less that 20 % stop the bot here
             if (Me.CurrentTarget.HealthPercent < 20) return true;
 
-            await Item.CoUseHS(40);
+            //await Item.CoUseHS(40);
 
             await Spell.CoCast("Blood Fury", SlimAI.Burst);
             await Spell.CoCast(Recklessness, SlimAI.Burst);

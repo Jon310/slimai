@@ -34,9 +34,9 @@ namespace SlimAI.Class.Deathknight
                 new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget,
                     new ActionAlwaysSucceed()),
 
-                Spell.WaitForCastOrChannel(),
+                //Spell.WaitForCastOrChannel(),
                 Common.CreateInterruptBehavior(),
-                Item.UsePotionAndHealthstone(40),
+                //Item.UsePotionAndHealthstone(40),
                 Spell.Cast(Conversion, ret => Me.HealthPercent < 50 && Me.RunicPowerPercent >= 20 && !Me.HasAura("Conversion")),
                 Spell.Cast(Conversion, ret => Me.HealthPercent > 65 && Me.HasAura("Conversion")),
                 Spell.Cast(DeathPact, ret => Me.HealthPercent < 45),

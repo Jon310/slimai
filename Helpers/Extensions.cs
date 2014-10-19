@@ -97,45 +97,46 @@ namespace SlimAI.Helpers
 
         public static bool ShowPlayerNames { get; set; }
 
-        public static string SafeName(this WoWObject obj)
-        {
-            if (obj.IsMe)
-            {
-                return "Me";
-            }
+        //6.0
+        //public static string SafeName(this WoWObject obj)
+        //{
+        //    if (obj.IsMe)
+        //    {
+        //        return "Me";
+        //    }
 
-            string name;
-            if (obj is WoWPlayer)
-            {
-                if (!obj.ToPlayer().IsFriendly)
-                {
-                    name = "Enemy.";
-                }
-                else
-                {
-                    if (RaFHelper.Leader == obj)
-                        name = "lead.";
-                    else if (Group.Tanks.Any(t => t.Guid == obj.Guid))
-                        name = "tank.";
-                    else if (Group.Healers.Any(t => t.Guid == obj.Guid))
-                        name = "healer.";
-                    else
-                        name = "dps.";
-                }
-                name += ShowPlayerNames ? ((WoWPlayer)obj).Name : ((WoWPlayer)obj).Class.ToString();
-            }
-            else if (obj is WoWUnit && obj.ToUnit().IsPet)
-            {
-                WoWUnit root = obj.ToUnit().OwnedByRoot;
-                name =  root == null ? "(unknown)" : root.SafeName()  + ":Pet";
-            }
-            else
-            {
-                name = obj.Name;
-            }
+        //    string name;
+        //    if (obj is WoWPlayer)
+        //    {
+        //        if (!obj.ToPlayer().IsFriendly)
+        //        {
+        //            name = "Enemy.";
+        //        }
+        //        else
+        //        {
+        //            if (RaFHelper.Leader == obj)
+        //                name = "lead.";
+        //            else if (Group.Tanks.Any(t => t.Guid == obj.Guid))
+        //                name = "tank.";
+        //            else if (Group.Healers.Any(t => t.Guid == obj.Guid))
+        //                name = "healer.";
+        //            else
+        //                name = "dps.";
+        //        }
+        //        name += ShowPlayerNames ? ((WoWPlayer)obj).Name : ((WoWPlayer)obj).Class.ToString();
+        //    }
+        //    else if (obj is WoWUnit && obj.ToUnit().IsPet)
+        //    {
+        //        WoWUnit root = obj.ToUnit().OwnedByRoot;
+        //        name =  root == null ? "(unknown)" : root.SafeName()  + ":Pet";
+        //    }
+        //    else
+        //    {
+        //        name = obj.Name;
+        //    }
 
-            return name + "." + UnitID(obj.Guid);
-        }
+        //    return name + "." + UnitID(obj.Guid);
+        //}
 
         public static bool IsWanding(this LocalPlayer me)
         {

@@ -37,15 +37,16 @@ namespace SlimAI.Helpers
 
         public ulong SourceGuid { get { return Args[3].ToString() == "" ? 1 : ulong.Parse(Args[3].ToString().Replace("0x", string.Empty), NumberStyles.HexNumber); } }
 
-        public WoWUnit SourceUnit
-        {
-            get
-            {
-                return
-                    ObjectManager.GetObjectsOfType<WoWUnit>(true, true).FirstOrDefault(
-                        o => o.IsValid && (o.Guid == SourceGuid || o.DescriptorGuid == SourceGuid));
-            }
-        }
+        //6.0
+        //public WoWUnit SourceUnit
+        //{
+        //    get
+        //    {
+        //        return
+        //            ObjectManager.GetObjectsOfType<WoWUnit>(true, true).FirstOrDefault(
+        //                o => o.IsValid && (o.Guid == SourceGuid || o.DescriptorGuid == SourceGuid));
+        //    }
+        //}
 
         public string SourceName { get { return Args[4].ToString(); } }
 
@@ -53,15 +54,16 @@ namespace SlimAI.Helpers
 
         public ulong DestGuid { get { return ulong.Parse(Args[7].ToString().Replace("0x", string.Empty), NumberStyles.HexNumber); } }
 
-        public WoWUnit DestUnit
-        {
-            get
-            {
-                return
-                    ObjectManager.GetObjectsOfType<WoWUnit>(true, true).FirstOrDefault(
-                        o => o.IsValid && (o.Guid == DestGuid || o.DescriptorGuid == DestGuid));
-            }
-        }
+        //6.0
+        //public WoWUnit DestUnit
+        //{
+        //    get
+        //    {
+        //        return
+        //            ObjectManager.GetObjectsOfType<WoWUnit>(true, true).FirstOrDefault(
+        //                o => o.IsValid && (o.Guid == DestGuid || o.DescriptorGuid == DestGuid));
+        //    }
+        //}
 
         public string DestName { get { return Args[8].ToString(); } }
 

@@ -76,7 +76,7 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
             await Spell.CoCast(DieByTheSword, Me.HealthPercent <= 20);
 
-            await Item.CoUseHS(50);
+            //await Item.CoUseHS(50);
             await CoLeap();
             await CoDemoBanner();
 
@@ -180,7 +180,7 @@ namespace SlimAI.Class.Warrior
 
             if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
 
-            await Item.CoUseHS(40);
+            //await Item.CoUseHS(40);
             await Spell.CoCast("Disarm", Me.CurrentTarget.HasAnyAura(Disarm) && !Me.CurrentTarget.HasAnyAura(DontDisarm));
 
             if (StyxWoW.Me.CurrentTarget != null && (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange || StyxWoW.Me.IsCasting || SpellManager.GlobalCooldown)) return true;
@@ -872,7 +872,7 @@ namespace SlimAI.Class.Warrior
                 return true;
 
             // Dummies/bosses are valid by default. Period.
-            if (p.IsTrainingDummy() || p.IsBoss())
+            if (p.IsTrainingDummy())
                 return true;
 
             // If its a pet, lets ignore it please.
@@ -883,8 +883,9 @@ namespace SlimAI.Class.Warrior
             if (p.IsNonCombatPet || p.IsCritter)
                 return false;
 
-            if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
-                return false;
+            //6.0
+            //if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
+            //    return false;
 
             return true;
         }

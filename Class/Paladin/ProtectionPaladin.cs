@@ -33,7 +33,7 @@ namespace SlimAI.Class.Paladin
 
                 Common.CreateInterruptBehavior(),
                 //Staying alive
-                Item.UsePotionAndHealthstone(40),
+                //Item.UsePotionAndHealthstone(40),
                 Spell.Cast(SacredShield, on => Me, ret => !Me.HasAura("Sacred Shield") && SpellManager.HasSpell("Sacred Shield")),
                 Spell.Cast(LayonHands, on => Me, ret => Me.HealthPercent <= 10 && !Me.HasAura("Forbearance")),
                 Spell.Cast(ArdentDefender, ret => Me.HealthPercent <= 15 && Me.HasAura("Forbearance")),

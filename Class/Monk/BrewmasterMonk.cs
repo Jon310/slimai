@@ -35,11 +35,11 @@ namespace SlimAI.Class.Monk
                 new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
                     new ActionAlwaysSucceed()),
                 ZenMed(),
-                Spell.WaitForCastOrChannel(),
+                //Spell.WaitForCastOrChannel(),
                 //CreateInterruptSpellCast(),
                 //Common.CreateInterruptBehavior(),
                 //Spell.Cast(SpearHandStrike, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
-                Item.UsePotionAndHealthstone(40),
+                //Item.UsePotionAndHealthstone(40),
                 //new Action(ret => { Item.UseWaist(); return RunStatus.Failure; }),
                 new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
 
@@ -126,8 +126,9 @@ namespace SlimAI.Class.Monk
         {
             return new PrioritySelector(
                 new Decorator(ret => Me.Mounted,
-                    new ActionAlwaysSucceed()),
-                PartyBuff.BuffGroup("Legacy of the Emperor"));
+                    new ActionAlwaysSucceed())
+                //PartyBuff.BuffGroup("Legacy of the Emperor")
+                );
         }
         #endregion
 

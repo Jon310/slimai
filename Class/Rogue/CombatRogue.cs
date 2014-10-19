@@ -37,7 +37,7 @@ namespace SlimAI.Class.Rogue
 //I	4.70	vanish,if=time>10&(combo_points<3|(talent.anticipation.enabled&anticipation_charges<3)|(buff.shadow_blades.down&(combo_points<4|(talent.anticipation.enabled&anticipation_charges<4))))&((talent.shadow_focus.enabled&buff.adrenaline_rush.down&energy<20)|(talent.subterfuge.enabled&energy>=90)|(!talent.shadow_focus.enabled&!talent.subterfuge.enabled&energy>=60))
             new Decorator(ret => SlimAI.Burst,
                 new PrioritySelector(
-                    Spell.Cast("Shadow Blades", ret => Me.CurrentTarget.TimeToDeath() > 5),
+                    Spell.Cast("Shadow Blades"),
                     Spell.Cast("Killing Spree", ret => Me.CurrentEnergy < 45 && !Me.HasAura("Adrenaline Rush")),
                     Spell.Cast("Adrenaline Rush", ret => Me.CurrentEnergy < 35 || Me.HasAura("Shadow Blades")))),
 
@@ -57,7 +57,7 @@ namespace SlimAI.Class.Rogue
                 new Decorator(ret => Me.ComboPoints == 5 && (!SpellManager.HasSpell("Anticipation") || Me.HasAura("Deep Insight") 
                                     /* || cooldown.shadow_blades.remains<=11|anticipation_charges>=4|(buff.shadow_blades.up&anticipation_charges>=3)*/),
                     new PrioritySelector(
-                        Spell.Cast("Rupture", ret => DebuffTimeLeft(1943, Me.CurrentTarget) <= 2 && Me.CurrentTarget.TimeToDeath() >= 26 && (!Me.HasAura("Blade Flurry") || Unit.UnfriendlyUnits(10).Count() < 2 && SlimAI.AOE)),
+                        Spell.Cast("Rupture", ret => DebuffTimeLeft(1943, Me.CurrentTarget) <= 2 && (!Me.HasAura("Blade Flurry") || Unit.UnfriendlyUnits(10).Count() < 2 && SlimAI.AOE)),
                         Spell.Cast("Crimson Tempest", ret => Unit.UnfriendlyUnits(8).Count() >= 7 && SlimAI.AOE),
                         Spell.Cast("Eviscerate")
                         )));

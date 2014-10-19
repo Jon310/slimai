@@ -40,7 +40,7 @@ namespace SlimAI.Helpers
             //    AttachCombatLogEvent();
 
             // add context handler that reacts to context change with above rules for logging
-            SlimAI.OnWoWContextChanged += HandleContextChanged;
+            //SlimAI.OnWoWContextChanged += HandleContextChanged;
 
             // hook PVP start timer so we can identify end of prep phase
             //PVP.AttachStartTimer();
@@ -74,17 +74,18 @@ namespace SlimAI.Helpers
             LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "SPELL_NOT_SHAPESHIFTED_NOSPACE");
         }
 
-        internal static void HandleContextChanged(object sender, WoWContextEventArg e)
-        {
-            // Since we hooked this in ctor, make sure we are the selected CC
-            if (RoutineManager.Current.Name != SlimAI.Instance.Name)
-                return;
+        //6.0
+        //internal static void HandleContextChanged(object sender, WoWContextEventArg e)
+        //{
+        //    // Since we hooked this in ctor, make sure we are the selected CC
+        //    if (RoutineManager.Current.Name != SlimAI.Instance.Name)
+        //        return;
 
-            if (SlimAI.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid)
-                AttachCombatLogEvent();
-            else
-                DetachCombatLogEvent();
-        }
+        //    if (SlimAI.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid)
+        //        AttachCombatLogEvent();
+        //    else
+        //        DetachCombatLogEvent();
+        //}
 
         /// <summary>
         /// time of last "Target not in line of sight" spell failure.
@@ -111,233 +112,237 @@ namespace SlimAI.Helpers
         // a combination of errors and spell failures we search for Druid shape shift errors
         private static Dictionary<string,string> LocalizedShapeshiftMessages;
 
-        private static void AttachCombatLogEvent()
-        {
-            if (_combatLogAttached)
-                return;
+        //6.0
+        //private static void AttachCombatLogEvent()
+        //{
+        //    if (_combatLogAttached)
+        //        return;
 
-            // DO NOT EDIT THIS UNLESS YOU KNOW WHAT YOU'RE DOING!
-            // This ensures we only capture certain combat log events, not all of them.
-            // This saves on performance, and possible memory leaks. (Leaks due to Lua table issues.)
-            Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
+        //    // DO NOT EDIT THIS UNLESS YOU KNOW WHAT YOU'RE DOING!
+        //    // This ensures we only capture certain combat log events, not all of them.
+        //    // This saves on performance, and possible memory leaks. (Leaks due to Lua table issues.)
+        //    Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
 
-            string filterCriteria =
-                "return args[4] == UnitGUID('player')"
-                + " and (args[2] == 'SPELL_MISSED'"
-                + " or args[2] == 'RANGE_MISSED'"
-                + " or args[2] == 'SWING_MISSED'"
-                + " or args[2] == 'SPELL_CAST_FAILED')";
+        //    string filterCriteria =
+        //        "return args[4] == UnitGUID('player')"
+        //        + " and (args[2] == 'SPELL_MISSED'"
+        //        + " or args[2] == 'RANGE_MISSED'"
+        //        + " or args[2] == 'SWING_MISSED'"
+        //        + " or args[2] == 'SPELL_CAST_FAILED')";
 
-            if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", filterCriteria))
-            {
-                Logging.Write("ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
-                //Logger.Write( "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
-            }
+        //    if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", filterCriteria))
+        //    {
+        //        Logging.Write("ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
+        //        //Logger.Write( "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
+        //    }
 
-            Logging.WriteDiagnostic("Attached combat log");
-            //Logger.WriteDebug("Attached combat log");
-            _combatLogAttached = true;
-        }
+        //    Logging.WriteDiagnostic("Attached combat log");
+        //    //Logger.WriteDebug("Attached combat log");
+        //    _combatLogAttached = true;
+        //}
 
-        private static void DetachCombatLogEvent()
-        {
-            if (!_combatLogAttached)
-                return;
+        //6.0
+        //private static void DetachCombatLogEvent()
+        //{
+        //    if (!_combatLogAttached)
+        //        return;
 
-            Logging.WriteDiagnostic("Removed combat log filter");
-            //Logger.WriteDebug("Removed combat log filter");
-            Lua.Events.RemoveFilter("COMBAT_LOG_EVENT_UNFILTERED");
-            Logging.WriteDiagnostic("Detached combat log");
-            //Logger.WriteDebug("Detached combat log");
-            Lua.Events.DetachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
-            _combatLogAttached = false;
-        }
+        //    Logging.WriteDiagnostic("Removed combat log filter");
+        //    //Logger.WriteDebug("Removed combat log filter");
+        //    Lua.Events.RemoveFilter("COMBAT_LOG_EVENT_UNFILTERED");
+        //    Logging.WriteDiagnostic("Detached combat log");
+        //    //Logger.WriteDebug("Detached combat log");
+        //    Lua.Events.DetachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
+        //    _combatLogAttached = false;
+        //}
 
-        private static void HandleCombatLog(object sender, LuaEventArgs args)
-        {
-            if (RoutineManager.Current.Name != SlimAI.Instance.Name)
-                return;
+        //6.0
+//        private static void HandleCombatLog(object sender, LuaEventArgs args)
+//        {
+//            if (RoutineManager.Current.Name != SlimAI.Instance.Name)
+//                return;
 
-            var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
-            if (e.SourceGuid != StyxWoW.Me.Guid)
-                return;
+//            var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
+//            if (e.SourceGuid != StyxWoW.Me.Guid)
+//                return;
 
-            // Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
+//            // Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
 
-            switch (e.Event)
-            {
-                // spell_cast_failed only passes filter in Singular debug mode
-                case "SPELL_CAST_FAILED":
-                    Logging.WriteDiagnostic("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14]);
+//            switch (e.Event)
+//            {
+//                // spell_cast_failed only passes filter in Singular debug mode
+//                case "SPELL_CAST_FAILED":
+//                    Logging.WriteDiagnostic("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14]);
 
-                    if (e.Args[14].ToString() == LocalizedLineOfSightFailure)
-                    {
-                        ulong guid;
-                        try
-                        {
-                            LastLineOfSightTarget = e.DestUnit;
-                            guid = LastLineOfSightTarget == null ? 0 : LastLineOfSightTarget.Guid;
-                        }
-                        catch
-                        {
-                            LastLineOfSightTarget = StyxWoW.Me.CurrentTarget;
-                            guid = StyxWoW.Me.CurrentTargetGuid;
-                        }
+//                    if (e.Args[14].ToString() == LocalizedLineOfSightFailure)
+//                    {
+//                        ulong guid;
+//                        try
+//                        {
+//                            LastLineOfSightTarget = e.DestUnit;
+//                            guid = LastLineOfSightTarget == null ? 0 : LastLineOfSightTarget.Guid;
+//                        }
+//                        catch
+//                        {
+//                            LastLineOfSightTarget = StyxWoW.Me.CurrentTarget;
+//                            guid = StyxWoW.Me.CurrentTargetGuid;
+//                        }
 
-                        LastLineOfSightFailure = DateTime.Now;
-                        Logging.WriteDiagnostic("[CombatLog] cast fail due to los reported at {0} on target {1:X}", LastLineOfSightFailure.ToString("HH:mm:ss.fff"), e.DestGuid);
-                    }
-                    else if (StyxWoW.Me.Class == WoWClass.Druid)
-                    {
-                        if (LocalizedShapeshiftMessages.ContainsKey(e.Args[14].ToString()))
-                        {
-                            string symbolicName = LocalizedShapeshiftMessages[e.Args[14].ToString()];
-                            LastShapeshiftFailure = DateTime.Now;
-                            Logging.WriteDiagnostic("[CombatLog] cast fail due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
-                        }
-                    }
-                    else if (StyxWoW.Me.Class == WoWClass.Rogue)
-                    {
-                        if (e.Args[14].ToString() == LocalizedNoPocketsToPickFailure)
-                        {
-                            // args on this event don't match standard SPELL_CAST_FAIL
-                            // -- so, Singular only casts on current target so use that assumption
-                            WoWUnit unit = StyxWoW.Me.CurrentTarget;
-                            if (unit == null)
-                                Logging.WriteDiagnostic("[CombatLog] has no pockets event did not have a valid unit");
-                            else
-                            {
-                                Logging.WriteDiagnostic("[CombatLog] {0} has no pockets, blacklisting from pick pocket for 2 minutes", unit.SafeName());
-                                Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2));
-                            }
-                        }
-                    }
-                    break;
+//                        LastLineOfSightFailure = DateTime.Now;
+//                        Logging.WriteDiagnostic("[CombatLog] cast fail due to los reported at {0} on target {1:X}", LastLineOfSightFailure.ToString("HH:mm:ss.fff"), e.DestGuid);
+//                    }
+//                    else if (StyxWoW.Me.Class == WoWClass.Druid)
+//                    {
+//                        if (LocalizedShapeshiftMessages.ContainsKey(e.Args[14].ToString()))
+//                        {
+//                            string symbolicName = LocalizedShapeshiftMessages[e.Args[14].ToString()];
+//                            LastShapeshiftFailure = DateTime.Now;
+//                            Logging.WriteDiagnostic("[CombatLog] cast fail due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
+//                        }
+//                    }
+//                    else if (StyxWoW.Me.Class == WoWClass.Rogue)
+//                    {
+//                        if (e.Args[14].ToString() == LocalizedNoPocketsToPickFailure)
+//                        {
+//                            // args on this event don't match standard SPELL_CAST_FAIL
+//                            // -- so, Singular only casts on current target so use that assumption
+//                            WoWUnit unit = StyxWoW.Me.CurrentTarget;
+//                            if (unit == null)
+//                                Logging.WriteDiagnostic("[CombatLog] has no pockets event did not have a valid unit");
+//                            else
+//                            {
+//                                Logging.WriteDiagnostic("[CombatLog] {0} has no pockets, blacklisting from pick pocket for 2 minutes", unit.SafeName());
+//                                Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2));
+//                            }
+//                        }
+//                    }
+//                    break;
 
-#if SOMEONE_USES_LAST_SPELL_AT_SOME_POINT
-                case "SPELL_AURA_APPLIED":
-                case "SPELL_CAST_SUCCESS":
-                    if (e.SourceGuid != StyxWoW.Me.Guid)
-                    {
-                        return;
-                    }
+//#if SOMEONE_USES_LAST_SPELL_AT_SOME_POINT
+//                case "SPELL_AURA_APPLIED":
+//                case "SPELL_CAST_SUCCESS":
+//                    if (e.SourceGuid != StyxWoW.Me.Guid)
+//                    {
+//                        return;
+//                    }
 
-                    // Update the last spell we cast. So certain classes can 'switch' their logic around.
-                    Spell.LastSpellCast = e.SpellName;
-                    //Logger.WriteDebug("Successfully cast " + Spell.LastSpellCast);
+//                    // Update the last spell we cast. So certain classes can 'switch' their logic around.
+//                    Spell.LastSpellCast = e.SpellName;
+//                    //Logger.WriteDebug("Successfully cast " + Spell.LastSpellCast);
 
-                    // following commented block should not be needed since rewrite of Pet summon
-                    //
-                    //// Force a wait for all summoned minions. This prevents double-casting it.
-                    //if (StyxWoW.Me.Class == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
-                    //{
-                    //    StyxWoW.SleepForLagDuration();
-                    //}
-                    break;
-#endif
+//                    // following commented block should not be needed since rewrite of Pet summon
+//                    //
+//                    //// Force a wait for all summoned minions. This prevents double-casting it.
+//                    //if (StyxWoW.Me.Class == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
+//                    //{
+//                    //    StyxWoW.SleepForLagDuration();
+//                    //}
+//                    break;
+//#endif
 
-                case "SWING_MISSED":
-                    if (e.Args[11].ToString() == "EVADE")
-                    {
-                        HandleEvadeBuggedMob(args, e);
-                    }
-                    else if (e.Args[11].ToString() == "IMMUNE")
-                    {
-                        WoWUnit unit = e.DestUnit;
-                        if (unit != null && !unit.IsPlayer)
-                        {
-                            Logging.WriteDiagnostic("{0} is immune to Physical spell school", unit.Name);
-                            SpellImmunityManager.Add(unit.Entry, WoWSpellSchool.Physical);
-                        }
-                    }
-                    break;
+//                case "SWING_MISSED":
+//                    if (e.Args[11].ToString() == "EVADE")
+//                    {
+//                        HandleEvadeBuggedMob(args, e);
+//                    }
+//                    else if (e.Args[11].ToString() == "IMMUNE")
+//                    {
+//                        WoWUnit unit = e.DestUnit;
+//                        if (unit != null && !unit.IsPlayer)
+//                        {
+//                            Logging.WriteDiagnostic("{0} is immune to Physical spell school", unit.Name);
+//                            SpellImmunityManager.Add(unit.Entry, WoWSpellSchool.Physical);
+//                        }
+//                    }
+//                    break;
 
-                case "SPELL_MISSED":
-                case "RANGE_MISSED":
+//                case "SPELL_MISSED":
+//                case "RANGE_MISSED":
 
-                    if (e.Args[14].ToString() == "EVADE")
-                    {
-                        HandleEvadeBuggedMob(args, e);
-                    }
-                    else if (e.Args[14].ToString() == "IMMUNE")
-                    {
-                        WoWUnit unit = e.DestUnit;
-                        if (unit != null && !unit.IsPlayer)
-                        {
-                            Logging.WriteDiagnostic("{0} is immune to {1} spell school", unit.Name, e.SpellSchool);
-                            SpellImmunityManager.Add(unit.Entry, e.SpellSchool);
-                        }
-                    }
-                    break;
-            }
-        }
+//                    if (e.Args[14].ToString() == "EVADE")
+//                    {
+//                        HandleEvadeBuggedMob(args, e);
+//                    }
+//                    else if (e.Args[14].ToString() == "IMMUNE")
+//                    {
+//                        WoWUnit unit = e.DestUnit;
+//                        if (unit != null && !unit.IsPlayer)
+//                        {
+//                            Logging.WriteDiagnostic("{0} is immune to {1} spell school", unit.Name, e.SpellSchool);
+//                            SpellImmunityManager.Add(unit.Entry, e.SpellSchool);
+//                        }
+//                    }
+//                    break;
+//            }
+//        }
 
-        private static void HandleEvadeBuggedMob(LuaEventArgs args, CombatLogEventArgs e)
-        {
-            WoWUnit unit = e.DestUnit;
-            ulong guid = e.DestGuid;
+        //6.0
+//        private static void HandleEvadeBuggedMob(LuaEventArgs args, CombatLogEventArgs e)
+//        {
+//            WoWUnit unit = e.DestUnit;
+//            ulong guid = e.DestGuid;
 
-            if (unit == null && StyxWoW.Me.CurrentTarget != null)
-            {
-                unit = StyxWoW.Me.CurrentTarget;
-                guid = StyxWoW.Me.CurrentTargetGuid;
-                Logging.WriteDiagnostic("Evade: bugged mob guid:{0}, so assuming current target instead", args.Args[7]);
-            }
+//            if (unit == null && StyxWoW.Me.CurrentTarget != null)
+//            {
+//                unit = StyxWoW.Me.CurrentTarget;
+//                guid = StyxWoW.Me.CurrentTargetGuid;
+//                Logging.WriteDiagnostic("Evade: bugged mob guid:{0}, so assuming current target instead", args.Args[7]);
+//            }
 
-            if (unit != null)
-            {
-                if (!MobsThatEvaded.ContainsKey(unit.Guid))
-                    MobsThatEvaded.Add(unit.Guid, 0);
+//            if (unit != null)
+//            {
+//                if (!MobsThatEvaded.ContainsKey(unit.Guid))
+//                    MobsThatEvaded.Add(unit.Guid, 0);
 
-                MobsThatEvaded[unit.Guid]++;
-                if (MobsThatEvaded[unit.Guid] <= 5)
-                {
-                    Logging.WriteDiagnostic("Mob {0} has evaded {1} times.  Keeping an eye on {2:X0} for now!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid);
-                }
-                else
-                {
-                    const int MinutesToBlacklist = 5;
+//                MobsThatEvaded[unit.Guid]++;
+//                if (MobsThatEvaded[unit.Guid] <= 5)
+//                {
+//                    Logging.WriteDiagnostic("Mob {0} has evaded {1} times.  Keeping an eye on {2:X0} for now!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid);
+//                }
+//                else
+//                {
+//                    const int MinutesToBlacklist = 5;
 
-                    if (Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
-                        Logging.WriteDiagnostic("Mob {0} has evaded {1} times. Previously blacklisted {2:X0} for {3} minutes!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid, MinutesToBlacklist);
-                    else
-                    {
-                        Logging.Write("Mob {0} has evaded {1} times. Blacklisting {2:X0} for {3} minutes!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid, MinutesToBlacklist);
-                        Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(MinutesToBlacklist));
-                        if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
-                        {
-                            Logging.Write("error: blacklist does not contain entry for {0} so adding {1}", unit.SafeName(), unit.Guid);
-                        }
-                    }
+//                    if (Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
+//                        Logging.WriteDiagnostic("Mob {0} has evaded {1} times. Previously blacklisted {2:X0} for {3} minutes!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid, MinutesToBlacklist);
+//                    else
+//                    {
+//                        Logging.Write("Mob {0} has evaded {1} times. Blacklisting {2:X0} for {3} minutes!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid, MinutesToBlacklist);
+//                        Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(MinutesToBlacklist));
+//                        if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
+//                        {
+//                            Logging.Write("error: blacklist does not contain entry for {0} so adding {1}", unit.SafeName(), unit.Guid);
+//                        }
+//                    }
 
-                    if (BotPoi.Current.Guid == unit.Guid)
-                    {
-                        Logging.WriteDiagnostic("EvadeHandling: Current BotPOI type={0} is Evading, clearing now...", BotPoi.Current.Type);
-                        BotPoi.Clear("SlimAI recognized Evade bugged mob");
-                    }
+//                    if (BotPoi.Current.Guid == unit.Guid)
+//                    {
+//                        Logging.WriteDiagnostic("EvadeHandling: Current BotPOI type={0} is Evading, clearing now...", BotPoi.Current.Type);
+//                        BotPoi.Clear("SlimAI recognized Evade bugged mob");
+//                    }
 
-                    if (StyxWoW.Me.CurrentTargetGuid == guid)
-                    {
-                        foreach (var target in Targeting.Instance.TargetList)
-                        {
-                            if (target.IsAlive && Unit.ValidUnit(target) && !Blacklist.Contains(target, BlacklistFlags.Combat))
-                            {
-                                Logging.Write("Setting target to {0} to get off evade bugged mob!", target.SafeName());
-                                target.Target();
-                                return;
-                            }
-                        }
+//                    if (StyxWoW.Me.CurrentTargetGuid == guid)
+//                    {
+//                        foreach (var target in Targeting.Instance.TargetList)
+//                        {
+//                            if (target.IsAlive && Unit.ValidUnit(target) && !Blacklist.Contains(target, BlacklistFlags.Combat))
+//                            {
+//                                Logging.Write("Setting target to {0} to get off evade bugged mob!", target.SafeName());
+//                                target.Target();
+//                                return;
+//                            }
+//                        }
 
-                        Logging.Write("BotBase has 0 entries in Target list not blacklisted -- nothing else we can do at this point!");
-                        // StyxWoW.Me.ClearTarget();
-                    }
-                }
+//                        Logging.Write("BotBase has 0 entries in Target list not blacklisted -- nothing else we can do at this point!");
+//                        // StyxWoW.Me.ClearTarget();
+//                    }
+//                }
 
-            }
+//            }
 
-            /// line below was originally in Evade logic, but commenting to avoid Sleeps
-            // StyxWoW.SleepForLagDuration();
-        }
+//            /// line below was originally in Evade logic, but commenting to avoid Sleeps
+//            // StyxWoW.SleepForLagDuration();
+//        }
 
         private static void HandleErrorMessage(object sender, LuaEventArgs args)
         {
@@ -348,7 +353,7 @@ namespace SlimAI.Helpers
                 if (StyxWoW.Me.GotTarget)
                 {
                     WoWUnit unit = StyxWoW.Me.CurrentTarget;
-                    Logging.WriteDiagnostic("[WowErrorMessage] already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.SafeName());
+                    Logging.WriteDiagnostic("[WowErrorMessage] already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.Name);
                     Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2));
                     handled = true;
                 }
