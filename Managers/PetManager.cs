@@ -66,11 +66,11 @@ namespace SlimAI.Managers
                 if (StyxWoW.Me.PetSpells.Any(s => s.Spell != null))
                 {
                     // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
-                    PetSpells.AddRange(StyxWoW.Me.PetSpells);
-                    PetSummonAfterDismountTimer.Reset();
+                    //PetSpells.AddRange(StyxWoW.Me.PetSpells);
+                    //PetSummonAfterDismountTimer.Reset();
                     //_petGuid = StyxWoW.Me.Pet.Guid;
 
-                    Logging.WriteDiagnostic("---PetSpells Loaded---");
+                    //Logging.WriteDiagnostic("---PetSpells Loaded---");
                     //Logger.WriteDebug("---PetSpells Loaded---");
                     foreach (var sp in PetSpells)
                     {
