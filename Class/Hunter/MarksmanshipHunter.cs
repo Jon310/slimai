@@ -41,7 +41,7 @@ namespace SlimAI.Class.Hunter
             await Spell.CoCast("Kill Shot");
             await Spell.CoCast("Chimaera Shot");
             await Spell.CoCast("Rapid Fire", SlimAI.Burst);
-            await Spell.CoCast("Stampede", SlimAI.Burst && (Me.HasAura("Rapid Fire") /*|| hero buff*/));
+            await Spell.CoCast("Stampede", SlimAI.Burst && (Me.HasAura("Rapid Fire") || PartyBuff.WeHaveBloodlust));
             await CarefulAim(Me.CurrentTarget.HealthPercent > 80 || Me.HasAura("Rapid Fire"));
             await Spell.CoCast("A Murder of Crows", SlimAI.Burst);
             await Spell.CoCast("Dire Beast");

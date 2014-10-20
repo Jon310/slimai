@@ -28,25 +28,19 @@ namespace SlimAI.Class.Druid
         public static async Task<bool> CombatCoroutine()
         {
             // Pause for Casting
-            if (Me.IsCasting || Me.IsChanneling || !Me.GotTarget || Me.Mounted) return true;
-            //cooldowns
-            //if (IsCurrentTank() && SlimAI.AFK){if (await Item.CoUseHands()) return true;}
-            //if (await Item.CoUseHS(40)) return true;
-            if (await Spell.CoCast(Rejuvenation, Me, Me.HasAura(HeartoftheWildBuff) && !Me.HasAura(Rejuvenation))) return true;
-            if (await Spell.CoCast(CenarionWard, Me)) return true;
-            if (await Spell.CoCast("Bone Shield", IsCurrentTank() && !Me.HasAura("Bone Shield"))) return true;
-            if (await Spell.CoCast(HealingTouch, Me, Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1)) return true;
-            if (await Spell.CoCast(FrenziedRegeneration, Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration"))) return true;
-            if (await Spell.CoCast(SavageDefense, IsCurrentTank())) return true;
+            if (Me.IsCasting || Me.IsChanneling || !Me.GotTarget || Me.Mounted);
 
-            if (await Spell.CoCast(Maul, (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw)))) return true;
-            if (await Spell.CoCast(Mangle)) return true;
-            if (await Spell.CoCast(FaerieFire, !Me.CurrentTarget.HasAura("Weakened Armor", 3))) return true;
-            if (await Spell.CoCast("Thrash")) return true;
-            if (await Spell.CoCast(Swipe, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE)) return true;
-            if (await Spell.CoCast(Lacerate)) return true;
-            if (await Spell.CoCast(FaerieFire)) return true;
-            if (await Spell.CoCast(Maul, !IsCurrentTank())) return true;
+            await Spell.CoCast(Rejuvenation, Me, Me.HasAura(HeartoftheWildBuff) && !Me.HasAura(Rejuvenation));
+            await Spell.CoCast(CenarionWard, Me, Me.HealthPercent <= 75);
+            await Spell.CoCast(HealingTouch, Me, Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1);
+            await Spell.CoCast(FrenziedRegeneration, Me.CurrentRage >= 60 && Me.HealthPercent <= 65 && !Me.HasAura("Frenzied Regeneration"));
+            await Spell.CoCast(SavageDefense, IsCurrentTank() && Me.HealthPercent <= 80);
+
+            await Spell.CoCast(Maul, (Me.RagePercent > 90 || Me.HasAura(ToothandClaw) && Me.HealthPercent > 55));
+            await Spell.CoCast(Mangle);
+            await Spell.CoCast("Thrash", Me.CurrentTarget.HasAuraExpired("Thrash", 4) || (Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE));
+            await Spell.CoCast(Lacerate);
+            await Spell.CoCast(Maul, !IsCurrentTank());
 
             return false;
 
@@ -61,66 +55,6 @@ namespace SlimAI.Class.Druid
         #endregion
 
 
-        //[Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian)]
-        public static Composite GuardianCombat()
-        {
-            return new PrioritySelector(
-                new Decorator(ret => !Me.Combat || Me.IsCasting || !Me.GotTarget || Me.Mounted,
-                    new ActionAlwaysSucceed()),
-                new Decorator(ret => SlimAI.AFK,
-                    new PrioritySelector(
-                        Spell.Cast(BearForm, ret => SlimAI.AFK && Me.Shapeshift != ShapeshiftForm.Bear),
-                        Common.CreateInterruptBehavior())),
-                //Spell.Cast(SkullBash, on => aUnit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
-                CreateCooldowns(),
-                Spell.Cast(Maul, ret => (Me.RagePercent > 90 || Me.GetAuraTimeLeft(SavageDefenseBuff).TotalSeconds >= 3 && Me.HealthPercent > 60 || Me.HasAura(ToothandClaw))),
-                Spell.Cast(Mangle),
-                Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
-                //new Decorator(ret => !SpellManager.CanCast("Mangle"),
-                //    new PrioritySelector(
-                        Spell.Cast("Thrash"),
-                        CreateAoe(),
-                        Spell.Cast(Lacerate),
-                        Spell.Cast("Faerie Fire"),
-                        Spell.Cast(Maul, ret => !IsCurrentTank()
-                //)
-                //)
-                )
-            );
-        }
-
-        private static Composite CreateCooldowns()
-        {
-            return new PrioritySelector(
-                Spell.Cast(Rejuvenation, on => Me, ret => Me.HasAura(HeartoftheWildBuff) && !Me.HasAura(Rejuvenation)),
-                new Decorator(ret => IsCurrentTank() && SlimAI.AFK,
-                    new PrioritySelector(
-                        new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }),
-                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }))),
-                //Spell.Cast("Incarnation: Son of Ursoc", ret => SlimAI.Burst && Me.RagePercent < 60 && Me.HealthPercent < 60),
-                Spell.Cast(CenarionWard, on => Me),
-                Spell.Cast("Bone Shield", ret => IsCurrentTank() && !Me.HasAura("Bone Shield")),
-                //Spell.Cast(Enrage, ret => Me.RagePercent < 40),
-                Spell.Cast(HealingTouch, ret => Me.HasAura(145162) && Me.HealthPercent <= 90 || Me.HasAura(145162) && Me.GetAuraTimeLeft(145162).TotalSeconds < 2 && Me.GetAuraTimeLeft(145162).TotalSeconds > 1),
-                //Spell.Cast(BarkSkin),
-                //new Decorator(ret => SlimAI.Weave,
-                //    new PrioritySelector(
-                //        Spell.Cast(SurvivalInstincts, ret => Me.HealthPercent <= 50 && !Me.HasAura("Might of Ursoc")),
-                //        Spell.Cast(MightofUrsoc, ret => Me.HealthPercent <= 30 && !Me.HasAura("Survival Instincts")))),
-                //Spell.Cast(Renewal, ret => Me.HealthPercent <= 50 || Me.HasAura("Might of Ursoc")),
-                //Item.UsePotionAndHealthstone(40),
-                Spell.Cast(FrenziedRegeneration, ret => Me.HealthPercent <= 65 && Me.CurrentRage >= 60 && !Me.HasAura("Frenzied Regeneration")),
-                Spell.Cast(SavageDefense, ret => IsCurrentTank())
-                    );
-            }
-
-        private static Composite CreateAoe()
-        {
-            return new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE,
-                new PrioritySelector(
-                    Spell.Cast(Swipe)
-                    ));
-        }
 
         
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian)]
