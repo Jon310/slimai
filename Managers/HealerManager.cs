@@ -73,8 +73,7 @@ namespace SlimAI.Managers
         {
             bool foundMe = false;
             bool isHorde = StyxWoW.Me.IsHorde;
-            //6.0
-            //ulong focusGuid = Me.FocusedUnitGuid;
+            WoWGuid focusGuid = Me.FocusedUnitGuid;
             bool foundFocus = false;
 
             foreach (WoWObject incomingUnit in incomingUnits)
@@ -83,9 +82,8 @@ namespace SlimAI.Managers
                 {
                     if (incomingUnit.IsMe)
                         foundMe = true;
-                    //6.0
-                    //else if (incomingUnit.Guid == focusGuid)
-                    //    foundFocus = true;
+                    else if (incomingUnit.Guid == focusGuid)
+                        foundFocus = true;
 
                     outgoingUnits.Add(incomingUnit);
 
@@ -197,7 +195,7 @@ namespace SlimAI.Managers
 
         protected override void DefaultTargetWeight(List<TargetPriority> units)
         {
-            //var tanks = GetMainTankGuids();
+            var tanks = GetMainTankGuids();
             var inBg = Battlegrounds.IsInsideBattleground;
             var amHolyPally = StyxWoW.Me.Specialization == WoWSpec.PaladinHoly;
             var myLoc = Me.Location;
@@ -232,13 +230,12 @@ namespace SlimAI.Managers
                     }
 
                     // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                    //6.0
-                    //if (tanks.Contains(u.Guid) && u.HealthPercent != 100 &&
-                    //    // Ignore giving more weight to the tank if we have Beacon of Light on it.
-                    //    (!amHolyPally || !u.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid)))
-                    //{
-                    //    prio.Score += 100f;
-                    //}
+                    if (tanks.Contains(u.Guid) && u.HealthPercent != 100 &&
+                        // Ignore giving more weight to the tank if we have Beacon of Light on it.
+                        (!amHolyPally || !u.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid)))
+                    {
+                        prio.Score += 100f;
+                    }
 
                     // Give flag carriers more weight in battlegrounds. We need to keep them alive!
                     if (inBg && u.IsPlayer && u.Auras.Keys.Any(a => a.ToLowerInvariant().Contains("flag")))
@@ -334,16 +331,15 @@ namespace SlimAI.Managers
         //        base.Pulse();
         //}
 
-        //6.0
-        //private static HashSet<ulong> GetMainTankGuids()
-        //{
-        //    var infos = StyxWoW.Me.GroupInfo.RaidMembers;
+        private static HashSet<WoWGuid> GetMainTankGuids()
+        {
+            var infos = StyxWoW.Me.GroupInfo.RaidMembers;
 
-        //    return new HashSet<ulong>(
-        //        from pi in infos
-        //        where (pi.Role & WoWPartyMember.GroupRole.Tank) != 0
-        //        select pi.Guid);
-        //}
+            return new HashSet<WoWGuid>(
+                from pi in infos
+                where (pi.Role & WoWPartyMember.GroupRole.Tank) != 0
+                select pi.Guid);
+        }
 
         /// <summary>
         /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in 

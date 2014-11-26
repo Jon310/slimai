@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Styx;
@@ -29,6 +30,51 @@ namespace SlimAI.Helpers
             return unit.CreatureType == WoWCreatureType.Undead
                     || unit.CreatureType == WoWCreatureType.Demon;
         }
+
+        #region EnemyUnits
+
+        public static IEnumerable<WoWUnit> EnemyUnits(int maxSpellDist)
+        {
+            var typeWoWUnit = typeof(WoWUnit);
+            var typeWoWPlayer = typeof(WoWPlayer);
+            var objectList = ObjectManager.ObjectList;
+            return (from t1 in objectList
+                    let type = t1.GetType()
+                    where type == typeWoWUnit ||
+                        type == typeWoWPlayer
+                    select t1 as WoWUnit into t
+                    where t != null && ValidUnit(t) && t.SpellDistance() < maxSpellDist
+                    select t).ToList();
+        }
+
+        #endregion
+
+        #region EnemyUnitsSub40
+
+        public static IEnumerable<WoWUnit> EnemyUnitsSub40
+        {
+            get { return EnemyUnits(40); }
+        }
+
+        #endregion
+
+        #region EnemyUnitsSub10
+
+        public static IEnumerable<WoWUnit> EnemyUnitsSub10
+        {
+            get { return EnemyUnits(10); }
+        }
+
+        #endregion
+
+        #region EnemyUnitsSub8
+
+        public static IEnumerable<WoWUnit> EnemyUnitsSub8
+        {
+            get { return EnemyUnits(8); }
+        }
+
+        #endregion
 
         internal static IEnumerable<WoWUnit> AttackableUnits
         {

@@ -874,9 +874,8 @@ namespace SlimAI.Class.Warrior
             if (p.IsNonCombatPet || p.IsCritter)
                 return false;
 
-            //6.0
-            //if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
-            //    return false;
+            if (p.CreatedByUnitGuid != WoWGuid.Empty || p.SummonedByUnitGuid != WoWGuid.Empty)
+                return false;
 
             return true;
         }
