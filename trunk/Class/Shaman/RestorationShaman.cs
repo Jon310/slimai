@@ -209,7 +209,7 @@ namespace SlimAI.Class.Shaman
         #endregion
 
         #region Earth Shield
-        private static ulong guidLastEarthShield = 0;
+        private static WoWGuid guidLastEarthShield = WoWGuid.Empty;
         private static WoWUnit GetBestEarthShieldTargetInstance()
         {
             WoWUnit target = null;
@@ -228,8 +228,7 @@ namespace SlimAI.Class.Shaman
                 }
             }
 
-            //6.0
-            //guidLastEarthShield = target != null ? target.Guid : 0;
+            guidLastEarthShield = target != null ? target.Guid : WoWGuid.Empty;
             return target;
         }
         #endregion
