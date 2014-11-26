@@ -45,15 +45,14 @@ namespace SlimAI.Class.Paladin
                 //Common.CreateInterruptBehavior(),
                 //Staying alive
                 //Item.UsePotionAndHealthstone(40),
-            await Spell.CoCast(SacredShield, Me, !Me.HasAura("Sacred Shield") && SpellManager.HasSpell("Sacred Shield"));
             await Spell.CoCast(LayonHands, Me, Me.HealthPercent <= 10 && !Me.HasAura("Forbearance"));
             await Spell.CoCast(ArdentDefender,  Me.HealthPercent <= 15 && Me.HasAura("Forbearance"));
             await Spell.CoCast(GuardianofAncientKings, Me.HealthPercent < 50 && !Me.HasAnyAura("ArdentDefender") && SlimAI.AFK);
             await Spell.CoCast(DivineProtection, Me.HealthPercent <= 80 && !Me.HasAura("Shield of the Righteous") && IsCurrentTank() && SlimAI.AFK);
 
-            //await Spell.CoCast(WordofGlory, Me.HealthPercent < 50 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose")));
-                //Spell.Cast(WordofGlory, ret => Me.HealthPercent < 25 && (Me.CurrentHolyPower >= 2 || Me.HasAura("Divine Purpose"))),
-                //Spell.Cast(WordofGlory, ret => Me.HealthPercent < 15 && (Me.CurrentHolyPower >= 1 || Me.HasAura("Divine Purpose"))),
+            await Spell.CoCast(WordofGlory, Me, Me.HealthPercent < 30 && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose")));
+            await Spell.CoCast(WordofGlory, Me, Me.HealthPercent < 25 && (Me.CurrentHolyPower >= 2 || Me.HasAura("Divine Purpose")));
+            await Spell.CoCast(WordofGlory, Me, Me.HealthPercent < 15 && (Me.CurrentHolyPower >= 1 || Me.HasAura("Divine Purpose")));
 
             await Spell.CoCast(WordofGlory, Me, SpellManager.HasSpell(EternalFlame) && !Me.ActiveAuras.ContainsKey("Eternal Flame") && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose")) && Me.HasAura("Bastion of Glory", 5));
 
@@ -66,11 +65,10 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCast(AvengersShield, Me.HasAura(GrandCrusader));
             await Spell.CoCast(CrusaderStrike);
             await Spell.CoCast(Judgment);
-            //    new Decorator(ret => Spell.GetSpellCooldown("Judgment").TotalSeconds >= 1 && Spell.GetSpellCooldown("Crusader Strike").TotalSeconds >= 1 && !Me.HasAura(GrandCrusader),
-            //        new PrioritySelector(
-            await Spell.CoCastOnGround(LightsHammer, Me.Location, Unit.UnfriendlyUnits(10).Any());
+            await Spell.CoCast(SacredShield, Me, Me.HasAuraExpired("Sacred Shield", 9) && SpellManager.HasSpell("Sacred Shield"));
+            await Spell.CoCastOnGround(LightsHammer, Me.Location, Unit.UnfriendlyUnits(10).Any() && SlimAI.Weave);
             await Spell.CoCast(HolyPrism);
-            await Spell.CoCast(ExecutionSentence);
+            await Spell.CoCast(ExecutionSentence, SlimAI.Weave);
             await Spell.CoCast(HammerofWrath);
             await Spell.CoCast(ShieldoftheRighteous, SlimAI.Burst);
             await Spell.CoCast(AvengersShield);
@@ -94,19 +92,18 @@ namespace SlimAI.Class.Paladin
                 return false;
 
             await Spell.CoCast(ShieldoftheRighteous, MaxHolyPower);
-            await Spell.CoCast(Judgment, SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath"));
+            await Spell.CoCast(AvengersShield, Me.HasAura(GrandCrusader));
+            await Spell.CoCast(HolyWrath, SpellManager.HasSpell("Sanctified Wrath"));
             await Spell.CoCast(HammeroftheRighteous);
             await Spell.CoCast(Judgment);
-            await Spell.CoCast(AvengersShield, Me.HasAura(GrandCrusader));
-            //new Decorator(ret => Spell.GetSpellCooldown("Judgment").TotalSeconds >= 1 && Spell.GetSpellCooldown("Crusader Strike").TotalSeconds >= 1 && !Me.HasAura(GrandCrusader),
-
+            await Spell.CoCast(SacredShield, Me, Me.HasAuraExpired("Sacred Shield", 9) && SpellManager.HasSpell("Sacred Shield"));
+            await Spell.CoCast(AvengersShield);
             await Spell.CoCastOnGround(LightsHammer, Me.Location, Unit.UnfriendlyUnits(10).Any());
             await Spell.CoCast(HolyPrism, Me, Me.HealthPercent <= 90);
+            await Spell.CoCast(Consecration, !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange);
             await Spell.CoCast(ExecutionSentence);
             await Spell.CoCast(HammerofWrath);
             await Spell.CoCast(ShieldoftheRighteous, SlimAI.Burst);
-            await Spell.CoCast(Consecration, !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange);
-            await Spell.CoCast(AvengersShield);
             await Spell.CoCast(HolyWrath, Me.CurrentTarget.IsWithinMeleeRange);
             
             return false;

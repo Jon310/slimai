@@ -1,15 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Buddy.Coroutines;
+using JetBrains.Annotations;
 using CommonBehaviors.Actions;
+using SlimAI.Helpers;
+using SlimAI.Lists;
 using SlimAI.Managers;
 using SlimAI.Settings;
 using Styx;
+using SlimAI.Class;
+using Styx.Common;
 using Styx.CommonBot;
+using Styx.CommonBot.Coroutines;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using SlimAI.Helpers;
-using System.Linq;
 using Action = Styx.TreeSharp.Action;
+
 
 namespace SlimAI.Class.Shaman
 {
@@ -18,47 +29,73 @@ namespace SlimAI.Class.Shaman
         static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static ShamanSettings Settings { get { return GeneralSettings.Instance.Shaman(); } }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanElemental)]
-        public static Composite ElementalCombat()
+        private static async Task<bool> CombatCoroutine()
         {
-            return new PrioritySelector(
-                Common.CreateInterruptBehavior(),
-                new Decorator(ret => SlimAI.Burst && Me.CurrentTarget.IsBoss,
-                    new PrioritySelector(
-                        Spell.Cast(ElementalMastery),
-                        Spell.Cast(FlameShock, ret => Me.CurrentTarget.HasAuraExpired("Flame Shock") && Me.HasAura(Ascendance)),
-                        Spell.Cast(Ascendance, ret => Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds > 18),
-                        Spell.Cast(FireElementalTotem),
-                        Spell.Cast(EarthElementalTotem, ret => Spell.GetSpellCooldown("Fire Elemental Totem").TotalSeconds > 61),
-                        Spell.Cast(StormlashTotem, ret => !PartyBuff.WeHaveBloodlust))),
+
+                //Common.CreateInterruptBehavior(),
+            await CoBURST(SlimAI.Burst);
+
                 
                 //Spell.WaitForCast(),
-                Spell.Cast(Thunderstorm, ret => Me.ManaPercent < 60 && TalentManager.HasGlyph("Thunderstorm")),
+            await Spell.CoCast(Thunderstorm, Me.ManaPercent < 60 && TalentManager.HasGlyph("Thunderstorm"));
 
-                new Decorator(ret => Unit.UnfriendlyUnitsNearTargetFacing(10).Count() >= 4 && SlimAI.AOE,
-                    AOE()),
+            await Spell.CoCast(SpiritWalkersGrace, Me.IsMoving && !SpellManager.Spells["Lava Burst"].Cooldown && SlimAI.Burst);
 
-                Spell.Cast(SpiritWalkersGrace, ret => Me.IsMoving && !SpellManager.Spells["Lava Burst"].Cooldown && SlimAI.Burst),
-                Spell.Cast(FlameShock, on => FlameShockTar, ret => FlameShockTar.HasAuraExpired("Flame Shock")),
-                Spell.Cast(UnleashElements, ret => TalentManager.IsSelected((int)ShamanTalents.UnleashedFury)),
-                Spell.Cast(LavaBurst),
-                Spell.Cast(ElementalBlast),
-                Spell.Cast(EarthShock, ret => Me.HasAura("Lightning Shield", Unit.UnfriendlyUnitsNearTargetFacing(10).Count() > 2 ? 7 : 5)),
-                Spell.Cast(SearingTotem, ret => !Totems.ExistInRange(Me.CurrentTarget.Location, WoWTotem.Searing)),
-                new Decorator(ret => Unit.UnfriendlyUnitsNearTargetFacing(10).Count() > 1 && SlimAI.AOE,
-                    new PrioritySelector(
-                        Spell.Cast(ChainLightning),
-                        new ActionAlwaysSucceed())),
-                Spell.Cast(LightningBolt));
+            await Spell.CoCast(EarthShock, Me.HasAura("Lightning Shield", 12));
+            await Spell.CoCastOnGround(Earthquake, Me.CurrentTarget.Location, Unit.UnfriendlyUnitsNearTarget(8).Count() > 2 && SlimAI.AOE);
+            await Spell.CoCast(UnleashFlame, TalentManager.IsSelected((int)ShamanTalents.UnleashedFury));
+            await Spell.CoCast(LavaBurst);
+            await Spell.CoCast(UnleashFlame, Me.IsMoving);
+            await Spell.CoCast(FlameShock, Me.CurrentTarget.HasAuraExpired("Flame Shock", 9));
+            await Spell.CoCast(ElementalBlast);
+            await Spell.CoCast(SearingTotem, !Totems.ExistInRange(Me.CurrentTarget.Location, WoWTotem.Searing) && !Totems.ExistInRange(Me.CurrentTarget.Location, WoWTotem.FireElemental));
+            await Spell.CoCast(ChainLightning, Unit.UnfriendlyUnitsNearTarget(10).Count() > 1 && SlimAI.AOE);
+            await Spell.CoCast(SpiritWalkersGrace, Me.IsMoving && !SpellManager.Spells["Lava Burst"].Cooldown && SlimAI.Burst);
+            await Spell.CoCast(LightningBolt, !SpellManager.CanCast(LavaBurst)/*!Me.HasAura(EchooftheElements) || !Me.HasAura(LavaSurge)*/);
+
+
+            return false;
         }
 
+       [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanElemental)]
+        public static Composite CoElementalCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+
+        #region Precombat Buff Coroutine
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental)]
         public static Composite ElementalPreCombatBuffs()
         {
-            return new PrioritySelector(
-                Spell.Cast(LightningShield, ret => !StyxWoW.Me.HasAura("Lightning Shield")),
-                CreateShamanImbueMainHandBehavior(Imbue.Flametongue));
+            return new ActionRunCoroutine(ctx => PreCombatBuffCoroutine());
         }
+
+        private static async Task<bool> PreCombatBuffCoroutine()
+        {
+            if (Me.Mounted)
+                return false;
+
+
+            await Spell.CoCast(LightningShield, !Me.HasAura("Lightning Shield"));
+
+            return false;
+        }
+        #endregion
+
+        #region Burst
+        private static async Task<bool> CoBURST(bool reqs)
+        {
+            if (!reqs)
+                return false;
+
+            await Spell.CoCast(ElementalMastery);
+            await Spell.CoCast(FlameShock, Me.CurrentTarget.HasAuraExpired("Flame Shock", 9) && Me.HasAura(Ascendance));
+            await Spell.CoCast(FireElementalTotem);
+            //await Spell.CoCast(EarthElementalTotem, Spell.GetSpellCooldown("Fire Elemental Totem").TotalSeconds > 61);
+            await Spell.CoCast(Ascendance, Me.CurrentTarget.GetAuraTimeLeft("Flame Shock").TotalSeconds > 18);
+            return false;
+        }
+        #endregion
 
         private static Composite AOE()
         {
@@ -90,111 +127,111 @@ namespace SlimAI.Class.Shaman
         }
         #endregion
 
-        #region Imbue
-        private static Decorator CreateShamanImbueMainHandBehavior(params Imbue[] imbueList)
-        {
-            return new Decorator(ret => CanImbue(Me.Inventory.Equipped.MainHand),
-                new PrioritySelector(
-                    imb => imbueList.FirstOrDefault(i => SpellManager.HasSpell(i.ToString() + " Weapon")),
+        //#region Imbue
+        //private static Decorator CreateShamanImbueMainHandBehavior(params Imbue[] imbueList)
+        //{
+        //    return new Decorator(ret => CanImbue(Me.Inventory.Equipped.MainHand),
+        //        new PrioritySelector(
+        //            imb => imbueList.FirstOrDefault(i => SpellManager.HasSpell(i.ToString() + " Weapon")),
 
-                    new Decorator(
-                        ret => Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != (int)ret
-                            && SpellManager.HasSpell(((Imbue)ret).ToString() + " Weapon")
-                            && SpellManager.CanCast(((Imbue)ret).ToString() + " Weapon", null, false, false),
-                        new Sequence(
-                            new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
-                            new WaitContinue(1,
-                                ret => Me.Inventory.Equipped.MainHand != null && (Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == Imbue.None,
-                                new ActionAlwaysSucceed()),
-                            new DecoratorContinue(ret => ((Imbue)ret) != Imbue.None,
-                                new Sequence(
-                                    new Action(ret => SpellManager.Cast(((Imbue)ret).ToString() + " Weapon", null)),
-                                    new Action(ret => SetNextAllowedImbueTime())
-                                    )
-                                )
-                            )
-                        )
-                    )
-                );
-        }
+        //            new Decorator(
+        //                ret => Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != (int)ret
+        //                    && SpellManager.HasSpell(((Imbue)ret).ToString() + " Weapon")
+        //                    && SpellManager.CanCast(((Imbue)ret).ToString() + " Weapon", null, false, false),
+        //                new Sequence(
+        //                    new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
+        //                    new WaitContinue(1,
+        //                        ret => Me.Inventory.Equipped.MainHand != null && (Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == Imbue.None,
+        //                        new ActionAlwaysSucceed()),
+        //                    new DecoratorContinue(ret => ((Imbue)ret) != Imbue.None,
+        //                        new Sequence(
+        //                            new Action(ret => SpellManager.Cast(((Imbue)ret).ToString() + " Weapon", null)),
+        //                            new Action(ret => SetNextAllowedImbueTime())
+        //                            )
+        //                        )
+        //                    )
+        //                )
+        //            )
+        //        );
+        //}
 
-        private static DateTime nextImbueAllowed = DateTime.Now;
+        //private static DateTime nextImbueAllowed = DateTime.Now;
 
-        public static bool CanImbue(WoWItem item)
-        {
-            if (item != null && item.ItemInfo.IsWeapon)
-            {
-                // during combat, only mess with imbues if they are missing
-                if (Me.Combat && item.TemporaryEnchantment.Id != 0)
-                    return false;
+        //public static bool CanImbue(WoWItem item)
+        //{
+        //    if (item != null && item.ItemInfo.IsWeapon)
+        //    {
+        //        // during combat, only mess with imbues if they are missing
+        //        if (Me.Combat && item.TemporaryEnchantment.Id != 0)
+        //            return false;
 
-                // check if enough time has passed since last imbue
-                // .. guards against detecting is missing immediately after a cast but before buff appears
-                // .. (which results in imbue cast spam)
-                if (nextImbueAllowed > DateTime.Now)
-                    return false;
+        //        // check if enough time has passed since last imbue
+        //        // .. guards against detecting is missing immediately after a cast but before buff appears
+        //        // .. (which results in imbue cast spam)
+        //        if (nextImbueAllowed > DateTime.Now)
+        //            return false;
 
-                switch (item.ItemInfo.WeaponClass)
-                {
-                    case WoWItemWeaponClass.Axe:
-                        return true;
-                    case WoWItemWeaponClass.AxeTwoHand:
-                        return true;
-                    case WoWItemWeaponClass.Dagger:
-                        return true;
-                    case WoWItemWeaponClass.Fist:
-                        return true;
-                    case WoWItemWeaponClass.Mace:
-                        return true;
-                    case WoWItemWeaponClass.MaceTwoHand:
-                        return true;
-                    case WoWItemWeaponClass.Polearm:
-                        return true;
-                    case WoWItemWeaponClass.Staff:
-                        return true;
-                    case WoWItemWeaponClass.Sword:
-                        return true;
-                    case WoWItemWeaponClass.SwordTwoHand:
-                        return true;
-                }
-            }
+        //        switch (item.ItemInfo.WeaponClass)
+        //        {
+        //            case WoWItemWeaponClass.Axe:
+        //                return true;
+        //            case WoWItemWeaponClass.AxeTwoHand:
+        //                return true;
+        //            case WoWItemWeaponClass.Dagger:
+        //                return true;
+        //            case WoWItemWeaponClass.Fist:
+        //                return true;
+        //            case WoWItemWeaponClass.Mace:
+        //                return true;
+        //            case WoWItemWeaponClass.MaceTwoHand:
+        //                return true;
+        //            case WoWItemWeaponClass.Polearm:
+        //                return true;
+        //            case WoWItemWeaponClass.Staff:
+        //                return true;
+        //            case WoWItemWeaponClass.Sword:
+        //                return true;
+        //            case WoWItemWeaponClass.SwordTwoHand:
+        //                return true;
+        //        }
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
 
-        public static void SetNextAllowedImbueTime()
-        {
-            // 2 seconds to allow for 0.5 seconds plus latency for buff to appear
-            nextImbueAllowed = DateTime.Now + new TimeSpan(0, 0, 0, 0, 500); // 1500 + (int) StyxWoW.WoWClient.Latency << 1);
-        }
+        //public static void SetNextAllowedImbueTime()
+        //{
+        //    // 2 seconds to allow for 0.5 seconds plus latency for buff to appear
+        //    nextImbueAllowed = DateTime.Now + new TimeSpan(0, 0, 0, 0, 500); // 1500 + (int) StyxWoW.WoWClient.Latency << 1);
+        //}
 
-        private static Imbue GetImbue(WoWItem item)
-        {
-            if (item != null)
-                return (Imbue)item.TemporaryEnchantment.Id;
+        //private static Imbue GetImbue(WoWItem item)
+        //{
+        //    if (item != null)
+        //        return (Imbue)item.TemporaryEnchantment.Id;
 
-            return Imbue.None;
-        }
+        //    return Imbue.None;
+        //}
 
-        public static bool IsImbuedForDPS(WoWItem item)
-        {
-            Imbue imb = GetImbue(item);
-            return imb == Imbue.Flametongue;
-        }
+        //public static bool IsImbuedForDPS(WoWItem item)
+        //{
+        //    Imbue imb = GetImbue(item);
+        //    return imb == Imbue.Flametongue;
+        //}
 
-        public static bool IsImbuedForHealing(WoWItem item)
-        {
-            return GetImbue(item) == Imbue.Earthliving;
-        }
+        //public static bool IsImbuedForHealing(WoWItem item)
+        //{
+        //    return GetImbue(item) == Imbue.Earthliving;
+        //}
 
-        private enum Imbue
-        {
-            None = 0,
-            Flametongue = 5,
-            Earthliving = 3345,
+        //private enum Imbue
+        //{
+        //    None = 0,
+        //    Flametongue = 5,
+        //    Earthliving = 3345,
 
-        }
-        #endregion Imbue
+        //}
+        //#endregion Imbue
 
         #region ShamanTalents
         private enum ShamanTalents
@@ -227,7 +264,9 @@ namespace SlimAI.Class.Shaman
                           AstralShift = 108271,
                           ChainHeal = 1064,
                           ChainLightning = 421,
+                          Earthquake = 61882,
                           EarthElementalTotem = 2062,
+                          EchooftheElements = 159101,
                           EarthShield = 974,
                           EarthShock = 8042,
                           ElementalBlast = 117014,
@@ -244,6 +283,7 @@ namespace SlimAI.Class.Shaman
                           HealingWave = 331,
                           LavaBurst = 51505,
                           LavaLash = 60103,
+                          LavaSurge = 77756,
                           LightningBolt = 403,
                           LightningShield = 324,
                           ManaTideTotem = 16190,
@@ -258,7 +298,7 @@ namespace SlimAI.Class.Shaman
                           StormStrike = 17364,
                           Thunderstorm = 51490,
                           TotemicRecall = 36936,
-                          UnleashElements = 73680,
+                          UnleashFlame = 165462,
                           WaterShield = 52127,
                           WindwalkTotem = 108273;
         #endregion

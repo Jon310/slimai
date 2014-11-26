@@ -88,6 +88,7 @@
     <Compile Include="Class\Shaman\ElementalShaman.cs" />
     <Compile Include="Class\Shaman\EnhancementShaman.cs" />
     <Compile Include="Class\Shaman\RestorationShaman.cs" />
+    <Compile Include="Class\Warlock\AfflictionWarlock.cs" />
     <Compile Include="Class\Warrior\ArmsWarrior.cs" />
     <Compile Include="Class\Warrior\FuryWarrior.cs" />
     <Compile Include="Class\Warrior\ProtectionWarrior.cs" />

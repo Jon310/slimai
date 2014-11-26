@@ -78,8 +78,7 @@ namespace SlimAI.Class.Warrior
 
             //await Item.CoUseHS(50);
             await CoLeap();
-            await CoDemoBanner();
-
+            
             //await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 4 && SlimAI.AOE);
 
             await Spell.CoCast(Recklessness, SlimAI.Burst && (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Bloodbath") || Me.CurrentTarget.HealthPercent < 20));
