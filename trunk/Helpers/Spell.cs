@@ -102,7 +102,7 @@ namespace SlimAI.Helpers
 
             if (!SpellManager.Cast(spell, unit))
                 return false;
-            
+
             Logging.Write("Casting " + sname + " on " + unit);
 
             if (!await Coroutine.Wait(GetSpellCastTime(sname), () => cancel) && GetSpellCastTime(sname).TotalSeconds > 0)
@@ -1690,11 +1690,11 @@ namespace SlimAI.Helpers
             // assume we cant do that, but then check for class specific buffs which allow movement while casting
             bool allowMovingWhileCasting = false;
             if (Me.Class == WoWClass.Shaman)
-                allowMovingWhileCasting = spell.Name == "Lightning Bolt" || Me.HasAura("Maelstrom Weapon", 5) || Me.HasAura("Spiritwalker's Grace");
+                allowMovingWhileCasting = Me.HasAura("Maelstrom Weapon", 5) || Me.HasAura("Spiritwalker's Grace");
             else if (Me.Specialization == WoWSpec.MageFire)
                 allowMovingWhileCasting = spell.Name == "Scorch" || Me.HasAura(108839);
             else if (Me.Class == WoWClass.Hunter)
-                allowMovingWhileCasting = spell.Name == "Steady Shot" || spell.Name == "Aimed Shot"  || spell.Name == "Cobra Shot";
+                allowMovingWhileCasting = spell.Name == "Steady Shot" || spell.Name == "Aimed Shot" || spell.Name == "Cobra Shot" || spell.Name == "Barrage";
             else if (Me.Class == WoWClass.Warlock)
                 allowMovingWhileCasting = spell.Name == "Malefic Grasp" && SpellManager.HasSpell(137587);
 

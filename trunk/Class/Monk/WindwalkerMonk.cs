@@ -20,67 +20,71 @@ namespace SlimAI.Class.Monk
         static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static MonkSettings Settings { get { return GeneralSettings.Instance.Monk(); } }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker)]
-        public static Composite WindwalkerCombat()
+        #region Coroutine Combat
+
+        private static async Task<bool> CombatCoroutine()
         {
-            return new PrioritySelector(
+            //if (SlimAI.PvPRotation)
+            //{
+            //    await PvPCoroutine();
+            //    return true;
+            //}
                 /* Things to fix
                  * energy capping
                  * need to check healing spheres 
                 */
-                new Throttle(1,
-                    new Action(context => ResetVariables())),
-                new Decorator(ret => SlimAI.PvPRotation, 
-                    CreatePvP()),
-                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget,
-                    new ActionAlwaysSucceed()),
-                CreateInterruptSpellCast(),
-                Common.CreateInterruptBehavior(),
+                //new Throttle(1,
+                //    new Action(context => ResetVariables()))
+
+                //CreateInterruptSpellCast(),
+                //Common.CreateInterruptBehavior(),
                 //Spell.WaitForCastOrChannel(),
                 //Item.UsePotionAndHealthstone(40),
 
 
                 //Detox
-                new Decorator(ret => SlimAI.Dispell,
-                    CreateDispelBehavior()),
+                //new Decorator(ret => SlimAI.Dispell,
+                //    CreateDispelBehavior()),
                 //Healing Spheres need to work on
                 //Spell.CastOnGround("Healing Sphere", on => Me.Location, ret => Me.HealthPercent <= 50),
-                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
-                Spell.Cast(TigereyeBrew, ret => Me.HasAura("Tigereye Brew", 18)),
-                new Throttle(2,
-                    Spell.Cast("Chi Brew", ret => buffStackCount(TigereyeBrewStack, Me) <= 16 && Me.CurrentChi < 2)),
-                Spell.Cast(EnergizingBrew, ret => Me.CurrentEnergy < 25),
+            await Spell.CoCast(TigereyeBrew, Me.HasAura("Tigereye Brew", 18));
+            await Spell.CoCast("Chi Brew", buffStackCount(TigereyeBrewStack, Me) <= 16 && Me.CurrentChi < 2);
+            await Spell.CoCast(EnergizingBrew, Me.CurrentEnergy < 40);
                 // Execute if we can
-                Spell.Cast(TouchofDeath, ret => Me.HasAura("Death Note")),
-                Spell.Cast(TigerPalm, ret => Me.CurrentChi > 0 &&
-                            (!Me.HasAura("Tiger Power") || Me.HasAura("Tiger Power") && Me.GetAuraTimeLeft("Tiger Power").TotalSeconds <= 3)),
+            await Spell.CoCast(TouchofDeath, Me.HasAura("Death Note"));
+            await Spell.CoCast(TigerPalm, Me.CurrentChi > 0 && (!Me.HasAura("Tiger Power") || Me.HasAura("Tiger Power") && Me.GetAuraTimeLeft("Tiger Power").TotalSeconds <= 3));
 
                 //need to do some more work on this
                 //Spell.Cast(InvokeXuentheWhiteTiger, ret => SlimAI.Burst),
 
-                Spell.Cast(RisingSunKick),
-                Spell.Cast(FistsofFury, ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 1 &&
-                            !Me.HasAura("Energizing Brew") && Me.EnergyPercent <= 50 && !PartyBuff.WeHaveBloodlust && !Me.IsMoving &&
-                            SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 2.5 &&SlimAI.Burst),
-
+            await Spell.CoCast(RisingSunKick, Me.CurrentTarget.HasAura("Rising Sun Kick"));
+            await Spell.CoCast(FistsofFury, Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 1 && !Me.IsMoving);
+            await Spell.CoCast(RisingSunKick);
                 //Chi Talents
-                Spell.Cast(ChiWave, ret => Me.EnergyPercent < 40),
-                Spell.Cast("Zen Sphere", ret => !Me.HasAura("Zen Sphere")),
+            await Spell.CoCast(ChiWave, Me.EnergyPercent < 40);
+            await Spell.CoCast("Zen Sphere", !Me.HasAura("Zen Sphere"));
 
                 // free Tiger Palm or Blackout Kick... do before Jab
-                Spell.Cast(BlackoutKick, ret => Me.HasAura("Combo Breaker: Blackout Kick")),
-                Spell.Cast(TigerPalm, ret => Me.HasAura("Combo Breaker: Tiger Palm")),
+            await Spell.CoCast(BlackoutKick, Me.HasAura("Combo Breaker: Blackout Kick"));
+            await Spell.CoCast(TigerPalm, Me.HasAura("Combo Breaker: Tiger Palm"));
 
-                new Decorator(ret => SlimAI.AOE,
-                    new PrioritySelector(
-                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 4 && Me.CurrentChi < 3),
-                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3))),
+            await Spell.CoCast(SpinningCraneKick, Unit.UnfriendlyUnits(8).Count() >= 4 && Me.CurrentChi < 3 && SlimAI.AOE);
+            await Spell.CoCast(RushingJadeWind, Unit.UnfriendlyUnits(8).Count() >= 3 && SlimAI.AOE);
 
-                Spell.Cast(ExpelHarm, ret => Me.CurrentChi <= Me.MaxChi - 2 && Me.HealthPercent < 80 || Me.HealthPercent <= 30),
-                Spell.Cast("Jab", ret => Me.CurrentChi <= Me.MaxChi - 2),
+            await Spell.CoCast(ExpelHarm, Me.CurrentChi <= Me.MaxChi - 2 && Me.HealthPercent < 80 || Me.HealthPercent <= 30);
+            await Spell.CoCast("Jab", Me.CurrentChi <= Me.MaxChi - 2);
                 // chi dump
-                Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 3 && SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 1));
+            await Spell.CoCast(BlackoutKick, Me.CurrentChi >= 3 && SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds > 1);
+            return false;
         }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker)]
+        public static Composite CoWindwalkerCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+
+        #endregion
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker)]
         public static Composite WindwalkerPreCombatBuffs()

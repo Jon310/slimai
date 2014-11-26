@@ -1,17 +1,29 @@
-﻿using System.Windows.Forms;
-using SlimAI.Managers;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Buddy.Coroutines;
+using JetBrains.Annotations;
 using CommonBehaviors.Actions;
+using SlimAI.Helpers;
+using SlimAI.Lists;
+using SlimAI.Managers;
+using SlimAI.Settings;
 using Styx;
+using SlimAI.Class;
+using Styx.Common;
 using Styx.CommonBot;
+using Styx.CommonBot.Coroutines;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using SlimAI.Helpers;
-using SlimAI.Settings;
-using System.Linq;
+using Action = Styx.TreeSharp.Action;
 
 namespace SlimAI.Class.Deathknight
 {
+    [UsedImplicitly]
     class BloodDeathknight
     {
         static LocalPlayer Me { get { return StyxWoW.Me; } }
@@ -20,47 +32,57 @@ namespace SlimAI.Class.Deathknight
         private static int UnholyRuneSlotsActive { get { return Me.GetRuneCount(4) + Me.GetRuneCount(5); } }
         private static DeathKnightSettings Settings { get { return GeneralSettings.Instance.DeathKnight(); } }
 
-        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
-        public static Composite BloodDKCombat()
-        {
-            return new PrioritySelector(
-            new Throttle(1,
-                new Action(context => ResetVariables())),
+        #region Coroutine Combat
 
-            new Decorator(ret => Me.IsCasting || Me.IsChanneling || !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
-                            new ActionAlwaysSucceed()),
-            Army(),
+        private static async Task<bool> CombatCoroutine()
+        {
+
+            if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
+                        
+            //Army(),
             //CreateInterruptSpellCast(),
             //Common.CreateInterruptBehavior(),
-            new Decorator(ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague"), 
-                CreateApplyDiseases()),
-            BloodCombatBuffs(),
-            new Decorator(ret => SlimAI.AFK,
-                CreateAFK()),
+            //new Decorator(ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague"), 
+            //    CreateApplyDiseases()),
+            //BloodCombatBuffs(),
+            //new Decorator(ret => SlimAI.AFK,
+            //    CreateAFK()),
             //Item.UsePotionAndHealthstone(40),
-            new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
 
-            Spell.Cast(DeathStrike, ret => ShouldDeathStrike),
+            await Spell.CoCast(UnholyBlight, !Me.CurrentTarget.HasAura("Frost Fever") || !Me.CurrentTarget.HasAura("Blood Plague"));
+            await Spell.CoCast(Outbreak, !Me.CurrentTarget.HasAura("Frost Fever") || !Me.CurrentTarget.HasAura("Blood Plague"));
+            await Spell.CoCast(IcyTouch, !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && !Me.CurrentTarget.HasAura("Frost Fever") && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3);
+            await Spell.CoCast(PlagueStrike, !Me.CurrentTarget.HasAura("Blood Plague") && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3);
 
-            new Throttle(1, 2,
-                new Decorator(ret => Unit.UnfriendlyUnits(12).Count() >= 2 && !Me.HasAura("Unholy Blight") && SlimAI.AOE && ShouldSpreadDiseases && BloodRuneUse,
-                    new PrioritySelector(
-                        Spell.Cast(BloodBoil, ret => SpellManager.HasSpell("Roiling Blood")),
-                        Spell.Cast(Pestilence, ret => !SpellManager.HasSpell("Roiling Blood"))))),
+            await Spell.CoCast(BoneShield, !Me.HasAura("Bone Shield"));
+            await Spell.CoCast(Conversion, Me.HealthPercent < 60 && Me.RunicPowerPercent > 20 && !Me.HasAura("Conversion"));
+            await Spell.CoCast(Conversion, Me.HealthPercent > 90 && Me.HasAura("Conversion"));
 
-            new Decorator(ret => !ShouldDeathStrike,
-                new PrioritySelector(
-                    DnD(),
-                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && ((Me.CurrentTarget.HasAuraExpired("Blood Plague", 3)) && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3 ||
-                                                 Me.HasAura(81141) && !SpellManager.CanCast("Death and Decay"))),
-                    Spell.Cast(RuneTap, ret => Me.HealthPercent <= 80 && Me.BloodRuneCount >= 1),
-                    Spell.Cast(RuneStrike, ret => Me.CurrentRunicPower >= 30 && !Me.HasAura("Lichborne")),
-                    Spell.Cast(SoulReaper, ret => BloodRuneUse && Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent <= 35),
-                    Spell.Cast(BloodBoil, ret => SlimAI.AOE && !SpellManager.CanCast("Death and Decay") && Unit.UnfriendlyUnits(10).Count() > 3 && BloodRuneUse),
-                    Spell.Cast(HeartStrike, ret => BloodRuneUse),
-                    Spell.Cast(HornofWinter, ret => Me.CurrentRunicPower < 90))));
+            await Spell.CoCast(DeathPact, Me.HealthPercent < 30);
+            await Spell.CoCast(EmpowerRuneWeapon, !SpellManager.CanCast("Death Strike") && !SpellManager.CanCast(DeathPact));
+            await Spell.CoCast(BloodTap, Me.HasAura("Blood Charge", 5) && Me.HealthPercent < 90 && !SpellManager.CanCast("Death Strike") && NoRunes);
+            await Spell.CoCast(PlagueLeech, CanCastPlagueLeech);
 
+            await Spell.CoCast(DeathStrike, ShouldDeathStrike);
+
+            await Spell.CoCastOnGround(DeathandDecay, Me.Location, Me.HasAura(81141) && SlimAI.AOE);
+            await Spell.CoCast(BloodBoil, Me.CurrentTarget.HasAuraExpired("Blood Plague", 3) && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 3 || Me.HasAura(81141) && !SpellManager.CanCast("Death and Decay"));
+            await Spell.CoCast(DeathCoil, Me.CurrentRunicPower >= 30);
+            await Spell.CoCast(SoulReaper, BloodRuneUse && Me.CurrentTarget != null && Me.CurrentTarget.HealthPercent <= 35);
+            await Spell.CoCast(BloodBoil, BloodRuneUse);
+            await Spell.CoCast(BloodTap, Me.HasAura("Blood Charge", 10) && NoRunes);
+            
+            return false;
         }
+
+        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
+        public static Composite CoBloodCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+
+        #endregion
+
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
         public static Composite BloodDKPreCombatBuffs()
@@ -68,8 +90,9 @@ namespace SlimAI.Class.Deathknight
             return new PrioritySelector(
                 new Decorator(ret => Me.Mounted,
                               new ActionAlwaysSucceed()),
-                Spell.Cast(BoneShield, ret => !Me.HasAura("Bone Shield")),
-                Spell.Cast(HornofWinter, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower)));
+                Spell.Cast(BoneShield, ret => !Me.HasAura("Bone Shield"))
+                //Spell.Cast(HornofWinter, ret => !Me.HasPartyBuff(PartyBuffType.AttackPower))
+                );
         }
 
         private static Composite BloodCombatBuffs()
@@ -84,7 +107,6 @@ namespace SlimAI.Class.Deathknight
                     new PrioritySelector(
                         Spell.Cast(VampiricBlood, ret => Me.HealthPercent < 60),
                         Spell.Cast(IceboundFortitude, ret => Me.HealthPercent < 30))),
-                Spell.Cast(MightofUrsoc, ret => Me.HealthPercent < 60),
                 new Decorator(ret => Me.HealthPercent < 45,
                     new PrioritySelector(
                         Spell.Cast(RaiseDead, ret => !GhoulMinionIsActive),
@@ -271,7 +293,7 @@ namespace SlimAI.Class.Deathknight
             AntiMagicShell = 48707,
             ArmyoftheDead = 42650,
             Asphyxiate = 108194,
-            BloodBoil = 48721,
+            BloodBoil = 50842,
             BloodTap = 45529,
             BoneShield = 49222,
             Conversion = 119975,

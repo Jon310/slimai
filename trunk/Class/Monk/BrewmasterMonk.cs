@@ -1,12 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using SlimAI.Helpers;
-using SlimAI.Managers;
+using Buddy.Coroutines;
+using JetBrains.Annotations;
 using CommonBehaviors.Actions;
+using SlimAI.Helpers;
+using SlimAI.Lists;
+using SlimAI.Managers;
 using SlimAI.Settings;
 using Styx;
+using SlimAI.Class;
+using Styx.Common;
 using Styx.CommonBot;
+using Styx.CommonBot.Coroutines;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -22,102 +31,74 @@ namespace SlimAI.Class.Monk
         private static double? _energyRegen;
         private static double? _energy;
 
-        #region Combat
-        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
-        public static Composite BrewmasterCombat()
+        #region Coroutine Combat
+
+        private static async Task<bool> CombatCoroutine()
         {
-            return new PrioritySelector(
-                new Throttle(1,
-                    new Action(context => ResetVariables())),
+            new Throttle(1,
+                         new Action(context => ResetVariables()));
                 /*Things to fix
                  * using glyph of expel harm to heal ppl dont want to have to page heal manger if i dont have to to keep it faster i guess
                 */
-                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive,
-                    new ActionAlwaysSucceed()),
-                ZenMed(),
+            if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
+
+            //ZenMed();
                 //Spell.WaitForCastOrChannel(),
                 //CreateInterruptSpellCast(),
                 //Common.CreateInterruptBehavior(),
                 //Spell.Cast(SpearHandStrike, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
                 //Item.UsePotionAndHealthstone(40),
                 //new Action(ret => { Item.UseWaist(); return RunStatus.Failure; }),
-                new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
 
                 // Execute if we can
-                Spell.Cast(TouchofDeath, ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
-                //stance stuff need to work on it more
-                Spell.Cast(StanceoftheSturdyOx, ret => IsCurrentTank() && !Me.HasAura("Stance of the Sturdy Ox")),
+            await Spell.CoCast(TouchofDeath, Me.CurrentChi >= 3 && Me.HasAura("Death Note"));
 
-                new Decorator(ret => Me.HasAura("Stance of the Fierce Tiger"),
-                    new PrioritySelector(
-                //HealingSphereTank(),
-                        Spell.Cast(TigerPalm, ret => !Me.HasAura("Tiger Power")),
-                        Spell.Cast(ChiWave),
-                        Spell.Cast(BlackoutKick),
-                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
-                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 3),
-                        Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 35),
-                        Spell.Cast(Jab, ret => Me.CurrentChi <= 4),
-                        Spell.Cast(TigerPalm),
-                        new ActionAlwaysSucceed())),
-
-                //// apply the Weakened Blows debuff. Keg Smash also generates allot of threat 
-                Spell.Cast(KegSmash, ret => Me.CurrentChi <= 3 && Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8).Any(u => !u.HasAura("Weakened Blows") &&
-                                            u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
-
-                OxStatue(),
-                
+            //await Spell.CoCastOnGround(SummonBlackOxStatue, Me.Location, !Me.HasAura("Sanctuary of the Ox") /*&& Me.IsInGroup()*/ && SlimAI.Weave);
+            
                 //PB, EB, and Guard are off the GCD
                 //!!!!!!!Purifying Brew !!!!!!!
-                new Decorator(ret => Me.CurrentChi >= 1,
-                    new Throttle(1,
-                        new PrioritySelector(
-                            Spell.Cast(PurifyingBrew, ret => Me.HasAura("Heavy Stagger")),
-                            new Decorator(ret => (HasShuffle() || Me.CurrentChi >= 2) && !Me.HasAura(ElusiveBrew),
-                                new PrioritySelector(
-                                    Spell.Cast(PurifyingBrew, ret => Me.HasAura("Moderate Stagger") && Me.HealthPercent <= 70)
-                //Spell.Cast(PurifyingBrew, ret => Me.HasAura("Light Stagger") && Me.HealthPercent < 40)
-                                    ))))),
+            await Spell.CoCast(PurifyingBrew, Me.HasAura("Heavy Stagger") ||
+                                              (((HasShuffle() || Me.CurrentChi >= 2) && !Me.HasAura(ElusiveBrew)) && Me.HasAura("Moderate Stagger") && Me.HealthPercent <= 70));
+
 
                 //Elusive Brew will made auto at lower stacks when I can keep up 80 to 90% up time this is just to keep from capping
-                Spell.Cast(ElusiveBrew, ret => Me.HasAura("Elusive Brew", 12) && !Me.HasAura(ElusiveBrew) && IsCurrentTank()),
-                Spell.Cast(BlackoutKick, ret => !Me.HasAura("Shuffle") || Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds <= 6),
-                Spell.Cast(Guard, ret => Me.CurrentChi >= 2 && Me.HasAura("Power Guard") && Me.HealthPercent <= 80 && IsCurrentTank()),
+            await Spell.CoCast(ElusiveBrew, Me.HasAura("Elusive Brew", 12) && !Me.HasAura(ElusiveBrew) && IsCurrentTank());
+            await Spell.CoCast(BlackoutKick, !Me.HasAura("Shuffle") || Me.HasAura("Shuffle") && Me.GetAuraTimeLeft("Shuffle").TotalSeconds <= 6);
+            await Spell.CoCast(Guard, Me.CurrentChi >= 2 && Me.HealthPercent <= 80 && IsCurrentTank());
                 
                 //Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 80),
                 //Spell.Cast(ExpelHarm, on => EHtar, ret => Me.HealthPercent > 70 && TalentManager.HasGlyph("Targeted Expulsion")),
-                Spell.Cast(ExpelHarm, ret => Me.HealthPercent <= 70 && Me.CurrentEnergy > 40/*&& TalentManager.HasGlyph("Targeted Expulsion") || Me.HealthPercent < 80 && !TalentManager.HasGlyph("Targeted Expulsion")*/),
+            await Spell.CoCast(ExpelHarm, Me.HealthPercent <= 70 && Me.CurrentEnergy > 40/*&& TalentManager.HasGlyph("Targeted Expulsion") || Me.HealthPercent < 80 && !TalentManager.HasGlyph("Targeted Expulsion")*/);
                 //Detox
-                CreateDispelBehavior(),
+            //CreateDispelBehavior();
 
-                Spell.Cast(TigerPalm, ret => Me.CurrentChi >= 2 && !Me.HasAura("Power Guard") || !Me.HasAura("Tiger Power")),
+            await Spell.CoCast(TigerPalm, !Me.HasAura("Tiger Power"));
                 //Spell.Cast(BreathofFire, ret => Me.CurrentChi >= 3 && HasShuffle() && Me.CurrentTarget.HasAura("Dizzying Haze") && SlimAI.AOE),
-                Spell.Cast(BlackoutKick, ret => Me.CurrentChi >= 3 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds <= 1 || Me.CurrentChi >= 4 || Me.CurrentChi >= 3 && Spell.GetSpellCooldown("Guard").TotalSeconds >= 3),
-                Spell.Cast(KegSmash),
+            await Spell.CoCast(BlackoutKick, Me.CurrentChi >= 3 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds <= 1 || Me.CurrentChi >= 4 || Me.CurrentChi >= 3 && Spell.GetSpellCooldown("Guard").TotalSeconds >= 3);
+            await Spell.CoCast(KegSmash);
 
                 //Chi Talents
-                Spell.Cast(ChiWave),
-                //Spell.Cast(ZenSphere, ret => !Me.HasAura(ZenSphere)),
+            await Spell.CoCast(ChiWave);
+            await Spell.CoCast(ZenSphere, !Me.HasAura(ZenSphere));
                 
-                //Healing Spheres need to work on not happy with this atm
-                HealingSphere(),
-                //HealingSphereTank(),
-
-                new Decorator(ret => SlimAI.AOE,
-                    new PrioritySelector(
-                        Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3),
+            await Spell.CoCast(RushingJadeWind, Unit.UnfriendlyUnits(8).Count() >= 3 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3 && SlimAI.AOE);
                         //Spell.Cast(RushingJadeWind, ret => Unit.UnfriendlyUnits(8).Count() >= 3 && ((Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= (((40 - 0) * (1.0 / EnergyRegen)) / 1.6)) || Me.CurrentEnergy >= 80)),
-                        Spell.Cast(SpinningCraneKick, ret => Unit.UnfriendlyUnits(8).Count() >= 5 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3))),
+            await Spell.CoCast(SpinningCraneKick, Unit.UnfriendlyUnits(8).Count() >= 5 && Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3 && SlimAI.AOE);
 
                 //Spell.Cast(Jab, ret => ((Me.CurrentEnergy - 40) + (Spell.GetSpellCooldown("Keg Smash").TotalSeconds * EnergyRegen)) > 40),
                 //Spell.Cast("Jab", ret => (Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= (((40 - 0) * (1.0 / EnergyRegen)) / 1.6)) || Me.CurrentEnergy >= 80),
-                Spell.Cast("Jab", ret => Me.CurrentEnergy >= 80 || Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3),
+            await Spell.CoCast("Jab", Me.CurrentEnergy >= 80 || Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 3);
 
-                //dont like using this in auto to many probs with it
-                //Spell.Cast("Invoke Xuen, the White Tiger", ret => Me.CurrentTarget.IsBoss && IsCurrentTank()),
-                new Throttle(Spell.Cast(TigerPalm, ret => Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 1 && Me.CurrentChi < 3 && Me.CurrentEnergy < 80))
-                );
+            await Spell.CoCast(TigerPalm/*, Spell.GetSpellCooldown("Keg Smash").TotalSeconds >= 1 && Me.CurrentChi < 3 && Me.CurrentEnergy < 80*/);
+            return false;
         }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
+        public static Composite CoBrewmasterCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+
 #endregion
 
         #region Buffs
