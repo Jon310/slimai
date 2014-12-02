@@ -34,7 +34,7 @@
       <HintPath>..\..\..\HBTest\GreyMagic.dll</HintPath>
     </Reference>
     <Reference Include="Honorbuddy">
-      <HintPath>..\..\..\HBTest\Honorbuddy.exe</HintPath>
+      <HintPath>..\..\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\Newtonsoft.Json.dll</HintPath>
@@ -59,6 +59,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Tripper.Tools">
+      <HintPath>..\..\Tripper.Tools.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class\DeathKnight\BloodDeathknight.cs" />
@@ -86,9 +89,7 @@
     <Compile Include="Class\Warrior\ArmsWarrior.cs" />
     <Compile Include="Class\Warrior\FuryWarrior.cs" />
     <Compile Include="Class\Warrior\ProtectionWarrior.cs" />
-    <Compile Include="GUI\Main.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="GUI\Main.cs" />
     <Compile Include="GUI\Main.designer.cs">
       <DependentUpon>Main.cs</DependentUpon>
     </Compile>

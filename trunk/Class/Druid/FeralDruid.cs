@@ -51,19 +51,20 @@ namespace SlimAI.Class.Druid
             await Spell.CoCast(FerociousBite, Me.CurrentTarget.HasMyAura("Rip") && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 3 && Me.CurrentTarget.HealthPercent <= 25);
             await Spell.CoCast("Cenarion Ward", WardTar, SpellManager.HasSpell("Cenarion Ward"));
             await Spell.CoCast(HealingTouch, HTtar, Me.HasAura("Predatory Swiftness") && !Me.HasAura(Bloodtalons) && (Me.GetAuraTimeLeft("Predatory Swiftness").TotalSeconds <= 1.5 || Me.ComboPoints >= 4 || Me.CurrentTarget.GetAuraTimeLeft("Rake").TotalSeconds <= 4));
-            await Spell.CoCast("Savage Roar", Me.GetAuraTimeLeft("Savage Roar").TotalSeconds <= 3 && Me.CurrentTarget.HealthPercent < 25 && Me.ComboPoints > 0 || !Me.HasAura("Savage Roar"));
+            await Spell.CoCast("Savage Roar", Me.GetAuraTimeLeft("Savage Roar").TotalSeconds <= 3 || ((Me.HasAura(Berserk) || Spell.GetSpellCooldown("Tiger's Fury").TotalSeconds <= 3) && Me.HasAuraExpired("Savage Roar", 12)) && Me.ComboPoints == 5 || !Me.HasAura("Savage Roar"));
             await Spell.CoCast("Tiger's Fury", Me.CurrentEnergy <= 30 && !Me.HasAura(Clearcasting));
             await Spell.CoCast("Force of Nature", SpellManager.HasSpell("Force of Nature") && (Spell.GetCharges("Force of Nature") == 3));
             await Spell.CoCast(FerociousBite, Me.ComboPoints >= 5 && Me.CurrentTarget.HealthPercent <= 25 && Me.CurrentTarget.HasMyAura("Rip"));
-            await Spell.CoCast(Rip, Me.HasAura("Savage Roar") && Me.ComboPoints == 5 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 2 || !Me.CurrentTarget.HasMyAura("Rip")));
+            await Spell.CoCast(Rip, Me.HasAura("Savage Roar") && Me.ComboPoints == 5 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds <= 7 || !Me.CurrentTarget.HasMyAura("Rip")));
             await Spell.CoCast("Savage Roar", SavageRoarTimer);
-            await Spell.CoCast("Thrash", Me.HasAura(Clearcasting) && (Me.CurrentTarget.GetAuraTimeLeft("Thrash").TotalSeconds < 3 || !Me.CurrentTarget.HasMyAura("Thrash")));
+            await Spell.CoCast("Thrash", Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Thrash")));
             await Spell.CoCast(Rake, Me.CurrentTarget.HasAuraExpired("Rake", 4) &&  Me.HasAura("Savage Roar"));
-            await Spell.CoCast("Thrash", Me.CurrentTarget.GetAuraTimeLeft("Thrash").TotalSeconds < 3 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds >= 8 &&
-                                           (Me.GetAuraTimeLeft("Savage Roar").TotalSeconds >= 12 || Me.HasAura("Berserk") || Me.ComboPoints == 5)));
-            await Spell.CoCast(FerociousBite, Me.HasAura("Savage Roar") && Me.ComboPoints >= 5 && Me.CurrentTarget.HasMyAura("Rip") && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds > 7);
-            await Spell.CoCast("Swipe", Unit.UnfriendlyUnits(8).Count() >= 3 && SlimAI.AOE);
-            await Spell.CoCast(Shred, Unit.UnfriendlyUnits(8).Count() < 3);
+            //await Spell.CoCast("Thrash", Me.CurrentTarget.GetAuraTimeLeft("Thrash").TotalSeconds < 3 && (Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds >= 8 &&
+            //                               (Me.GetAuraTimeLeft("Savage Roar").TotalSeconds >= 12 || Me.HasAura("Berserk") || Me.ComboPoints == 5)));
+            await Spell.CoCast(FerociousBite, Me.HasAura("Savage Roar") && Me.ComboPoints == 5 && Me.CurrentTarget.HasMyAura("Rip") && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds > 7 && Me.CurrentEnergy > 50);
+            await Spell.CoCast("Swipe", Unit.UnfriendlyUnits(8).Count() >= 3 && SlimAI.AOE && Me.ComboPoints < 5);
+            await Spell.CoCast(Shred, Unit.UnfriendlyUnits(8).Count() < 3 && Me.ComboPoints < 5);
+            await Spell.CoCast(Rejuvenation, RejuvTar, Me.ManaPercent >= 40);
             return false;
 
         }
@@ -314,6 +315,21 @@ namespace SlimAI.Class.Druid
                 return eHheal;
             }
         }
+
+        private static WoWUnit RejuvTar
+        {
+            get
+            {
+                var eHheal = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                              where unit.IsAlive
+                              where unit.IsInMyPartyOrRaid
+                              where unit.Distance < 40
+                              where unit.InLineOfSight
+                              where unit.HealthPercent <= 95
+                              select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
+                return eHheal;
+            }
+        }
         #endregion
 
         #region DruidTalents
@@ -362,6 +378,7 @@ namespace SlimAI.Class.Druid
                           NaturesSwiftness = 132158,
                           Rake = 1822,
                           Renewal = 108238,
+                          Rejuvenation = 774,
                           Rip = 1079,
                           SavageDefense = 62606,
                           SavageRoar = 127538,
