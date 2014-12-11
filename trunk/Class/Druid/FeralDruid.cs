@@ -325,7 +325,7 @@ namespace SlimAI.Class.Druid
                               where unit.IsInMyPartyOrRaid
                               where unit.Distance < 40
                               where unit.InLineOfSight
-                              where unit.HealthPercent <= 95
+                              where unit.HealthPercent <= 75
                               select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
                 return eHheal;
             }
