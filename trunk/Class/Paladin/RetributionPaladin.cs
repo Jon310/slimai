@@ -48,7 +48,7 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCast(DivineShield, Me.HealthPercent <= 20 && SlimAI.Weave);
             await Spell.CoCast(Emancipate, Me.HasAuraWithEffect(WoWApplyAuraType.ModRoot));
 
-                    //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }))),
+            //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }))),
             await Spell.CoCast(FlashofLight, FlashTar, Me.HasAura("Selfless Healer", 3));
             await Spell.CoCast(SealofRighteousness, !Me.HasAura("Seal of Righteousness") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) >= 2);
             await Spell.CoCast(SealofTruth, !Me.HasAura("Seal of Truth") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) < 2);
@@ -62,7 +62,7 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCast(CrusaderStrike, Me.CurrentHolyPower <= 4);
             //divine_storm,if=buff.divine_crusader.react&buff.final_verdict.up
             await Spell.CoCast(DivineStorm, Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict"));
-            //await Spell.CoCast("Judgment", on => SecTar, ret => Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,15f) >= 2 && Me.HasAura("Glyph of Double Jeopardy"));
+            await Spell.CoCast(Judgment, SecTar, Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,15f) >= 2 && Me.HasAura("Glyph of Double Jeopardy"));
             await Spell.CoCast(Judgment, Me.CurrentHolyPower <= 4);
             await Spell.CoCast(DivineStorm, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) >= 2 && SlimAI.AOE);
             await Spell.CoCast(TemplarsVerdict);
@@ -72,37 +72,37 @@ namespace SlimAI.Class.Paladin
             return false;
         }
 
-            [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
+        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
         public static Composite CoRetributionCombat()
         {
             return new ActionRunCoroutine(ctx => CombatCoroutine());
         }
         #endregion
-        
 
-        //#region SecTar
-        //public static WoWUnit SecTar
-        //{
-        //    get
-        //    {
-        //        if (!StyxWoW.Me.GroupInfo.IsInParty)
-        //            return null;
-        //        if (StyxWoW.Me.GroupInfo.IsInParty)
-        //        {
-        //            var secondTarget = (from unit in ObjectManager.GetObjectsOfType<WoWUnit>(false)
-        //                                where unit.IsAlive
-        //                                where unit.IsHostile
-        //                                where unit.Distance < 30
-        //                                where unit.IsTargetingMyPartyMember || unit.IsTargetingMyRaidMember
-        //                                where unit.InLineOfSight
-        //                                where unit.Guid != Me.CurrentTarget.Guid
-        //                                select unit).FirstOrDefault();
-        //            return secondTarget;
-        //        }
-        //        return null;
-        //    }
-        //}
-        //#endregion
+
+            #region SecTar
+            public static WoWUnit SecTar
+            {
+                get
+                {
+                    if (!StyxWoW.Me.GroupInfo.IsInParty)
+                        return null;
+                    if (StyxWoW.Me.GroupInfo.IsInParty)
+                    {
+                        var secondTarget = (from unit in ObjectManager.GetObjectsOfType<WoWUnit>(false)
+                                            where unit.IsAlive
+                                            where unit.IsHostile
+                                            where unit.Distance < 30
+                                            where unit.IsTargetingMyPartyMember || unit.IsTargetingMyRaidMember
+                                            where unit.InLineOfSight
+                                            where unit.Guid != Me.CurrentTarget.Guid
+                                            select unit).FirstOrDefault();
+                        return secondTarget;
+                    }
+                    return null;
+                }
+            }
+            #endregion
 
             private static WoWUnit FlashTar
             {

@@ -218,7 +218,7 @@ namespace SlimAI.Managers
                     prio.Score -= u.HealthPercent * 5;
 
                     // If they're out of range, give them a bit lower score.
-                    if (u.DistanceSqr > 40 * 40)
+                    if (u.Location.DistanceSqr(myLoc) > 40 * 40)
                     {
                         prio.Score -= 50f;
                     }
@@ -230,11 +230,17 @@ namespace SlimAI.Managers
                     }
 
                     // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                    if (tanks.Contains(u.Guid) && u.HealthPercent != 100 &&
+                    if (tanks.Contains(u.Guid) && u.HealthPercent < 100 &&
                         // Ignore giving more weight to the tank if we have Beacon of Light on it.
                         (!amHolyPally || !u.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid)))
                     {
                         prio.Score += 100f;
+                    }
+
+                    // Give self Higher Prio
+                    if (Me.Guid == u.Guid && WoWPartyMember.GroupRole.Healer == (Me.Role & WoWPartyMember.GroupRole.Healer))
+                    {
+                        prio.Score += 50f;
                     }
 
                     // Give flag carriers more weight in battlegrounds. We need to keep them alive!
@@ -355,15 +361,13 @@ namespace SlimAI.Managers
             double minHealth = 999;
             WoWUnit minUnit = null;
 
-            foreach (WoWUnit unit in HealerManager.Instance.TargetList)
+            foreach (var unit in Instance.TargetList)
             {
                 try
                 {
-                    if (unit.HealthPercent < minHealth && unit.Distance < 40)
-                    {
-                        minHealth = unit.HealthPercent;
-                        minUnit = unit;
-                    }
+                    if (!(unit.HealthPercent < minHealth) || !(unit.Distance < 40)) continue;
+                    minHealth = unit.HealthPercent;
+                    minUnit = unit;
                 }
                 catch
                 {
