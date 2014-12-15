@@ -39,6 +39,7 @@ namespace SlimAI.Class.Paladin
                 await PvPCoroutine();
                 return true;
             }
+
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
             //Common.CreateInterruptBehavior(),
             //Dispelling.CreateDispelBehavior(),
@@ -46,25 +47,23 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCast(AvengingWrath, SlimAI.Burst);
             await Spell.CoCast(HolyAvenger, Me.CurrentHolyPower <= 2 && SlimAI.Burst);
             await Spell.CoCast(DivineShield, Me.HealthPercent <= 20 && SlimAI.Weave);
-            await Spell.CoCast(Emancipate, Me.HasAuraWithEffect(WoWApplyAuraType.ModRoot));
 
             //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }))),
             await Spell.CoCast(FlashofLight, FlashTar, Me.HasAura("Selfless Healer", 3));
-            await Spell.CoCast(SealofRighteousness, !Me.HasAura("Seal of Righteousness") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) >= 2);
+            await Spell.CoCast(SealofRighteousness, SlimAI.AOE && !Me.HasAura("Seal of Righteousness") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) >= 2);
             await Spell.CoCast(SealofTruth, !Me.HasAura("Seal of Truth") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) < 2);
             await Spell.CoCast(ExecutionSentence, SlimAI.Burst);
-            await Spell.CoCastOnGround(LightsHammer, Me.Location, Me.CurrentTarget.IsBoss);
-            await Spell.CoCast(DivineStorm, (Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits,ClusterType.Radius, 8f) >= 2 && (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"))) && SlimAI.AOE);
+            await Spell.CoCastOnGround(LightsHammer, Me.Location, Me.CurrentTarget.IsBoss && SlimAI.AOE);
+            await Spell.CoCast(DivineStorm, (Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"))) && SlimAI.AOE && Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(TemplarsVerdict, Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"));
             await Spell.CoCast(HammerofWrath, Me.CurrentHolyPower <= 4);
-            await Spell.CoCast(DivineStorm, Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict") && (Me.HasAura(AvengingWrath) || Me.CurrentTarget.HealthPercent < 35));
+            await Spell.CoCast(DivineStorm, SlimAI.AOE && Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict") && Me.CurrentTarget.Distance <= 8 && (Me.HasAura(AvengingWrath) || Me.CurrentTarget.HealthPercent < 35));
             await Spell.CoCast(HammeroftheRighteous, Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) >= 2 && SlimAI.AOE);
             await Spell.CoCast(CrusaderStrike, Me.CurrentHolyPower <= 4);
-            //divine_storm,if=buff.divine_crusader.react&buff.final_verdict.up
-            await Spell.CoCast(DivineStorm, Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict"));
+            await Spell.CoCast(DivineStorm,  SlimAI.AOE && Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict") && Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(Judgment, SecTar, Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,15f) >= 2 && Me.HasAura("Glyph of Double Jeopardy"));
             await Spell.CoCast(Judgment, Me.CurrentHolyPower <= 4);
-            await Spell.CoCast(DivineStorm, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) >= 2 && SlimAI.AOE);
+            await Spell.CoCast(DivineStorm, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && SlimAI.AOE && Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(TemplarsVerdict);
             await Spell.CoCast(Exorcism, Me.CurrentHolyPower <= 4);
             await Spell.CoCast(HolyPrism);
@@ -78,6 +77,45 @@ namespace SlimAI.Class.Paladin
             return new ActionRunCoroutine(ctx => CombatCoroutine());
         }
         #endregion
+
+
+            #region PvP
+
+            private static async Task<bool> PvPCoroutine()
+            {
+
+                if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
+
+
+                if (StyxWoW.Me.CurrentTarget != null && (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange || StyxWoW.Me.IsCasting || SpellManager.GlobalCooldown)) return true;
+
+                await Spell.CoCast(AvengingWrath, SlimAI.Burst);
+                await Spell.CoCast(HolyAvenger, Me.CurrentHolyPower <= 2 && SlimAI.Burst);
+                await Spell.CoCast(DivineShield, Me.HealthPercent <= 20 && SlimAI.Weave);
+
+                //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }))),
+                await Spell.CoCast(FlashofLight, FlashTar, Me.HasAura("Selfless Healer", 3));
+                await Spell.CoCast(ExecutionSentence, SlimAI.Burst);
+                //await Spell.CoCastOnGround(LightsHammer, Me.Location, Me.CurrentTarget.IsBoss);
+                await Spell.CoCast(DivineStorm, (Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"))) && SlimAI.AOE && Me.CurrentTarget.Distance <= 8);
+                await Spell.CoCast(TemplarsVerdict, Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"));
+                await Spell.CoCast(HammerofWrath, Me.CurrentHolyPower <= 4);
+                await Spell.CoCast(DivineStorm, Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict") && Me.CurrentTarget.Distance <= 8 && (Me.HasAura(AvengingWrath) || Me.CurrentTarget.HealthPercent < 35));
+                await Spell.CoCast(HammeroftheRighteous, Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && SlimAI.AOE);
+                await Spell.CoCast(CrusaderStrike, Me.CurrentHolyPower <= 4);
+                await Spell.CoCast(DivineStorm, Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict") && Me.CurrentTarget.Distance <= 8);
+                //await Spell.CoCast("Judgment", on => SecTar, ret => Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,15f) >= 2 && Me.HasAura("Glyph of Double Jeopardy"));
+                await Spell.CoCast(Judgment, Me.CurrentHolyPower <= 4);
+                await Spell.CoCast(DivineStorm, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && SlimAI.AOE && Me.CurrentTarget.Distance <= 8);
+                await Spell.CoCast(TemplarsVerdict);
+                await Spell.CoCast(Exorcism, Me.CurrentHolyPower <= 4);
+                await Spell.CoCast(HolyPrism);
+
+                return true;
+            }
+
+
+            #endregion
 
 
             #region SecTar
@@ -119,45 +157,8 @@ namespace SlimAI.Class.Paladin
                 }
             }
 
-            #region PvP
-
-            private static async Task<bool> PvPCoroutine()
-            {
-
-                if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
-
-                await Spell.CoCast(AvengingWrath, SlimAI.Burst);
-                await Spell.CoCast(HolyAvenger, Me.CurrentHolyPower <= 2 && SlimAI.Burst);
-                await Spell.CoCast(DivineShield, Me.HealthPercent <= 20 && SlimAI.Weave);
-                await Spell.CoCast(Emancipate, Me.HasAuraWithEffect(WoWApplyAuraType.ModRoot));
-
-                //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }))),
-                await Spell.CoCast(FlashofLight, FlashTar, Me.HasAura("Selfless Healer", 3));
-
-                await Spell.CoCast(SealofRighteousness, !Me.HasAura("Seal of Righteousness") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2);
-                await Spell.CoCast(SealofTruth, !Me.HasAura("Seal of Truth") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) < 2);
-                await Spell.CoCast(ExecutionSentence, SlimAI.Burst);
-                await Spell.CoCastOnGround(LightsHammer, Me.Location, Me.CurrentTarget.IsBoss);
-                await Spell.CoCast(DivineStorm, (Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"))) && Me.CurrentTarget.Distance <= 8 && SlimAI.AOE);
-                await Spell.CoCast(TemplarsVerdict, Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"));
-                await Spell.CoCast(HammerofWrath, Me.CurrentHolyPower <= 4);
-                await Spell.CoCast(DivineStorm, Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict") && Me.CurrentTarget.Distance <= 8 && (Me.HasAura(AvengingWrath) || Me.CurrentTarget.HealthPercent < 35));
-                await Spell.CoCast(HammeroftheRighteous, Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && SlimAI.AOE);
-                await Spell.CoCast(CrusaderStrike, Me.CurrentHolyPower <= 4);
-                await Spell.CoCast(DivineStorm, Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict") && Me.CurrentTarget.Distance <= 8);
-                //await Spell.CoCast("Judgment", on => SecTar, ret => Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,15f) >= 2 && Me.HasAura("Glyph of Double Jeopardy"));
-                await Spell.CoCast(Judgment, Me.CurrentHolyPower <= 4);
-                await Spell.CoCast(DivineStorm, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && Me.CurrentTarget.Distance <= 8 && SlimAI.AOE);
-                await Spell.CoCast(TemplarsVerdict);
-                await Spell.CoCast(Exorcism, Me.CurrentHolyPower <= 4);
-                await Spell.CoCast(HolyPrism);
-
-                return true;
-            }
-            #endregion
-
-            #region PaladinTalents
-            public enum PaladinTalents
+        #region PaladinTalents
+        public enum PaladinTalents
         {
             SpeedofLight = 1,//Tier 1
             LongArmoftheLaw,
@@ -195,7 +196,6 @@ namespace SlimAI.Class.Paladin
             DivineProtection = 498,
             DivineShield = 642,
             DivineStorm = 53385,
-            Emancipate = 121783,
             EternalFlame = 114163,
             ExecutionSentence = 114157,
             Exorcism = 879,
