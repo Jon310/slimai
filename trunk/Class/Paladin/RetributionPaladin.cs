@@ -68,7 +68,8 @@ namespace SlimAI.Class.Paladin
             //await Spell.CoCast(TemplarsVerdict);
             //await Spell.CoCast(Exorcism, Me.CurrentHolyPower <= 4);
             //await Spell.CoCast(HolyPrism);
-
+            //D	5.46	execution_sentence
+            await Spell.CoCast(ExecutionSentence, SlimAI.Burst);
             //t	0.14	divine_storm,if=buff.divine_crusader.react&holy_power=5&buff.final_verdict.up
             await Spell.CoCast(DivineStorm, Me.HasAura("Divine Crusader") && Me.CurrentHolyPower == 5 && Me.HasAura("Final Verdict"));
             //v	0.00	divine_storm,if=holy_power=5&active_enemies=2&buff.final_verdict.up
