@@ -173,8 +173,11 @@ namespace SlimAI.Class.Warrior
             }
 
             await Spell.CoCast(ShieldCharge, (!Me.HasAura("Shield Charge") && SpellManager.Spells["Shield Slam"].Cooldown) || Spell.GetCharges(ShieldCharge) > 1);
-            await Spell.CoCast(HeroicStrike, Me.HasAura("Shield Charge") || Me.HasAura("Ultimatum") || Me.CurrentRage >= 90 || Me.HasAura("Unyielding Strikes", 5));
+            //await Spell.CoCast(HeroicStrike, Me.HasAura("Shield Charge") || Me.HasAura("Ultimatum") || Me.CurrentRage >= 90 || Me.HasAura("Unyielding Strikes", 5));
             
+            await Spell.CoCast(HeroicStrike, (Me.HasAura("Sheld Charge") || (Me.HasAura("Unyielding Strikes") && Me.CurrentRage >= 50 - Spell.StackCount(169686) * 5)) && Me.CurrentTarget.HealthPercent > 20);
+            await Spell.CoCast(HeroicStrike, Me.HasAura("Ultimatum") || Me.CurrentRage >= Me.MaxRage - 20 || Me.HasAura("Unyielding Strikes", 4));
+
             await Spell.CoCast(ShieldSlam);
             await Spell.CoCast(Revenge);
             await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
