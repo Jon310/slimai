@@ -218,6 +218,26 @@ namespace SlimAI.Helpers
             return false;
         }
 
+        #region Stack Count
+        public static uint StackCount(int Buff, WoWUnit onTarget = null)
+        {
+            if (onTarget == null)
+            {
+                var Results = Me.GetAuraById(Buff);
+                if (Results != null)
+                    return Results.StackCount;
+            }
+
+            if (onTarget != null)
+            {
+                var Results = onTarget.GetAuraById(Buff);
+                if (Results != null)
+                    return Results.StackCount;
+            }
+            return 0;
+        }
+        #endregion
+
         public static float MeleeDistance(this WoWUnit unit)
         {
             return Me.MeleeDistance(unit);
