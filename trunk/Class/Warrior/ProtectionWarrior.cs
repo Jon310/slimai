@@ -25,76 +25,81 @@ namespace SlimAI.Class.Warrior
         #region Coroutine Combat Section
         private static async Task<bool> CombatCoroutine()
         {
+            if (Me.HasAura("Gladiator Stance"))
+            {
+                await GladCoroutine();
+                return true;
+            }
+            //if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
+
+            //await Spell.CoCast(MassSpellReflection, Me.CurrentTarget.IsCasting && Me.CurrentTarget.Distance > 10);
+            //await Spell.CoCast(ShieldWall, Me.HealthPercent < 40);
+            //await Spell.CoCast(LastStand, Me.CurrentTarget.HealthPercent > Me.HealthPercent && Me.HealthPercent < 60);
+            //await Spell.CoCast(DemoralizingShout, Unit.EnemyUnitsSub10.Count() >= 3);
+            //await Spell.CoCast(ShieldBarrier, Me.HealthPercent < 40 && Me.CurrentRage >= 100);
+            //await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
+            //await Spell.CoCast(BerserkerRage, Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing));
+
+            //if (Me.CurrentTarget.IsWithinMeleeRange)
+            //{
+            //    await Spell.CoCast(Avatar);
+            //    await Spell.CoCast(BloodBath);
+            //    await Spell.CoCast(Bladestorm);
+            //}
+
+            //await Spell.CoCast(ShieldCharge, (!Me.HasAura("Shield Charge") && SpellManager.Spells["Shield Slam"].Cooldown) || Spell.GetCharges(ShieldCharge) > 1);
+            //await Spell.CoCast(HeroicStrike, ((Me.HasAura("Shield Charge") || Me.HasAura("Unyielding Strikes")) && Me.CurrentTarget.HealthPercent > 20) ||
+            //                                    Me.HasAura("Ultimatum") || Me.CurrentRage >= 100 || Me.HasAura("Unyielding Strikes", 5));
+
+            //await Spell.CoCast(ShieldSlam);
+            //await Spell.CoCast(Revenge);
+            //await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
+            //await Spell.CoCast(StormBolt);
+            //await Spell.CoCast(DragonRoar);
+            //await Spell.CoCast(Execute, Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent < 20);
+            //await Spell.CoCast(Devastate);
+           // HealerManager.NeedHealTargeting = true;
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
-            await Spell.CoCast(MassSpellReflection, Me.CurrentTarget.IsCasting && Me.CurrentTarget.Distance > 10);
-            await Spell.CoCast(ShieldWall, Me.HealthPercent < 40);
-            await Spell.CoCast(LastStand, Me.CurrentTarget.HealthPercent > Me.HealthPercent && Me.HealthPercent < 60);
-            await Spell.CoCast(DemoralizingShout, Unit.EnemyUnitsSub10.Count() >= 3);
-            await Spell.CoCast(ShieldBarrier, Me.HealthPercent < 40 && Me.CurrentRage >= 100);
+            // Boss Mechanics Section
+            //
+            // End Boss Mechanics Section
+
+            // Intrrupt Section
+            await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
+
+
+            await Spell.CoCast(BloodBath, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
+            await Spell.CoCast(Avatar, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
+
+            await CoLeap();
+            await CoMockingBanner();
+
             await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
-            await Spell.CoCast(BerserkerRage, Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing));
+            await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 50 && SlimAI.AFK);
+            await Spell.CoCast(LastStand, Me.HealthPercent <= 15 && !Me.HasAura("Shield Wall") && SlimAI.AFK);
+            await Spell.CoCast(ShieldWall, Me.HealthPercent <= 30 && !Me.HasAura("Last Stand") && SlimAI.AFK);
 
-            if (Me.CurrentTarget.IsWithinMeleeRange)
-            {
-                await Spell.CoCast(Avatar);
-                await Spell.CoCast(BloodBath);
-                await Spell.CoCast(Bladestorm);
-            }
+            await Spell.CoCast(DemoralizingShout, Unit.UnfriendlyUnits(10).Any() && IsCurrentTank());
 
-            await Spell.CoCast(ShieldCharge, (!Me.HasAura("Shield Charge") && SpellManager.Spells["Shield Slam"].Cooldown) || Spell.GetCharges(ShieldCharge) > 1);
-            await Spell.CoCast(HeroicStrike, ((Me.HasAura("Shield Charge") || Me.HasAura("Unyielding Strikes")) && Me.CurrentTarget.HealthPercent > 20) ||
-                                                Me.HasAura("Ultimatum") || Me.CurrentRage >= 100 || Me.HasAura("Unyielding Strikes", 5));
+            await Spell.CoCast(ImpendingVictory, Me.HealthPercent <= 75);
+            await Spell.CoCast(ShieldBlock, !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave);
+            await Spell.CoCast("Shield Barrier", (Me.CurrentRage >= 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave) || Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70);
 
+
+            await Spell.CoCast(HeroicStrike, Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || Me.HasAura("Unyielding Strikes", 6) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss));
             await Spell.CoCast(ShieldSlam);
-            await Spell.CoCast(Revenge);
-            await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
+            await Spell.CoCast(Revenge, Me.CurrentRage < 90);
+
+            // Needs Testing, Nesting broke the cc last time I tried it, but it could have been other issues.
+            // if (Spell.GetSpellCooldown("Shield Slam").TotalSeconds >= 1 && Spell.GetSpellCooldown("Revenge").TotalSeconds >= 1)
+            // {
             await Spell.CoCast(StormBolt);
-            await Spell.CoCast(DragonRoar);
-            await Spell.CoCast(Execute, Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent < 20);
+            await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(Execute, SlimAI.Burst || Me.HasAura("Sudden Death"));
+            await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
+            await Spell.CoCast(HeroicThrow, Me.CurrentTarget.Distance >= 10);
             await Spell.CoCast(Devastate);
-           // HealerManager.NeedHealTargeting = true;
-           // if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
-
-           // // Boss Mechanics Section
-           // //
-           // // End Boss Mechanics Section
-
-           // // Intrrupt Section
-           // await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
-
-
-           // await Spell.CoCast(BloodBath, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
-           // await Spell.CoCast(Avatar, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
-
-           // await CoLeap();
-           // await CoMockingBanner();
-
-           // await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
-           // await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 50 && SlimAI.AFK);
-           // await Spell.CoCast(LastStand, Me.HealthPercent <= 15 && !Me.HasAura("Shield Wall") && SlimAI.AFK);
-           // await Spell.CoCast(ShieldWall, Me.HealthPercent <= 30 && !Me.HasAura("Last Stand") && SlimAI.AFK);
-
-           // await Spell.CoCast(DemoralizingShout, Unit.UnfriendlyUnits(10).Any() && IsCurrentTank());
-
-           // await Spell.CoCast(ImpendingVictory, Me.HealthPercent <= 75);
-           // await Spell.CoCast(ShieldBlock, !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave);
-           // await Spell.CoCast("Shield Barrier", (Me.CurrentRage >= 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave) ||  Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70);
-            
-
-           // await Spell.CoCast(HeroicStrike, Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || Me.HasAura("Unyielding Strikes", 6) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss));
-           // await Spell.CoCast(ShieldSlam);
-           // await Spell.CoCast(Revenge, Me.CurrentRage < 90);
-
-           // // Needs Testing, Nesting broke the cc last time I tried it, but it could have been other issues.
-           //// if (Spell.GetSpellCooldown("Shield Slam").TotalSeconds >= 1 && Spell.GetSpellCooldown("Revenge").TotalSeconds >= 1)
-           //// {
-           //     await Spell.CoCast(StormBolt);
-           //     await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
-           //     await Spell.CoCast(Execute, SlimAI.Burst || Me.HasAura("Sudden Death"));
-           //     await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
-           //     await Spell.CoCast(HeroicThrow, Me.CurrentTarget.Distance >= 10);
-           //     await Spell.CoCast(Devastate);
            // //}
 
             return false;
@@ -170,6 +175,53 @@ namespace SlimAI.Class.Warrior
         //                Spell.Cast(HeroicThrow, ret => Me.CurrentTarget.Distance >= 10),
         //                Spell.Cast(Devastate))));
         //}
+
+        #region Glad
+
+        private static async Task<bool> GladCoroutine()
+        {
+
+            //if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
+
+            if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
+
+            //await Spell.CoCast(MassSpellReflection, Me.CurrentTarget.IsCasting && Me.CurrentTarget.Distance > 10);
+            //await Spell.CoCast(ShieldWall, Me.HealthPercent < 40);
+            //await Spell.CoCast(LastStand, Me.CurrentTarget.HealthPercent > Me.HealthPercent && Me.HealthPercent < 60);
+            //await Spell.CoCast(DemoralizingShout, Unit.EnemyUnitsSub10.Count() >= 3);
+            await Spell.CoCast(ShieldBarrier, Me.HealthPercent < 40 && Me.CurrentRage >= 100);
+            await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
+            //await Spell.CoCast(BerserkerRage, Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing));
+
+            await CoLeap();
+
+            if (Me.CurrentTarget.IsWithinMeleeRange && SlimAI.Burst)
+            {
+                await Spell.CoCast(Avatar);
+                await Spell.CoCast(BloodBath);
+                await Spell.CoCast(Bladestorm);
+            }
+
+            await Spell.CoCast(ShieldCharge, (!Me.HasAura("Shield Charge") && SpellManager.Spells["Shield Slam"].Cooldown) || Spell.GetCharges(ShieldCharge) > 1);
+            await Spell.CoCast(HeroicStrike, Me.HasAura("Shield Charge") || Me.HasAura("Ultimatum") || Me.CurrentRage >= 90 || Me.HasAura("Unyielding Strikes", 5));
+            //await Spell.CoCast(HeroicStrike, ((Me.HasAura("Shield Charge") || Me.HasAura("Unyielding Strikes")) && Me.CurrentTarget.HealthPercent > 20) ||
+            //                                    Me.HasAura("Ultimatum") || Me.CurrentRage >= 100 || Me.HasAura("Unyielding Strikes", 5));
+
+            await Spell.CoCast(ShieldSlam);
+            await Spell.CoCast(Revenge);
+            await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
+            await Spell.CoCast(StormBolt);
+            await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.UnfriendlyUnits(8).Count() >= 2 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds")));
+            await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.UnfriendlyUnits(8).Count() >= 6);
+            await Spell.CoCast(Execute, Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent < 20);
+            await Spell.CoCast(Devastate);
+
+            return true;
+        }
+
+
+        #endregion
 
         private static Composite CreateAoe()
         {

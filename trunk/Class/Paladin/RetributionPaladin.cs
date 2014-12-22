@@ -52,7 +52,7 @@ namespace SlimAI.Class.Paladin
             //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }))),
             await Spell.CoCast(FlashofLight, FlashTar, Me.HasAura("Selfless Healer", 3));
             await Spell.CoCast(SealofRighteousness, SlimAI.AOE && !Me.HasAura("Seal of Righteousness") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) >= 4);
-            await Spell.CoCast(SealofTruth, !Me.HasAura("Seal of Truth") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) < 3);
+            await Spell.CoCast(SealofTruth, !Me.HasAura("Seal of Truth") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) < 4);
             await Spell.CoCast(ExecutionSentence, SlimAI.Burst);
             await Spell.CoCastOnGround(LightsHammer, Me.Location, Me.CurrentTarget.IsBoss && SlimAI.AOE);
             //await Spell.CoCast(DivineStorm, (Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"))) && SlimAI.AOE && Me.CurrentTarget.Distance <= 8);
