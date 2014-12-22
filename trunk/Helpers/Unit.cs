@@ -33,7 +33,7 @@ namespace SlimAI.Helpers
 
         #region EnemyUnits
 
-        public static IEnumerable<WoWUnit> EnemyUnits(int maxSpellDist)
+        private static IEnumerable<WoWUnit> EnemyUnits(int maxSpellDist)
         {
             var typeWoWUnit = typeof(WoWUnit);
             var typeWoWPlayer = typeof(WoWPlayer);

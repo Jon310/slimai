@@ -30,35 +30,8 @@ namespace SlimAI.Class.Warrior
                 await GladCoroutine();
                 return true;
             }
-            //if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
-
-            //await Spell.CoCast(MassSpellReflection, Me.CurrentTarget.IsCasting && Me.CurrentTarget.Distance > 10);
-            //await Spell.CoCast(ShieldWall, Me.HealthPercent < 40);
-            //await Spell.CoCast(LastStand, Me.CurrentTarget.HealthPercent > Me.HealthPercent && Me.HealthPercent < 60);
-            //await Spell.CoCast(DemoralizingShout, Unit.EnemyUnitsSub10.Count() >= 3);
-            //await Spell.CoCast(ShieldBarrier, Me.HealthPercent < 40 && Me.CurrentRage >= 100);
-            //await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
-            //await Spell.CoCast(BerserkerRage, Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing));
-
-            //if (Me.CurrentTarget.IsWithinMeleeRange)
-            //{
-            //    await Spell.CoCast(Avatar);
-            //    await Spell.CoCast(BloodBath);
-            //    await Spell.CoCast(Bladestorm);
-            //}
-
-            //await Spell.CoCast(ShieldCharge, (!Me.HasAura("Shield Charge") && SpellManager.Spells["Shield Slam"].Cooldown) || Spell.GetCharges(ShieldCharge) > 1);
-            //await Spell.CoCast(HeroicStrike, ((Me.HasAura("Shield Charge") || Me.HasAura("Unyielding Strikes")) && Me.CurrentTarget.HealthPercent > 20) ||
-            //                                    Me.HasAura("Ultimatum") || Me.CurrentRage >= 100 || Me.HasAura("Unyielding Strikes", 5));
-
-            //await Spell.CoCast(ShieldSlam);
-            //await Spell.CoCast(Revenge);
-            //await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
-            //await Spell.CoCast(StormBolt);
-            //await Spell.CoCast(DragonRoar);
-            //await Spell.CoCast(Execute, Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent < 20);
-            //await Spell.CoCast(Devastate);
-           // HealerManager.NeedHealTargeting = true;
+           
+            // HealerManager.NeedHealTargeting = true;
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
             // Boss Mechanics Section
@@ -97,7 +70,7 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(StormBolt);
             await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(Execute, SlimAI.Burst || Me.HasAura("Sudden Death"));
-            await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
+            await CoAOE(Unit.EnemyUnitsSub8.Count() >= 2 && SlimAI.AOE);
             await Spell.CoCast(HeroicThrow, Me.CurrentTarget.Distance >= 10);
             await Spell.CoCast(Devastate);
            // //}
@@ -180,9 +153,6 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> GladCoroutine()
         {
-
-            //if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
-
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
             //await Spell.CoCast(MassSpellReflection, Me.CurrentTarget.IsCasting && Me.CurrentTarget.Distance > 10);
@@ -204,16 +174,14 @@ namespace SlimAI.Class.Warrior
 
             await Spell.CoCast(ShieldCharge, (!Me.HasAura("Shield Charge") && SpellManager.Spells["Shield Slam"].Cooldown) || Spell.GetCharges(ShieldCharge) > 1);
             await Spell.CoCast(HeroicStrike, Me.HasAura("Shield Charge") || Me.HasAura("Ultimatum") || Me.CurrentRage >= 90 || Me.HasAura("Unyielding Strikes", 5));
-            //await Spell.CoCast(HeroicStrike, ((Me.HasAura("Shield Charge") || Me.HasAura("Unyielding Strikes")) && Me.CurrentTarget.HealthPercent > 20) ||
-            //                                    Me.HasAura("Ultimatum") || Me.CurrentRage >= 100 || Me.HasAura("Unyielding Strikes", 5));
-
+            
             await Spell.CoCast(ShieldSlam);
             await Spell.CoCast(Revenge);
             await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
             await Spell.CoCast(StormBolt);
-            await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.UnfriendlyUnits(8).Count() >= 2 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds")));
+            await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.EnemyUnitsSub8.Count(u => !u.HasAura("Deep Wounds")) >= 1 && Unit.UnfriendlyUnits(8).Count() >= 2);
             await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
-            await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.UnfriendlyUnits(8).Count() >= 6);
+            await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.EnemyUnitsSub8.Count() >= 6);
             await Spell.CoCast(Execute, Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent < 20);
             await Spell.CoCast(Devastate);
 
