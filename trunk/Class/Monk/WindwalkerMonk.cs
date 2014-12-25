@@ -45,8 +45,6 @@ namespace SlimAI.Class.Monk
                 //Detox
                 //new Decorator(ret => SlimAI.Dispell,
                 //    CreateDispelBehavior()),
-                //Healing Spheres need to work on
-                //Spell.CastOnGround("Healing Sphere", on => Me.Location, ret => Me.HealthPercent <= 50),
             await Spell.CoCast(TigereyeBrew, Me.HasAura("Tigereye Brew", 18));
             await Spell.CoCast("Chi Brew", buffStackCount(TigereyeBrewStack, Me) <= 16 && Me.CurrentChi < 2);
             await Spell.CoCast(EnergizingBrew, Me.CurrentEnergy < 40);
