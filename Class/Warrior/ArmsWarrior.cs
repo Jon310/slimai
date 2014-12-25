@@ -79,22 +79,24 @@ namespace SlimAI.Class.Warrior
             //await Item.CoUseHS(50);
             await CoLeap();
             
-            //await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 4 && SlimAI.AOE);
+
 
             await Spell.CoCast(Recklessness, SlimAI.Burst && (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Bloodbath") || Me.CurrentTarget.HealthPercent < 20));
-            await Spell.CoCast(Avatar, SlimAI.Burst && Me.CurrentTarget.HasMyAura("Recklessness"));
+            await Spell.CoCast(Avatar, SlimAI.Burst && Me.HasAura("Recklessness"));
             await Spell.CoCast(BloodBath, SlimAI.Burst && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds < 5);
 
-            await Spell.CoCast(SweepingStrikes, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
-            await Spell.CoCast(Rend, Me.CurrentTarget.HasAuraExpired("Rend", 6));
-            await Spell.CoCast(MortalStrike, Me.CurrentTarget.HealthPercent > 20);
+            await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
+            await Spell.CoCast(Rend, !Me.CurrentTarget.HasAura("Rend"));
+            await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.AOE);
             await Spell.CoCast(ColossusSmash);
+            await Spell.CoCast(MortalStrike, Me.CurrentTarget.HealthPercent > 20 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
             await Spell.CoCast(StormBolt, (Me.CurrentTarget.HasMyAura("Colossus Smash") || Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 4) && Me.CurrentRage < 90);
-            await Spell.CoCast(DragonRoar, !Me.CurrentTarget.HasAura("Colossus Smash") && Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(DragonRoar, !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(Rend, Me.CurrentTarget.HasAuraExpired("Rend", 6) && !Me.CurrentTarget.HasMyAura("Colossus Smash"));
             await Spell.CoCast(Execute, Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Sudden Death") || Me.CurrentRage >= 60 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
-            await Spell.CoCast(ImpendingVictory, Me.CurrentTarget.HealthPercent > 20 && Me.CurrentRage < 30 && !Me.CurrentTarget.HasAura("Colossus Smash"));
+            await Spell.CoCast(ImpendingVictory, Me.CurrentTarget.HealthPercent > 20 && Me.CurrentRage < 40 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1 && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 1);
             //await Spell.CoCast(ThunderClap, Unit.UnfriendlyUnits(8).Count() >= 3 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds")));
-            await Spell.CoCast(Whirlwind, Me.CurrentTarget.HealthPercent > 20 && Me.CurrentRage > 40 && Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(Whirlwind, Me.CurrentTarget.HealthPercent > 20 && (Me.CurrentRage > 40 || Me.CurrentTarget.HasMyAura("Colossus Smash")) && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1 && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 1 && Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(HeroicThrow);
             
 
@@ -171,8 +173,6 @@ namespace SlimAI.Class.Warrior
 
             if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
 
-            //await Item.CoUseHS(40);
-            await Spell.CoCast("Disarm", Me.CurrentTarget.HasAnyAura(Disarm) && !Me.CurrentTarget.HasAnyAura(DontDisarm));
 
             if (StyxWoW.Me.CurrentTarget != null && (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange || StyxWoW.Me.IsCasting || SpellManager.GlobalCooldown)) return true;
 
@@ -184,33 +184,32 @@ namespace SlimAI.Class.Warrior
 
             await CoStormBoltFocus();
 
-            await Spell.CoCast(SweepingStrikes, Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2 && SlimAI.AOE);
-
-            await Spell.CoCast(Recklessness, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
-            await Spell.CoCast(Avatar, Me.HasAura("Recklessness") && SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
-            await Spell.CoCast(SkullBanner, Me.HasAura("Recklessness") && SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
             
             await Spell.CoCast(BloodBath, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.AOE);
             await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.AOE);
-            await Item.CoUseHands();
 
             await Spell.CoCast("Intervene", BestInterveneTarget);
-            await Spell.CoCast(Charge, ChargeInt);
-            await Spell.CoCast(MortalStrike);
-            await Spell.CoCast(HeroicStrike, (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentRage >= 70) || Me.CurrentRage >= 75);
-            await Spell.CoCast(ColossusSmash, !Me.CurrentTarget.HasAura("Colossus Smash"));
-            await Spell.CoCast(Execute);
-            await Spell.CoCast(ThunderClap, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8).Any(u => !u.HasMyAura("Weakened Blows")));
-            await Spell.CoCast(Slam, (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 40) && Me.CurrentTarget.HealthPercent >= 20);
-            await Spell.CoCast(Overpower, Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute"));
-            await Spell.CoCast(BattleShout, !SlimAI.Weave);
-            await Spell.CoCast(CommandingShout, SlimAI.Weave);
+
+            await Spell.CoCast(Recklessness, SlimAI.Burst && (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Bloodbath") || Me.CurrentTarget.HealthPercent < 20));
+            await Spell.CoCast(Avatar, SlimAI.Burst && Me.HasAura("Recklessness"));
+            await Spell.CoCast(BloodBath, SlimAI.Burst && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds < 5);
+
+            await Spell.CoCast(SweepingStrikes, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
+            await Spell.CoCast(Rend, !Me.CurrentTarget.HasAura("Rend"));
+            await Spell.CoCast(ColossusSmash);
+            await Spell.CoCast(MortalStrike, Me.CurrentTarget.HealthPercent > 20 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
+            await Spell.CoCast(StormBolt, (Me.CurrentTarget.HasMyAura("Colossus Smash") || Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 4) && Me.CurrentRage < 90);
+            await Spell.CoCast(DragonRoar, !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(Rend, Me.CurrentTarget.HasAuraExpired("Rend", 6) && !Me.CurrentTarget.HasMyAura("Colossus Smash"));
+            await Spell.CoCast(Execute, Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Sudden Death") || Me.CurrentRage >= 60 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
+            await Spell.CoCast(ImpendingVictory, Me.CurrentTarget.HealthPercent > 20 && Me.CurrentRage < 40 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1 && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 1);
+            await Spell.CoCast(Whirlwind, Me.CurrentTarget.HealthPercent > 20 && (Me.CurrentRage > 40 || Me.CurrentTarget.HasMyAura("Colossus Smash")) && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1 && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 1 && Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(HeroicThrow);
-            await Spell.CoCast(ImpendingVictory, Me.CurrentTarget.HealthPercent > 20 || Me.HealthPercent < 50);
+            
 
             return true;
         }
-
+        #endregion
         //private static Composite CreatePvP()
         //{
         //    return new PrioritySelector(
@@ -272,7 +271,7 @@ namespace SlimAI.Class.Warrior
         //            new ActionAlwaysSucceed()
         //        );
         //}
-        #endregion
+
 
         //[Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorArms)]
         //public static Composite ArmsPreCombatBuffs()
@@ -367,34 +366,21 @@ namespace SlimAI.Class.Warrior
             if (!reqs)
                 return false;
 
-            if (await Spell.CoCast(Recklessness, SlimAI.Burst && Me.CurrentTarget.HasAura("Colossus Smash"))) return true;
-            if (await Spell.CoCast(Avatar, SlimAI.Burst && Me.CurrentTarget.HasAura("Colossus Smash"))) return true;
-            if (await Spell.CoCast(SkullBanner, SlimAI.Burst && Me.CurrentTarget.HasAura("Colossus Smash"))) return true;
+            await Spell.CoCast(SweepingStrikes, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
+            await Spell.CoCast(Rend, !Me.CurrentTarget.HasAura("Rend"));
+            await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.AOE);
+            await Spell.CoCast(ColossusSmash, Me.CurrentTarget.HasMyAura("Rend"));
+            await Spell.CoCast(MortalStrike, Me.CurrentTarget.HealthPercent > 20 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1.5);
+            await Spell.CoCast(Execute, Me.HasAura(SweepingStrikes));
+            await Spell.CoCast(Execute, Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.CurrentRage >= 60 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
+            await Spell.CoCast(DragonRoar, !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(Whirlwind, Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1 && (Me.CurrentTarget.HealthPercent >= 20 || Unit.UnfriendlyUnits(8).Count() > 3));
+            await Spell.CoCast(Rend, Me.CurrentTarget.HasAuraExpired("Rend", 6));
+            await Spell.CoCast(StormBolt, (Me.CurrentTarget.HasMyAura("Colossus Smash") || Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 4) && Me.CurrentRage < 90);
+            await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
+            await Spell.CoCast(HeroicThrow);
 
-            if (await Spell.CoCast(BloodBath)) return true;
-            if (await Item.CoUseHands()) return true;
-
-            if (await Spell.CoCast(BerserkerRage, !Me.HasAura(Enrage))) return true;
-            if (await Spell.CoCast(SweepingStrikes)) return true;
-            if (await Spell.CoCast(Bladestorm, Me.HasAura(SweepingStrikes))) return true;
-            if (await Spell.CoCast(Whirlwind, (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentRage >= 80 && Me.CurrentTarget.HealthPercent >= 20) || Me.CurrentRage >= 105)) return true;
-            if (await Spell.CoCast(MortalStrike)) return true;
-            if (await Spell.CoCast(StormBolt, Me.CurrentTarget.HasMyAura("Colossus Smash"))) return true;
-            if (await Spell.CoCast(DragonRoar, !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Bloodbath") && Me.CurrentTarget.Distance <= 8)) return true;
-            if (await Spell.CoCast(ColossusSmash, Me.CurrentTarget.HasAuraExpired("Colossus Smash"))) return true;
-            if (await Spell.CoCast(Execute, Me.CurrentTarget.HasAura("Colossus Smash") || Me.HasAura("Recklessness") || Me.CurrentRage >= 95)) return true;
-            if (await Spell.CoCast(DragonRoar, (!Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.HealthPercent < 20) || (Me.HasAura("Bloodbath") && Me.CurrentTarget.HealthPercent >= 20) && Me.CurrentTarget.Distance <= 8)) return true;
-            if (await Spell.CoCast(ThunderClap, Unit.UnfriendlyUnits(8).Count() >= 3 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds")))) return true;
-            if (await Spell.CoCast(Slam, (Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.HasAura("Recklessness")) && Me.CurrentTarget.HealthPercent >= 20)) return true;
-            if (await Spell.CoCast(Overpower, Me.HasAura("Taste for Blood", 3) && Me.CurrentTarget.HealthPercent >= 20)) return true;
-            if (await Spell.CoCast(Execute, !Me.HasAura("Sudden Execute"))) return true;
-            if (await Spell.CoCast(Overpower, Me.CurrentTarget.HealthPercent >= 20 || Me.HasAura("Sudden Execute"))) return true;
-            if (await Spell.CoCast(Whirlwind, Me.CurrentRage >= 40 && Me.CurrentTarget.HealthPercent >= 20)) return true;
-            if (await Spell.CoCast(BattleShout)) return true;
-            if (await Spell.CoCast(HeroicThrow)) return true;
-            if (await Spell.CoCast(ImpendingVictory, Me.HealthPercent < 50)) return true;
-
-            return false;
+            return true;
         }
         #endregion
 
