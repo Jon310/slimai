@@ -57,7 +57,7 @@ namespace SlimAI.Class.Warrior
             await CoMockingBanner();
 
             await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
-            await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 50 && SlimAI.AFK);
+            await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 50);
             await Spell.CoCast(LastStand, Me.HealthPercent <= 15 && !Me.HasAura("Shield Wall") && SlimAI.AFK);
             await Spell.CoCast(ShieldWall, Me.HealthPercent <= 30 && !Me.HasAura("Last Stand") && SlimAI.AFK);
 
@@ -170,6 +170,7 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(ShieldBarrier, Me.HealthPercent < 40 && Me.CurrentRage >= 100);
             await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
             //await Spell.CoCast(BerserkerRage, Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing));
+            await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 50);
 
             await CoLeap();
 
