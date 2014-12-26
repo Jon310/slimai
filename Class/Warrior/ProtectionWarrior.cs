@@ -181,7 +181,7 @@ namespace SlimAI.Class.Warrior
                 await Spell.CoCast(Bladestorm);
             }
 
-            await Spell.CoCast(ShieldCharge, (!Me.HasAura("Shield Charge") && SpellManager.Spells["Shield Slam"].Cooldown) || Spell.GetCharges(ShieldCharge) > 1);
+            await Spell.CoCast(ShieldCharge, (!Me.HasAura("Shield Charge") && !SpellManager.Spells["Shield Slam"].Cooldown) || Spell.GetCharges(ShieldCharge) == 2);
             //await Spell.CoCast(HeroicStrike, Me.HasAura("Shield Charge") || Me.HasAura("Ultimatum") || Me.CurrentRage >= 90 || Me.HasAura("Unyielding Strikes", 5));
             
             await Spell.CoCast(HeroicStrike, (Me.HasAura("Sheld Charge") || (Me.HasAura("Unyielding Strikes") && Me.CurrentRage >= 50 - Spell.StackCount(169686) * 5)) && Me.CurrentTarget.HealthPercent > 20);
@@ -191,7 +191,7 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(Revenge);
             await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
             await Spell.CoCast(StormBolt);
-            await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.EnemyUnitsSub8.Count(u => !u.HasAura("Deep Wounds")) >= 1 && Unit.UnfriendlyUnits(8).Count() >= 2);
+            await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.EnemyUnitsSub8.Any(u => !u.HasAura("Deep Wounds")) && Unit.EnemyUnitsSub8.Count() >= 2);
             await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.EnemyUnitsSub8.Count() >= 6);
             await Spell.CoCast(Execute, Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent < 20);
@@ -436,11 +436,19 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> CoStormBoltFocus()
         {
-            if (!SpellManager.CanCast("Storm Bolt") && !KeyboardPolling.IsKeyDown(Keys.C))
-                return false;
-            if (await Spell.CoCast(StormBolt, Me.FocusedUnit))
-                return true;
-            return true;
+            if (SpellManager.CanCast("Storm Bolt") && KeyboardPolling.IsKeyDown(Keys.C))
+            {
+                await Spell.CoCast(StormBolt, Me.FocusedUnit);
+            }
+
+            return false;
+        }
+
+        private static void ResetVariables()
+        {
+            KeyboardPolling.IsKeyDown(Keys.G);
+            KeyboardPolling.IsKeyDown(Keys.Z);
+            KeyboardPolling.IsKeyDown(Keys.C);
         }
         #endregion
 
