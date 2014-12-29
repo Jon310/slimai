@@ -228,7 +228,7 @@ namespace SlimAI.Class.Warrior
             //await Spell.CoCast(DemoralizingShout, Unit.EnemyUnitsSub10.Count() >= 3);
             await Spell.CoCast(ShieldBarrier, Me.HealthPercent < 40 && Me.CurrentRage >= 100);
             //await Spell.CoCast(BerserkerRage, Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing));
-            await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 40);
+            await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 35);
 
             if (Me.CurrentTarget.IsWithinMeleeRange && SlimAI.Burst)
             {
