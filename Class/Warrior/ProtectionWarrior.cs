@@ -438,6 +438,7 @@ namespace SlimAI.Class.Warrior
         {
             if (SpellManager.CanCast("Storm Bolt") && KeyboardPolling.IsKeyDown(Keys.C))
             {
+                KeyboardPolling.IsKeyDown(Keys.C);
                 await Spell.CoCast(StormBolt, Me.FocusedUnit);
             }
 
