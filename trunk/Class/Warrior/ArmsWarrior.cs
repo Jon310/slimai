@@ -88,12 +88,14 @@ namespace SlimAI.Class.Warrior
 
             await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
             await Spell.CoCast(Rend, !Me.CurrentTarget.HasAura("Rend"));
+            await Spell.CoCastOnGround(Ravager, Me.CurrentTarget.Location, Spell.GetSpellCooldown("Colossus Smash").TotalSeconds < 4 && SlimAI.AOE);
             await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.AOE);
             await Spell.CoCast(ColossusSmash);
             await Spell.CoCast(MortalStrike, Me.CurrentTarget.HealthPercent > 20 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
             await Spell.CoCast(StormBolt, (Me.CurrentTarget.HasMyAura("Colossus Smash") || Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 4) && Me.CurrentRage < 90);
+            await Spell.CoCast(Siegebreaker);
             await Spell.CoCast(DragonRoar, !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.Distance <= 8);
-            await Spell.CoCast(Rend, Me.CurrentTarget.HasAuraExpired("Rend", 6) && !Me.CurrentTarget.HasMyAura("Colossus Smash"));
+            await Spell.CoCast(Rend, Me.CurrentTarget.HasAuraExpired("Rend", 5) && !Me.CurrentTarget.HasMyAura("Colossus Smash"));
             await Spell.CoCast(Execute, Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura(SuddenDeath) || Me.CurrentRage >= 60 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
             await Spell.CoCast(ImpendingVictory, Me.CurrentTarget.HealthPercent > 20 && Me.CurrentRage < 40 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1 && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 1);
             //await Spell.CoCast(ThunderClap, Unit.UnfriendlyUnits(8).Count() >= 3 && Clusters.GetCluster(Me, Unit.UnfriendlyUnits(8), ClusterType.Radius, 8).Any(u => !u.HasAura("Deep Wounds")));
@@ -1029,8 +1031,10 @@ namespace SlimAI.Class.Warrior
                           MockingBanner = 114192,
                           MortalStrike = 12294,
                           Overpower = 7384,
+                          Ravager = 152277,
                           Recklessness = 1719,
                           Rend = 772,
+                          Siegebreaker = 176289,
                           ShatteringThrow = 64382,
                           SkullBanner = 114207,
                           Slam = 1464,
