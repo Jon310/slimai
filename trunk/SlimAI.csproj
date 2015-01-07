@@ -88,12 +88,6 @@
     <Compile Include="Class\Warrior\ArmsWarrior.cs" />
     <Compile Include="Class\Warrior\FuryWarrior.cs" />
     <Compile Include="Class\Warrior\ProtectionWarrior.cs" />
-    <Compile Include="GUI\Main.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="GUI\Main.designer.cs">
-      <DependentUpon>Main.cs</DependentUpon>
-    </Compile>
     <Compile Include="GUI\SlimAIGUI.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -129,11 +123,6 @@
     <Compile Include="Managers\PetManager.cs" />
     <Compile Include="Managers\SpellImmunityManager.cs" />
     <Compile Include="Managers\TalentManager.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
     <Compile Include="Settings\DeathKnightSettings.cs" />
     <Compile Include="Settings\DruidSettings.cs" />
     <Compile Include="Settings\GeneralSettings.cs" />
@@ -155,15 +144,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <EmbeddedResource Include="GUI\Main.resx">
-      <DependentUpon>Main.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="GUI\SlimAIGUI.resx">
       <DependentUpon>SlimAIGUI.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
