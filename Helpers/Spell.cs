@@ -200,6 +200,62 @@ namespace SlimAI.Helpers
             return true;
         }
 
+        /// <summary>
+        /// Returns true if spell has been casted, returns false otherwise.
+        /// </summary>
+        /// <param name="spell">Spell name. (string)</param>
+        /// <param name="reqs">Requirements to cast the spell. (bool)</param>
+        /// <returns></returns>
+        public static async Task<bool> CoCastMove(string spell)
+        {
+            return await CoCastMove(spell, Me.CurrentTarget, true);
+        }
+
+        /// <summary>
+        /// Returns true if spell has been casted, returns false otherwise.
+        /// </summary>
+        /// <param name="spell">Spell name. (string)</param>
+        /// <param name="reqs">Requirements to cast the spell. (bool)</param>
+        /// <returns></returns>
+        public static async Task<bool> CoCastMove(string spell, bool reqs)
+        {
+            return await CoCastMove(spell, Me.CurrentTarget, reqs);
+        }
+
+        /// <summary>
+        /// Returns true if spell has been casted, returns false otherwise.
+        /// </summary>
+        /// <param name="spell">Spell name. (string)</param>
+        /// <param name="unit">Unit to cast on. (WoWUnit)</param>
+        /// <returns></returns>
+        public static async Task<bool> CoCastMove(string spell, WoWUnit unit)
+        {
+            return  await CoCastMove(spell, unit, true);
+        }
+
+        /// <summary>
+        /// Returns true if spell has been casted, returns false otherwise.
+        /// </summary>
+        /// <param name="spell">Spell name. (string)</param>
+        /// <param name="unit">Unit to cast on. (WoWUnit)</param>
+        /// <param name="reqs">Requirements to cast the spell. (bool)</param>
+        /// <returns></returns>
+        public static async Task<bool> CoCastMove(string spell, WoWUnit unit, bool reqs)
+        {
+            var sname = spell;
+
+            if (unit == null || !reqs || SpellManager.Spells[spell].Cooldown)
+                return false;
+
+            if (!SpellManager.Cast(spell, unit))
+                return false;
+
+            Logging.Write("Casting " + sname + " on " + unit);
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+
         #endregion
 
         public static bool IsStandingInGroundEffect(bool harmful = true)
