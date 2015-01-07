@@ -38,18 +38,18 @@ namespace SlimAI.Class.Hunter
 
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
 
-            await Spell.CoCast("Kill Shot");
-            await Spell.CoCast("Chimaera Shot");
-            await Spell.CoCast("Rapid Fire", SlimAI.Burst);
-            await Spell.CoCast("Stampede", SlimAI.Burst && (Me.HasAura("Rapid Fire") || PartyBuff.WeHaveBloodlust));
+            await Spell.CoCastMove("Kill Shot");
+            await Spell.CoCastMove("Chimaera Shot");
+            await Spell.CoCastMove("Rapid Fire", SlimAI.Burst);
+            await Spell.CoCastMove("Stampede", SlimAI.Burst && (Me.HasAura("Rapid Fire") || PartyBuff.WeHaveBloodlust));
             await CarefulAim(Me.CurrentTarget.HealthPercent > 80 || Me.HasAura("Rapid Fire"));
-            await Spell.CoCast("A Murder of Crows", SlimAI.Burst);
-            await Spell.CoCast("Dire Beast");
-            await Spell.CoCast("Glaive Toss");
-            await Spell.CoCast("Powershot");
-            await Spell.CoCast("Barrage", SlimAI.Weave);
-            await Spell.CoCast("Aimed Shot");
-            await Spell.CoCast("Steady Shot");
+            await Spell.CoCastMove("A Murder of Crows", SlimAI.Burst);
+            await Spell.CoCastMove("Dire Beast");
+            await Spell.CoCastMove("Glaive Toss");
+            await Spell.CoCastMove("Powershot");
+            await Spell.CoCastMove("Barrage", SlimAI.Weave);
+            await Spell.CoCastMove("Aimed Shot");
+            await Spell.CoCastMove("Steady Shot");
 
             return false;
          }
@@ -76,12 +76,12 @@ namespace SlimAI.Class.Hunter
         {
             if (!reqs)
                 return false;
-            await Spell.CoCast("Glaive Toss");
-            await Spell.CoCast("Powershot");
-            await Spell.CoCast("Barrage", SlimAI.Weave);
-            await Spell.CoCast("Aimed Shot");
-            await Spell.CoCast("Glaive Toss");
-            await Spell.CoCast("Steady Shot");
+            await Spell.CoCastMove("Glaive Toss");
+            await Spell.CoCastMove("Powershot");
+            await Spell.CoCastMove("Barrage", SlimAI.Weave);
+            await Spell.CoCastMove("Aimed Shot");
+            await Spell.CoCastMove("Glaive Toss");
+            await Spell.CoCastMove("Steady Shot");
 
             return false;
         }
