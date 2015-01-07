@@ -253,7 +253,7 @@ namespace SlimAI.Helpers
 
             WoWSpell spell = sfr.Override ?? sfr.Original;
 
-            if (unit == null || !reqs || spell.CanCast)
+            if (unit == null || !reqs || !spell.CanCast)
                 return false;
 
             if (!SpellManager.Cast(spellname, unit))
