@@ -256,7 +256,7 @@ namespace SlimAI.Helpers
             if (unit == null || !reqs || spell.CanCast)
                 return false;
 
-            if (!SpellManager.Cast(spell, unit))
+            if (!SpellManager.Cast(spellname, unit))
                 return false;
 
             Logging.Write("Casting " + sname + " on " + unit);
