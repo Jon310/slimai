@@ -244,7 +244,7 @@ namespace SlimAI.Helpers
         {
             var sname = spell;
 
-            if (unit == null || !reqs || SpellManager.Spells[spell].Cooldown)
+            if (unit == null || !reqs)
                 return false;
 
             if (!SpellManager.Cast(spell, unit))
