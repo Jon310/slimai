@@ -255,7 +255,7 @@ namespace SlimAI.Helpers
 
             if (unit == null || !reqs || !spell.CanCast)
                 return false;
-
+            await CommonCoroutines.SleepForLagDuration();
             if (!SpellManager.Cast(spellname, unit))
                 return false;
 
