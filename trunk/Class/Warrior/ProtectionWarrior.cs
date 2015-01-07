@@ -436,9 +436,9 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> CoStormBoltFocus()
         {
+            KeyboardPolling.IsKeyDown(Keys.C);
             if (SpellManager.CanCast("Storm Bolt") && KeyboardPolling.IsKeyDown(Keys.C))
             {
-                KeyboardPolling.IsKeyDown(Keys.C);
                 await Spell.CoCast(StormBolt, Me.FocusedUnit);
             }
 
