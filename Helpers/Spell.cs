@@ -236,15 +236,24 @@ namespace SlimAI.Helpers
         /// <summary>
         /// Returns true if spell has been casted, returns false otherwise.
         /// </summary>
-        /// <param name="spell">Spell name. (string)</param>
+        /// <param name="spellname">Spell name. (string)</param>
         /// <param name="unit">Unit to cast on. (WoWUnit)</param>
         /// <param name="reqs">Requirements to cast the spell. (bool)</param>
         /// <returns></returns>
-        public static async Task<bool> CoCastMove(string spell, WoWUnit unit, bool reqs)
+        public static async Task<bool> CoCastMove(string spellname, WoWUnit unit, bool reqs)
         {
-            var sname = spell;
+            var sname = spellname;
 
-            if (unit == null || !reqs)
+            SpellFindResults sfr;
+            if (!SpellManager.FindSpell(spellname, out sfr))
+            {
+                // Logger.WriteDebug("CanCast: spell [{0}] not known", castName);
+                return false;
+            }
+
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+
+            if (unit == null || !reqs || spell.CanCast)
                 return false;
 
             if (!SpellManager.Cast(spell, unit))
