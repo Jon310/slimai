@@ -30,28 +30,28 @@ namespace SlimAI.Class.Warrior
         static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static bool HasTalent(WarriorTalents tal) { return TalentManager.IsSelected((int)tal); }
         private static WarriorSettings Settings { get { return GeneralSettings.Instance.Warrior(); } }
-        #region Disarm
-        public static string[] Disarm = new[] { //Pally
-                                                 "Holy Avenger", "Avenging Wrath",
-                                                 //Warrior need to make so it want disarm a warr if it has die by the sword buff
-                                                 "Avatar", "Recklessness",
-                                                 //Rogue
-                                                 "Shadow Dance", "Shadow Blades",
-                                                 //Kitty
-                                                 "Berserk", "Incarnation", "Nature's Vigil",
-                                                 //Hunter
-                                                 "Rapid Fire","Bestial Wrath",
-                                                 //DK
-                                                 "Unholy Frenzy", "Pillar of Frost" };
-        #endregion
-        #region DontDisarm
-        public static string[] DontDisarm = new[] { //Warrior 
-                                                    "Die by the Sword", 
-                                                    // Rogue
-                                                    "Evasion", 
-                                                    // Hunter
-                                                    "Deterrence" };
-        #endregion
+        //#region Disarm
+        //public static string[] Disarm = new[] { //Pally
+        //                                         "Holy Avenger", "Avenging Wrath",
+        //                                         //Warrior need to make so it want disarm a warr if it has die by the sword buff
+        //                                         "Avatar", "Recklessness",
+        //                                         //Rogue
+        //                                         "Shadow Dance", "Shadow Blades",
+        //                                         //Kitty
+        //                                         "Berserk", "Incarnation", "Nature's Vigil",
+        //                                         //Hunter
+        //                                         "Rapid Fire","Bestial Wrath",
+        //                                         //DK
+        //                                         "Unholy Frenzy", "Pillar of Frost" };
+        //#endregion
+        //#region DontDisarm
+        //public static string[] DontDisarm = new[] { //Warrior 
+        //                                            "Die by the Sword", 
+        //                                            // Rogue
+        //                                            "Evasion", 
+        //                                            // Hunter
+        //                                            "Deterrence" };
+        //#endregion
 
         #region Coroutine Combat
 
@@ -87,7 +87,7 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(BloodBath, SlimAI.Burst && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds < 5);
 
             await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
-            await Spell.CoCast(Rend, !Me.CurrentTarget.HasAura("Rend"));
+            await Spell.CoCast(Rend, !Me.CurrentTarget.HasMyAura("Rend"));
             await Spell.CoCastOnGround(Ravager, Me.CurrentTarget.Location, Spell.GetSpellCooldown("Colossus Smash").TotalSeconds < 4 && SlimAI.AOE);
             await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.AOE);
             await Spell.CoCast(ColossusSmash);
@@ -168,12 +168,14 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> PvPCoroutine()
         {
-
+            await CoReset();
             await CoShatterBubbles();
             await CoLeap();
             await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 35);
 
             if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
+
+            //new Action(context => ResetVariables());
 
             //Do we really need this?
             //if (StyxWoW.Me.CurrentTarget != null && (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange || StyxWoW.Me.IsCasting || SpellManager.GlobalCooldown)) return true;
@@ -186,12 +188,12 @@ namespace SlimAI.Class.Warrior
 
             await Spell.CoCast(ColossusSmash);
             
-            await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.HasMyAura("Colossus Smash") && SlimAI.AOE);
+            await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.HasMyAura("Colossus Smash") && SlimAI.Burst);
             await Spell.CoCast(Recklessness, SlimAI.Burst && (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Bloodbath") || Me.CurrentTarget.HealthPercent < 20));
             await Spell.CoCast(Avatar, SlimAI.Burst && Me.HasAura("Recklessness"));
             await Spell.CoCast(BloodBath, SlimAI.Burst && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds < 5);
 
-            await Spell.CoCast(SweepingStrikes, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
+            //await Spell.CoCast(SweepingStrikes, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
             await Spell.CoCast(Rend, !Me.CurrentTarget.HasAura("Rend"));
             await Spell.CoCast(Execute, Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura(SuddenDeath) || Me.CurrentRage >= 60 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
             await Spell.CoCast(MortalStrike, Me.CurrentTarget.HealthPercent > 20 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
@@ -397,15 +399,25 @@ namespace SlimAI.Class.Warrior
                     );
         }
 
+        private static async  Task<Decorator> CoReset()
+        {
+            return new Decorator(ret => Me.Combat && SpellManager.Spells["Storm Bolt"].Cooldown,
+                       new Throttle(1,
+                           new Action(context => ResetVariables())));
+           
+        }
+
         #region Coroutine Stormbolt Focus
 
         private static async Task<bool> CoStormBoltFocus()
         {
-            if (!SpellManager.CanCast("Storm Bolt") && !KeyboardPolling.IsKeyDown(Keys.C))
-                return false;
-            if (await Spell.CoCast(StormBolt, Me.FocusedUnit))
-                return true;
-            return true;
+            if (SpellManager.CanCast("Storm Bolt") && KeyboardPolling.IsKeyDown(Keys.C))
+            {
+                KeyboardPolling.IsKeyDown(Keys.C);
+                await Spell.CoCast(StormBolt, Me.FocusedUnit);
+            }
+
+            return false;
         }
         #endregion
 
@@ -862,11 +874,12 @@ namespace SlimAI.Class.Warrior
         #endregion
         #endregion
 
-        private static void ResetVariables()
+        public static RunStatus ResetVariables()
         {
             KeyboardPolling.IsKeyDown(Keys.G);
             KeyboardPolling.IsKeyDown(Keys.Z);
             KeyboardPolling.IsKeyDown(Keys.C);
+            return RunStatus.Failure;
         }
 
         private static Composite Leap()

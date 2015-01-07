@@ -72,7 +72,7 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCast(HammerofWrath);
             await Spell.CoCast(ShieldoftheRighteous, SlimAI.Burst);
             await Spell.CoCast(AvengersShield);
-            await Spell.CoCast(Consecration, !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange);
+            await Spell.CoCast(Consecration, Me.CurrentTarget.IsWithinMeleeRange);
             await Spell.CoCast(HolyWrath, Me.CurrentTarget.IsWithinMeleeRange);
                         
             return false;
@@ -100,7 +100,7 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCast(AvengersShield);
             await Spell.CoCastOnGround(LightsHammer, Me.Location, Unit.UnfriendlyUnits(10).Any());
             await Spell.CoCast(HolyPrism, Me, Me.HealthPercent <= 90);
-            await Spell.CoCast(Consecration, !Me.IsMoving && Me.CurrentTarget.IsWithinMeleeRange);
+            await Spell.CoCast(Consecration, Me.CurrentTarget.IsWithinMeleeRange);
             await Spell.CoCast(ExecutionSentence);
             await Spell.CoCast(HammerofWrath);
             await Spell.CoCast(ShieldoftheRighteous, SlimAI.Burst);

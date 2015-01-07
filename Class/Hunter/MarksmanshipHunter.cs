@@ -36,9 +36,9 @@ namespace SlimAI.Class.Hunter
             //    return true;
             //}
 
-            if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive) return true;
+            if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive || Me.IsCasting || Me.IsChanneling) return true;
 
-            await Spell.CoCastMove("Kill Shot");
+            await Spell.CoCastMove("Kill Shot", Me.CurrentTarget.HealthPercent <= 20);
             await Spell.CoCastMove("Chimaera Shot");
             await Spell.CoCastMove("Rapid Fire", SlimAI.Burst);
             await Spell.CoCastMove("Stampede", SlimAI.Burst && (Me.HasAura("Rapid Fire") || PartyBuff.WeHaveBloodlust));
