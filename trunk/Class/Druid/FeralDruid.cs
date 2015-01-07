@@ -322,6 +322,7 @@ namespace SlimAI.Class.Druid
             {
                 var eHheal = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
                               where unit.IsAlive
+                              where !unit.HasMyAura("Rejuvenation")
                               where unit.IsInMyPartyOrRaid
                               where unit.Distance < 40
                               where unit.InLineOfSight

@@ -146,6 +146,7 @@ namespace SlimAI.Class.Paladin
 
                 if (StyxWoW.Me.CurrentTarget != null && (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange || StyxWoW.Me.IsCasting || SpellManager.GlobalCooldown)) return true;
 
+                await Spell.CoCast(HandofFreedom, Me, (Me.IsSlowed() && Me.HasAura(AvengingWrath)) || Me.CurrentTarget.HealthPercent <= 30);
                 await Spell.CoCast(AvengingWrath, SlimAI.Burst);
                 await Spell.CoCast(HolyAvenger, Me.CurrentHolyPower <= 2 && SlimAI.Burst);
                 await Spell.CoCast(DivineShield, Me.HealthPercent <= 20 && SlimAI.Weave);
