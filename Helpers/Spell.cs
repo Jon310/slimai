@@ -244,18 +244,9 @@ namespace SlimAI.Helpers
         {
             var sname = spellname;
 
-            SpellFindResults sfr;
-            if (!SpellManager.FindSpell(spellname, out sfr))
-            {
-                // Logger.WriteDebug("CanCast: spell [{0}] not known", castName);
+            if (unit == null || !reqs || !CanCastHack(spellname))
                 return false;
-            }
 
-            WoWSpell spell = sfr.Override ?? sfr.Original;
-
-            if (unit == null || !reqs || !spell.CanCast)
-                return false;
-            await CommonCoroutines.SleepForLagDuration();
             if (!SpellManager.Cast(spellname, unit))
                 return false;
 
