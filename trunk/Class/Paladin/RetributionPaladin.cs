@@ -57,7 +57,7 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCastOnGround(LightsHammer, Me.Location, Me.CurrentTarget.IsBoss && SlimAI.AOE);
             //await Spell.CoCast(DivineStorm, (Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"))) && SlimAI.AOE && Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(TemplarsVerdict, Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"));
-            await Spell.CoCast(HammerofWrath, Me.CurrentHolyPower <= 4);
+            await Spell.CoCast(HammerofWrath);
             await Spell.CoCast(DivineStorm, SlimAI.AOE && Me.HasAura("Divine Crusader") && Me.HasAura("Final Verdict") && Me.CurrentTarget.Distance <= 8 && (Me.HasAura(AvengingWrath) || Me.CurrentTarget.HealthPercent < 35));
             await Spell.CoCast(HammeroftheRighteous, Me.CurrentHolyPower <= 4 && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && SlimAI.AOE);
             await Spell.CoCast(CrusaderStrike, Me.CurrentHolyPower <= 4);
