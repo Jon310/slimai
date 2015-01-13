@@ -1,11 +1,20 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using SlimAI.Helpers;
-using SlimAI.Managers;
+using Buddy.Coroutines;
+using JetBrains.Annotations;
 using CommonBehaviors.Actions;
+using SlimAI.Helpers;
+using SlimAI.Lists;
+using SlimAI.Managers;
+using SlimAI.Settings;
 using Styx;
+using SlimAI.Class;
+using Styx.Common;
 using Styx.CommonBot;
+using Styx.CommonBot.Coroutines;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -13,68 +22,50 @@ using Action = Styx.TreeSharp.Action;
 
 namespace SlimAI.Class.Hunter
 {
-    class BeastmasterHunter
+    [UsedImplicitly]
+    class BeastMasterHunter
     {
         static LocalPlayer Me { get { return StyxWoW.Me; } }
         static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
 
+        #region Coroutine Combat
+        private static async Task<bool> CombatCoroutine()
+        {
+            if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive || Me.IsCasting || Me.IsChanneling) return true;
+                //        CreateMisdirectionBehavior(),
+                //        CreateHunterTrapBehavior("Explosive Trap", true, ret => Me.CurrentTarget, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && SlimAI.AOE),
+            await Spell.CoCastMove("Mend Pet", Pet, Me.GotAlivePet && Pet.HealthPercent < 60 && !Pet.HasAura("Mend Pet"));
+            await Spell.CoCastMove("Focus Fire", Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within"));
+       
+            await Spell.CoCastMove("Rapid Fire", SlimAI.Burst);
+            await Spell.CoCastMove("Stampede", SlimAI.Burst);
+            await Spell.CoCastMove("Bestial Wrath", Me.CurrentFocus > 60 && SlimAI.Burst);
+            await Spell.CoCastMove("A Murder of Crows", SlimAI.Burst);
+
+            await Spell.CoCastMove("Dire Beast");
+            await Spell.CoCastMove("Exhilaration", Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25));
+            await Spell.CoCastMove("Tranquilizing Shot", Me.CurrentTarget.ActiveAuras.ContainsKey("Enraged") || Me.CurrentTarget.ActiveAuras.ContainsKey("Magic"));
+
+            await CoAOE(Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 5 && SlimAI.AOE);
+            
+            await Spell.CoCastMove("Kill Command", Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f);
+            await Spell.CoCastMove("Kill Shot", Me.CurrentTarget.HealthPercent <= 20);
+            await Spell.CoCastMove("Glaive Toss");
+            await Spell.CoCastMove("Barrage");
+            await Spell.CoCastMove("Powershot");
+            await Spell.CoCastMove("Arcane Shot", Me.CurrentFocus >= 61 || Me.HasAura("Thrill of the Hunt") || Me.HasAura("The Beast Within"));
+            await Spell.CoCastMove("Cobra Shot", !Me.HasAura("The Beast Within"));
+                //    );
+            return false;
+        }
+
         [Behavior(BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterBeastMastery)]
-        public static Composite BeastMasterCombat()
-            {
-                return new PrioritySelector(
+        public static Composite CoBeastMasterCombat()
+        {
+            return new ActionRunCoroutine(ctx => CombatCoroutine());
+        }
+        #endregion
 
-                    new Throttle(1,
-                        new Action(context => ResetVariables())),
-                    new Decorator(ret => SlimAI.PvPRotation,
-                        CreatePvP()),
-
-                new Decorator(ret => !Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive || Me.HasAura("Feign Death"),
-                    new ActionAlwaysSucceed()),
-                        Common.CreateInterruptBehavior(),
-                        CreateMisdirectionBehavior(),
-                        CreateHunterTrapBehavior("Explosive Trap", true, ret => Me.CurrentTarget, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && SlimAI.AOE),
-
-                        Spell.Cast("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
-                        Spell.Cast("Serpent Sting", ret => !Me.CurrentTarget.HasMyAura("Serpent Sting")),
-                        new Action(ret => { Item.UseHands(); return RunStatus.Failure; }),
-                        //Burst
-                        new Decorator(ret => SlimAI.Burst,
-                            new PrioritySelector(
-                                Spell.Cast("Rapid Fire"),
-                                Spell.Cast("Stampede"),
-                                Spell.Cast("Bestial Wrath", ret => Me.CurrentFocus > 60),
-                                Spell.Cast("A Murder of Crows"))),
-
-                        Spell.Cast("Fervor", ctx => Me.CurrentFocus < 65),
-                        Spell.Cast("Dire Beast"),
-                        Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within")),
-
-                        Spell.Cast("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
-                        Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.ActiveAuras.ContainsKey("Enraged") || Me.CurrentTarget.ActiveAuras.ContainsKey("Magic")),
-
-                        //Spell.Buff("Concussive Shot",
-                        //    ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid 
-                        //        && Me.CurrentTarget.Distance > Spell.MeleeRange),
-
-                        // AoE Rotation
-                        new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 5 && SlimAI.AOE, 
-                            new PrioritySelector(
-                                Spell.Cast( "Multi-Shot", ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where( u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
-                                Spell.Cast( "Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                Spell.Cast("Cobra Shot", ret => !Me.HasAura("The Beast Within")))),
-
-                        Spell.Cast("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < 60 && !Pet.HasAura("Mend Pet")),
-                        Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f),
-                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent <= 20),
-                        Spell.Cast("Glaive Toss"),
-                        Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
-                        Spell.Cast("Barrage"),
-                        Spell.Cast("Powershot"),
-                        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus >= 61 || Me.HasAura("Thrill of the Hunt") || Me.HasAura("The Beast Within")),  
-                        Spell.Cast("Cobra Shot", ret => !Me.HasAura("The Beast Within"))
-                    );
-            }
-        
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Hunter, WoWSpec.HunterBeastMastery)]
         public static Composite BeastMasterPreCombatBuffs()
@@ -83,6 +74,21 @@ namespace SlimAI.Class.Hunter
 
                 );
             }
+
+        #region Coroutine AOE
+        private static async Task<bool> CoAOE(bool reqs)
+        {
+            if (!reqs)
+                return false;
+            await Spell.CoCastMove("Multi-Shot", Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f));
+            await Spell.CoCastMove("Kill Shot", Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)));
+            await Spell.CoCastMove("Glaive Toss");
+            await Spell.CoCastMove("Barrage");            
+            await Spell.CoCastMove("Cobra Shot", !Me.HasAura("The Beast Within"));
+
+            return false;
+        }
+        #endregion
 
         #region PvP
         private static Composite CreatePvP()

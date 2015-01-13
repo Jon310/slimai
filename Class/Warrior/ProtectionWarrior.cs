@@ -445,13 +445,7 @@ namespace SlimAI.Class.Warrior
             return false;
         }
 
-        private static void ResetVariables()
-        {
-            KeyboardPolling.IsKeyDown(Keys.G);
-            KeyboardPolling.IsKeyDown(Keys.Z);
-            KeyboardPolling.IsKeyDown(Keys.C);
-        }
-        #endregion
+       #endregion
 
         #region Best Banner
         public static WoWUnit BestBanner//WoWUnit

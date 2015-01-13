@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -37,7 +38,8 @@ namespace SlimAI.Class.Hunter
             //}
 
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive || Me.IsCasting || Me.IsChanneling) return true;
-
+            //CreateMisdirectionBehavior();
+            await Spell.CoCastMove("Mend Pet", Pet, Me.GotAlivePet && Pet.HealthPercent < 60 && !Pet.HasAura("Mend Pet"));
             await Spell.CoCastMove("Kill Shot", Me.CurrentTarget.HealthPercent <= 20);
             await Spell.CoCastMove("Chimaera Shot");
             await Spell.CoCastMove("Rapid Fire", SlimAI.Burst);
@@ -84,6 +86,41 @@ namespace SlimAI.Class.Hunter
             await Spell.CoCastMove("Steady Shot");
 
             return false;
+        }
+        #endregion
+
+        #region Misdirect
+        /// <summary>
+        /// creates composite that buffs Misdirection on appropriate target.  always cast on Pet for Normal, never cast at all in PVP, 
+        /// conditionally cast in Instances based upon parameter value
+        /// </summary>
+        /// <param name="buffForPull">applies to Instances only.  true = call is for pull behavior so allow use in instances; 
+        /// false = disabled in instances</param>
+        /// <returns></returns>
+        public static Composite CreateMisdirectionBehavior()
+        {
+            // Normal - misdirect onto Pet on cooldown
+            if (!Me.IsInGroup())
+            {
+                return new ThrottlePasses(5,
+                    new Decorator(
+                        ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
+                        Spell.Cast("Misdirection", ctx => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100))
+                    );
+            }
+
+            // Instances - misdirect only if pullCheck == true
+            if (Me.IsInGroup())
+            {
+                return new ThrottlePasses(5,
+                    new Decorator(
+                        ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
+                        Spell.Cast("Misdirection", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100))
+                        )
+                    );
+            }
+
+            return new ActionAlwaysFail();
         }
         #endregion
 
