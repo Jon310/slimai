@@ -57,7 +57,7 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCast(WordofGlory, Me, SpellManager.HasSpell(EternalFlame) && !Me.ActiveAuras.ContainsKey("Eternal Flame") && (Me.CurrentHolyPower >= 3 || Me.HasAura("Divine Purpose")) && Me.HasAura("Bastion of Glory", 5));
 
                 //CreateDispelBehavior(),
-
+            await Spell.CoCast(Seraphim, IsCurrentTank());
             await CoAOE(Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
 
             await Spell.CoCast(ShieldoftheRighteous, MaxHolyPower);
@@ -266,6 +266,7 @@ namespace SlimAI.Class.Paladin
             SealofInsight = 20165,
             SealofRighteousness = 20154,
             SealofTruth = 31801,
+            Seraphim = 152262,
             ShieldoftheRighteous = 53600,
             SpeedofLight = 85499,
             TurnEvil = 10326,

@@ -168,7 +168,6 @@ namespace SlimAI.Class.Warrior
 
         private static async Task<bool> PvPCoroutine()
         {
-            await CoReset();
             await CoShatterBubbles();
             await CoLeap();
             await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 35);
@@ -388,37 +387,21 @@ namespace SlimAI.Class.Warrior
                 return Me.CurrentTarget.HasAnyAura("Hand of Freedom", "Ice Block", "Hand of Protection", "Divine Shield", "Cyclone", "Deterrence", "Phantasm", "Windwalk Totem");
             }
         }
-        private static Composite StormBoltFocus()
-        {
-            return
-                new Decorator(ret => SpellManager.CanCast("Storm Bolt") &&
-                    KeyboardPolling.IsKeyDown(Keys.C),
-                    new PrioritySelector(
-                        Spell.Cast("Storm Bolt", on => Me.FocusedUnit))
 
-                    );
-        }
-
-        private static async  Task<Decorator> CoReset()
-        {
-            return new Decorator(ret => Me.Combat && SpellManager.Spells["Storm Bolt"].Cooldown,
-                       new Throttle(1,
-                           new Action(context => ResetVariables())));
-           
-        }
 
         #region Coroutine Stormbolt Focus
 
         private static async Task<bool> CoStormBoltFocus()
         {
+            KeyboardPolling.IsKeyDown(Keys.C);
             if (SpellManager.CanCast("Storm Bolt") && KeyboardPolling.IsKeyDown(Keys.C))
             {
-                KeyboardPolling.IsKeyDown(Keys.C);
                 await Spell.CoCast(StormBolt, Me.FocusedUnit);
             }
 
             return false;
         }
+
         #endregion
 
         #region Best Banner
