@@ -32,8 +32,10 @@ namespace SlimAI.Class.Hunter
         private static async Task<bool> CombatCoroutine()
         {
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive || Me.IsCasting || Me.IsChanneling) return true;
-                //        CreateMisdirectionBehavior(),
-                //        CreateHunterTrapBehavior("Explosive Trap", true, ret => Me.CurrentTarget, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && SlimAI.AOE),
+
+            await CreateMisdirectionBehavior().ExecuteCoroutine();
+            await CreateHunterTrapBehavior("Explosive Trap", true, ret => Me.CurrentTarget, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && SlimAI.AOE).ExecuteCoroutine();
+            
             await Spell.CoCastMove("Mend Pet", Pet, Me.GotAlivePet && Pet.HealthPercent < 60 && !Pet.HasAura("Mend Pet"));
             await Spell.CoCastMove("Focus Fire", Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within"));
        
