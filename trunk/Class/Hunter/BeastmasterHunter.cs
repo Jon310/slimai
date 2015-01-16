@@ -55,7 +55,7 @@ namespace SlimAI.Class.Hunter
             await Spell.CoCastMove("Glaive Toss");
             await Spell.CoCastMove("Barrage");
             await Spell.CoCastMove("Powershot");
-            await Spell.CoCastMove("Arcane Shot", Me.CurrentFocus >= 61 || Me.HasAura("Thrill of the Hunt") || Me.HasAura("The Beast Within"));
+            await Spell.CoCastMove("Arcane Shot", Me.CurrentFocus >= 64 || Me.HasAura("Thrill of the Hunt") && Me.CurrentFocus > 35 || Me.HasAura("The Beast Within"));
             await Spell.CoCastMove("Cobra Shot", !Me.HasAura("The Beast Within"));
                 //    );
             return false;
