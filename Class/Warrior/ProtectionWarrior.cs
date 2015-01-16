@@ -47,7 +47,7 @@ namespace SlimAI.Class.Warrior
             // End Boss Mechanics Section
 
             // Intrrupt Section
-            await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
+            //await Coroutine.ExternalTask(Task.Run(() => Common.CreateInterruptBehavior()));
 
 
             await Spell.CoCast(BloodBath, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
@@ -63,20 +63,18 @@ namespace SlimAI.Class.Warrior
 
             await Spell.CoCast(DemoralizingShout, Unit.UnfriendlyUnits(10).Any() && IsCurrentTank());
 
-            await Spell.CoCast(ImpendingVictory, Me.HealthPercent <= 75);
+            await Spell.CoCast(ImpendingVictory, Me.HealthPercent <= 60);
             await Spell.CoCast(ShieldBlock, !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave);
-            await Spell.CoCast("Shield Barrier", (Me.CurrentRage >= 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave) || Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70);
+            //await Spell.CoCast("Shield Barrier", (Me.CurrentRage >= 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave) || Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70);
 
 
-            await Spell.CoCast(HeroicStrike, Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016) || Me.HasAura("Unyielding Strikes", 6) || (!IsCurrentTank() && Me.CurrentRage > 60 && Me.CurrentTarget.IsBoss));
+            await Spell.CoCast(HeroicStrike, Me.CurrentRage > Me.MaxRage - 30 || Me.HasAura(122510) || Me.HasAura(122016) || Me.HasAura("Unyielding Strikes", 6));
+            await Spell.CoCastOnGround(Ravager, Me.CurrentTarget.Location, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
+            await Spell.CoCast(DragonRoar, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.Burst);
             await Spell.CoCast(ShieldSlam);
             await Spell.CoCast(Revenge, Me.CurrentRage < 90);
-
-            // Needs Testing, Nesting broke the cc last time I tried it, but it could have been other issues.
-            // if (Spell.GetSpellCooldown("Shield Slam").TotalSeconds >= 1 && Spell.GetSpellCooldown("Revenge").TotalSeconds >= 1)
-            // {
+            await Spell.CoCast(Bladestorm, SlimAI.AOE && Me.CurrentTarget.IsWithinMeleeRange);
             await Spell.CoCast(StormBolt);
-            await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(Execute, SlimAI.Burst || Me.HasAura("Sudden Death"));
             await CoAOE(Unit.EnemyUnitsSub8.Count() >= 2 && SlimAI.AOE);
             await Spell.CoCast(HeroicThrow, Me.CurrentTarget.Distance >= 10);
@@ -245,9 +243,11 @@ namespace SlimAI.Class.Warrior
 
             await Spell.CoCast(ShieldSlam);
             await Spell.CoCast(Revenge);
+            await Spell.CoCastOnGround(Ravager, Me.CurrentTarget.Location, SlimAI.Burst && Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(Execute, Me.HasAura("Sudden Death"));
             await Spell.CoCast(ThunderClap, SlimAI.AOE && Unit.EnemyUnitsSub8.Count(u => !u.HasAura("Deep Wounds")) >= 1 && Unit.UnfriendlyUnits(8).Count() >= 2);
-            await Spell.CoCast(DragonRoar, Me.CurrentTarget.Distance <= 8);
+            
             await Spell.CoCast(Execute, Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent < 20);
             await Spell.CoCast(Devastate);
 
@@ -315,56 +315,6 @@ namespace SlimAI.Class.Warrior
         }
         #endregion
 
-        private static Composite DemoBanner()
-        {
-            return
-                new Decorator(ret => SpellManager.CanCast("Demoralizing Banner") &&
-                    KeyboardPolling.IsKeyDown(Keys.Z),
-                    new Action(ret =>
-                    {
-                        SpellManager.Cast(DemoralizingBanner);
-                        Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
-                        return;
-                    }));
-        }
-
-        #region Coroutine Demo Banner
-        private static async Task<bool> CoDemoBanner()
-        {
-            if (!SpellManager.CanCast(DemoralizingBanner))
-                return false;
-
-            if (!KeyboardPolling.IsKeyDown(Keys.Z))
-                return false;
-
-            if (!SpellManager.Cast(DemoralizingBanner))
-                return false;
-
-            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
-            {
-                Logging.Write("Cursor Spell Didnt happen");
-                return false;
-            }
-
-            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
-
-            await CommonCoroutines.SleepForLagDuration();
-            return true;
-        }
-        #endregion
-
-        private static Composite Mocking()
-        {
-            return
-                new Decorator(ret => SpellManager.CanCast("Mocking Banner") &&
-                    KeyboardPolling.IsKeyDown(Keys.C),
-                    new Action(ret =>
-                    {
-                        SpellManager.Cast(MockingBanner);
-                        Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
-                        return;
-                    }));
-        }
 
         #region Coroutine Mocking Banner
         private static async Task<bool> CoMockingBanner()
@@ -400,12 +350,6 @@ namespace SlimAI.Class.Warrior
                     Spell.GetSpellCooldown("Enraged Regeneration").TotalSeconds > 30 && SpellManager.Spells["Enraged Regeneration"].Cooldown)));
         }
 
-        private static bool NeedEnrageRegen()
-        {
-
-            return (Me.HealthPercent <= 80 && Me.HasAura(Enrage) || Me.HealthPercent <= 50 && 
-                    Spell.GetSpellCooldown("Berserker Rage").TotalSeconds > 10) && SpellManager.HasSpell("Enraged Regeneration");
-        }
 
         static bool IsCurrentTank()
         {
@@ -957,6 +901,7 @@ namespace SlimAI.Class.Warrior
                           RagingBlow = 85288,
                           RallyingCry = 97462,
                           Recklessness = 1719,
+                          Ravager = 152277,
                           Revenge = 6572,
                           ShatteringThrow = 64382,
                           ShieldBarrier = 112048,
