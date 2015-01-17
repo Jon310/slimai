@@ -67,7 +67,7 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(ShieldBlock, !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave);
             //await Spell.CoCast("Shield Barrier", (Me.CurrentRage >= 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave) || Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70);
 
-
+            await Spell.CoCast(HeroicStrike, Me.CurrentRage > Me.MaxRage - (30 - Unit.buffStackCount(169685, Me) * 5));
             await Spell.CoCast(HeroicStrike, Me.CurrentRage > Me.MaxRage - 30 || Me.HasAura(122510) || Me.HasAura(122016) || Me.HasAura("Unyielding Strikes", 6));
             await Spell.CoCastOnGround(Ravager, Me.CurrentTarget.Location, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
             await Spell.CoCast(DragonRoar, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.Burst);
