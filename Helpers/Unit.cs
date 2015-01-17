@@ -399,6 +399,19 @@ namespace SlimAI.Helpers
             return null;
         }
 
+        #region Stack Count
+        public static uint buffStackCount(int Buff, WoWUnit onTarget)
+        {
+            if (onTarget != null)
+            {
+                var Results = onTarget.GetAuraById(Buff);
+                if (Results != null)
+                    return Results.StackCount;
+            }
+            return 0;
+        }
+        #endregion
+
         /// <summary>
         ///   Gets the nearby unfriendly units within *distance* yards.
         /// </summary>
