@@ -31,6 +31,13 @@ namespace SlimAI.Class.Hunter
         #region Coroutine Combat
         private static async Task<bool> CombatCoroutine()
         {
+
+            if (SlimAI.PvPRotation)
+            {
+                await PvPCoroutine();
+                return true;
+            }
+
             if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive || Me.IsCasting || Me.IsChanneling) return true;
 
             await CreateMisdirectionBehavior().ExecuteCoroutine();
@@ -93,52 +100,201 @@ namespace SlimAI.Class.Hunter
         #endregion
 
         #region PvP
-        private static Composite CreatePvP()
+
+        private static async Task<bool> PvPCoroutine()
         {
-            return new PrioritySelector(
-                new Decorator(ret => !Me.Combat || Me.Mounted || Me.HasAura("Feign Death"),
-                    new ActionAlwaysSucceed()),
-                //CC
-                CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, ret => KeyboardPolling.IsKeyDown(Keys.Z)),
-                Spell.Cast("Scatter Shot", on => Me.FocusedUnit, ret => KeyboardPolling.IsKeyDown(Keys.C)),
-                CreateHunterTrapBehavior("Freezing Trap", true, on => Me.FocusedUnit, ret => KeyboardPolling.IsKeyDown(Keys.F)),
-                Spell.Cast("Concussive Shot", ret => KeyboardPolling.IsKeyDown(Keys.R)),
 
-                new Throttle(1,
-                Spell.Cast("Tranquilizing Shot", on => BestTranq)),
+            if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield", "Freezing Trap", "Cyclone", "Hex") || !Me.Combat || Me.Mounted) return true;
 
-                Spell.Cast("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
-                Spell.Cast("Serpent Sting", ret => !Me.CurrentTarget.HasMyAura("Serpent Sting")),
+            await CoFreeze();
+            await CoFire();
+            await CoIce();
+            await CoBind();
+            
+            if (!Me.Combat || Me.Mounted || !Me.GotTarget || !Me.CurrentTarget.IsAlive || Me.IsCasting || Me.IsChanneling) return true;
 
-                //Burst
-                new Decorator(ret => SlimAI.Burst,
-                    new PrioritySelector(
-                        Spell.Cast("Rapid Fire"),
-                        Spell.Cast("Stampede"),
-                        Spell.Cast("Bestial Wrath", ret => Me.CurrentFocus > 60),
-                        Spell.Cast("A Murder of Crows"))),
+            //await CreateMisdirectionBehavior().ExecuteCoroutine();
+            //await CreateHunterTrapBehavior("Explosive Trap", true, ret => Me.CurrentTarget, ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && SlimAI.AOE).ExecuteCoroutine();
 
-                Spell.Cast("Fervor", ctx => Me.CurrentFocus <= 50),
-                Spell.Cast("Dire Beast"),
-                Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
-                Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within")),
+            await Spell.CoCast("Concussive Shot", !Freedoms && !Me.CurrentTarget.IsStunned() && !Me.CurrentTarget.IsCrowdControlled() && !Me.CurrentTarget.IsSlowed() && Me.CurrentTarget.IsPlayer);
 
-                Spell.Cast("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
-                Spell.Cast("Tranquilizing Shot", on => BestTranq),
+            await Spell.CoCastMove("Mend Pet", Pet, Me.GotAlivePet && Pet.HealthPercent < 60 && !Pet.HasAura("Mend Pet"));
+            await Spell.CoCastMove("Focus Fire", Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within"));
 
-                Spell.Cast("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < 60 && !Pet.HasAura("Mend Pet")),
-                Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f),
-                Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent <= 20),
-                Spell.Cast("Glaive Toss"),
-                Spell.Cast("Barrage"),
-                Spell.Cast("Powershot"),
-                Spell.Cast("Arcane Shot", ret => Me.CurrentFocus >= 61 || Me.HasAura("Thrill of the Hunt") || Me.HasAura("The Beast Within")),
-                Spell.Cast("Cobra Shot", ret => !Me.HasAura("The Beast Within")),
-                 Spell.Cast("Focus Fire", ctx => Me.HasAura("Frenzy", 1) && Me.GetAuraTimeLeft("Frenzy").TotalSeconds <= 1),
-                new ActionAlwaysSucceed()
-                );
+            await Spell.CoCastMove("Stampede", SlimAI.Burst);
+            await Spell.CoCastMove("Bestial Wrath", Me.CurrentFocus > 60 && SlimAI.Burst);
+            await Spell.CoCastMove("A Murder of Crows", SlimAI.Burst);
+
+            await Spell.CoCastMove("Dire Beast");
+            await Spell.CoCastMove("Exhilaration", Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25));
+            await Spell.CoCastMove("Tranquilizing Shot", BestTranq);
+
+            //await CoAOE(Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 5 && SlimAI.AOE);
+
+            await Spell.CoCastMove("Kill Command", Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f);
+            await Spell.CoCastMove("Kill Shot", Me.CurrentTarget.HealthPercent <= 20);
+            await Spell.CoCastMove("Glaive Toss");
+            await Spell.CoCastMove("Barrage");
+            await Spell.CoCastMove("Powershot");
+            await Spell.CoCastMove("Arcane Shot", Me.CurrentFocus >= 64 || Me.HasAura("Thrill of the Hunt") && Me.CurrentFocus > 35 || Me.HasAura("The Beast Within"));
+            await Spell.CoCastMove("Cobra Shot", !Me.HasAura("The Beast Within"));
+
+            return true;
+        }
+
+
+        #endregion
+
+        //#region PvP
+        //private static Composite CreatePvP()
+        //{
+        //    return new PrioritySelector(
+        //        new Decorator(ret => !Me.Combat || Me.Mounted || Me.HasAura("Feign Death"),
+        //            new ActionAlwaysSucceed()),
+        //        //CC
+        //        CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, ret => KeyboardPolling.IsKeyDown(Keys.Z)),
+        //        Spell.Cast("Scatter Shot", on => Me.FocusedUnit, ret => KeyboardPolling.IsKeyDown(Keys.C)),
+        //        CreateHunterTrapBehavior("Freezing Trap", true, on => Me.FocusedUnit, ret => KeyboardPolling.IsKeyDown(Keys.F)),
+        //        Spell.Cast("Concussive Shot", ret => KeyboardPolling.IsKeyDown(Keys.R)),
+
+        //        new Throttle(1,
+        //        Spell.Cast("Tranquilizing Shot", on => BestTranq)),
+
+        //        Spell.Cast("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
+        //        Spell.Cast("Serpent Sting", ret => !Me.CurrentTarget.HasMyAura("Serpent Sting")),
+
+        //        //Burst
+        //        new Decorator(ret => SlimAI.Burst,
+        //            new PrioritySelector(
+        //                Spell.Cast("Rapid Fire"),
+        //                Spell.Cast("Stampede"),
+        //                Spell.Cast("Bestial Wrath", ret => Me.CurrentFocus > 60),
+        //                Spell.Cast("A Murder of Crows"))),
+
+        //        Spell.Cast("Fervor", ctx => Me.CurrentFocus <= 50),
+        //        Spell.Cast("Dire Beast"),
+        //        Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
+        //        Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within")),
+
+        //        Spell.Cast("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
+        //        Spell.Cast("Tranquilizing Shot", on => BestTranq),
+
+        //        Spell.Cast("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < 60 && !Pet.HasAura("Mend Pet")),
+        //        Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f),
+        //        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent <= 20),
+        //        Spell.Cast("Glaive Toss"),
+        //        Spell.Cast("Barrage"),
+        //        Spell.Cast("Powershot"),
+        //        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus >= 61 || Me.HasAura("Thrill of the Hunt") || Me.HasAura("The Beast Within")),
+        //        Spell.Cast("Cobra Shot", ret => !Me.HasAura("The Beast Within")),
+        //         Spell.Cast("Focus Fire", ctx => Me.HasAura("Frenzy", 1) && Me.GetAuraTimeLeft("Frenzy").TotalSeconds <= 1),
+        //        new ActionAlwaysSucceed()
+        //        );
+        //}
+        //#endregion
+
+        #region Traps & Stuff
+        private static async Task<bool> CoFreeze()
+        {
+            if (!SpellManager.CanCast("Freezing Trap"))
+                return false;
+
+            if (!Lua.GetReturnVal<bool>("return IsLeftAltKeyDown() and not GetCurrentKeyBoardFocus()", 0))
+                return false;
+
+            if (!SpellManager.Cast("Freezing Trap"))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+
+        private static async Task<bool> CoFire()
+        {
+            if (!SpellManager.CanCast("Explosive Trap"))
+                return false;
+
+            if (!KeyboardPolling.IsKeyDown(Keys.C))
+                return false;
+
+            if (!SpellManager.Cast("Explosive Trap"))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+
+        private static async Task<bool> CoIce()
+        {
+            if (!SpellManager.CanCast("Ice Trap"))
+                return false;
+
+            if (!KeyboardPolling.IsKeyDown(Keys.X))
+                return false;
+
+            if (!SpellManager.Cast("Ice Trap"))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
+        }
+
+        private static async Task<bool> CoBind()
+        {
+            if (!SpellManager.CanCast("Binding Shot"))
+                return false;
+
+            if (!KeyboardPolling.IsKeyDown(Keys.R))
+                return false;
+
+            if (!SpellManager.Cast("Binding Shot"))
+                return false;
+
+            if (!await Coroutine.Wait(1000, () => StyxWoW.Me.CurrentPendingCursorSpell != null))
+            {
+                Logging.Write("Cursor Spell Didnt happen");
+                return false;
+            }
+
+            Lua.DoString("if SpellIsTargeting() then CameraOrSelectOrMoveStart() CameraOrSelectOrMoveStop() end");
+
+            await CommonCoroutines.SleepForLagDuration();
+            return true;
         }
         #endregion
+
+        private static bool Freedoms
+        {
+            get
+            {
+                return Me.CurrentTarget.HasAnyAura("Hand of Freedom", "Ice Block", "Hand of Protection", "Divine Shield", "Cyclone", "Deterrence", "Phantasm", "Windwalk Totem");
+            }
+        }
+
 
         #region Dispells
         private static bool Tranq
