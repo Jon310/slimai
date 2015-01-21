@@ -60,22 +60,25 @@ namespace SlimAI.Class.Warrior
             await Spell.CoCast(EnragedRegeneration, Me.HealthPercent <= 50);
             await Spell.CoCast(LastStand, Me.HealthPercent <= 15 && !Me.HasAura("Shield Wall") && SlimAI.AFK);
             await Spell.CoCast(ShieldWall, Me.HealthPercent <= 30 && !Me.HasAura("Last Stand") && SlimAI.AFK);
-
-            await Spell.CoCast(DemoralizingShout, Unit.UnfriendlyUnits(10).Any() && IsCurrentTank());
-
+            await Spell.CoCast(DemoralizingShout, Unit.UnfriendlyUnits(10).Any() && IsCurrentTank() && Me.HealthPercent <= 75);
             await Spell.CoCast(ImpendingVictory, Me.HealthPercent <= 60);
-            await Spell.CoCast(ShieldBlock, !Me.HasAura("Shield Block") && IsCurrentTank() && SlimAI.Weave);
-            //await Spell.CoCast("Shield Barrier", (Me.CurrentRage >= 60 && !Me.HasAura("Shield Barrier") && IsCurrentTank() && !SlimAI.Weave) || Me.CurrentRage > 30 && Me.HasAura("Shield Block") && Me.HealthPercent <= 70);
+            
+            //shield_block,if=!(debuff.demoralizing_shout.up|buff.ravager.up|buff.shield_wall.up|buff.last_stand.up|buff.enraged_regeneration.up|buff.shield_block.up)
+            await Spell.CoCast(ShieldBlock, !DefCools && IsCurrentTank());
+            //shield_barrier,if=buff.shield_barrier.down&((buff.shield_block.down&action.shield_block.charges_fractional<0.75)|rage>=85)
+            await Spell.CoCast("Shield Barrier", (Me.CurrentRage >= 85 /*|| !SpellManager.CanCast(ShieldBlock) && Me.CurrentRage >= 85*/) && !Me.HasAura("Shield Barrier") && IsCurrentTank());
 
-            await Spell.CoCast(HeroicStrike, Me.CurrentRage > Me.MaxRage - (30 - Unit.buffStackCount(169685, Me) * 5));
-            await Spell.CoCast(HeroicStrike, Me.CurrentRage > Me.MaxRage - 30 || Me.HasAura(122510) || Me.HasAura(122016) || Me.HasAura("Unyielding Strikes", 6));
+            //await Spell.CoCast(HeroicStrike, Me.CurrentRage > Me.MaxRage - (30 - Unit.buffStackCount(169685, Me) * 5));
+            await Spell.CoCast(HeroicStrike, Me.HasAura(Ultimatum) || Me.HasAura("Unyielding Strikes", 6) || (Me.CurrentRage > Me.MaxRage - 30 && !IsCurrentTank()));
             await Spell.CoCastOnGround(Ravager, Me.CurrentTarget.Location, SlimAI.Burst && Me.CurrentTarget.IsWithinMeleeRange);
             await Spell.CoCast(DragonRoar, Me.CurrentTarget.IsWithinMeleeRange && SlimAI.Burst);
+            await Spell.CoCast(StormBolt);            
+            
             await Spell.CoCast(ShieldSlam);
             await Spell.CoCast(Revenge, Me.CurrentRage < 90);
-            await Spell.CoCast(Bladestorm, SlimAI.AOE && Me.CurrentTarget.IsWithinMeleeRange);
-            await Spell.CoCast(StormBolt);
-            await Spell.CoCast(Execute, SlimAI.Burst || Me.HasAura("Sudden Death"));
+
+            await Spell.CoCast(Execute, Me.HasAura("Sudden Death") || Me.CurrentRage > Me.MaxRage -30 && SlimAI.Burst);
+            await Spell.CoCast(Devastate, Me.HasAuraExpired("Unyielding Strikes", 2) && !Me.HasAura("Unyielding Strikes", 6));
             await CoAOE(Unit.EnemyUnitsSub8.Count() >= 2 && SlimAI.AOE);
             await Spell.CoCast(HeroicThrow, Me.CurrentTarget.Distance >= 10);
             await Spell.CoCast(Devastate);
@@ -260,9 +263,7 @@ namespace SlimAI.Class.Warrior
             return new PrioritySelector(
                 Spell.Cast(Shockwave, ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 9) >= 3),
                 Spell.Cast(Bladestorm),
-                Spell.Cast(ThunderClap),
-                Spell.Cast(Cleave, ret => (Me.CurrentRage > 85 || Me.HasAura(122510) || Me.HasAura(122016)) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 5) >= 2)
-                );
+                Spell.Cast(ThunderClap));
         }
 
         private static async Task<bool> CoAOE(bool reqs)
@@ -271,7 +272,7 @@ namespace SlimAI.Class.Warrior
                 return false;
 
             await Spell.CoCast(Shockwave, Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 9) >= 3);
-            await Spell.CoCast(Bladestorm);
+            await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange);
             await Spell.CoCast(ThunderClap);
             
             return false;
@@ -390,6 +391,14 @@ namespace SlimAI.Class.Warrior
         }
 
        #endregion
+
+        private static bool DefCools
+        {
+            get
+            {
+                return Me.HasAura("Shield Block") || Me.HasAura(Ravager) || Me.HasAura(LastStand) || Me.HasAura(ShieldWall) || Me.CurrentTarget.HasMyAura("Demoralizing Shout");
+            }
+        }
 
         #region Best Banner
         public static WoWUnit BestBanner//WoWUnit
@@ -915,6 +924,8 @@ namespace SlimAI.Class.Warrior
                           StormBolt = 107570,
                           SweepingStrikes = 12328,
                           ThunderClap = 6343,
+                          Ultimatum = 122510,
+                          UnyieldingStrikes = 169685,
                           VictoryRush = 34428,
                           Whirlwind = 1680,
                           WildStrike = 100130;

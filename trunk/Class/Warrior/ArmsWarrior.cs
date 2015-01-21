@@ -174,31 +174,27 @@ namespace SlimAI.Class.Warrior
 
             if (Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") || !Me.Combat || Me.Mounted) return true;
 
-            //new Action(context => ResetVariables());
-
-            //Do we really need this?
-            //if (StyxWoW.Me.CurrentTarget != null && (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange || StyxWoW.Me.IsCasting || SpellManager.GlobalCooldown)) return true;
-
             await Spell.CoCast(VictoryRush, Me.HealthPercent <= 90 && Me.HasAura("Victorious"));
             await Spell.CoCast("Hamstring", !Freedoms && !Me.CurrentTarget.IsStunned() && !Me.CurrentTarget.IsCrowdControlled() && !Me.CurrentTarget.IsSlowed() && Me.CurrentTarget.IsPlayer);
             
             await Spell.CoCast("Intervene", BestInterveneTarget);
             await CoStormBoltFocus();
+            await CoShockwave();
 
             await Spell.CoCast(ColossusSmash);
             
             await Spell.CoCast(Bladestorm, Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.HasMyAura("Colossus Smash") && SlimAI.Burst);
-            await Spell.CoCast(Recklessness, SlimAI.Burst && (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Bloodbath") || Me.CurrentTarget.HealthPercent < 20));
+            await Spell.CoCast(Recklessness, SlimAI.Burst && (Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura("Bloodbath") || Me.CurrentTarget.HealthPercent < 20) && Me.CurrentTarget.IsWithinMeleeRange);
             await Spell.CoCast(Avatar, SlimAI.Burst && Me.HasAura("Recklessness"));
-            await Spell.CoCast(BloodBath, SlimAI.Burst && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds < 5);
+            await Spell.CoCast(BloodBath, SlimAI.Burst && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds < 5 && Me.CurrentTarget.IsWithinMeleeRange);
 
-            //await Spell.CoCast(SweepingStrikes, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
+            await Spell.CoCast(SweepingStrikes, Unit.UnfriendlyUnits(8).Count() >= 2 && SlimAI.AOE);
             await Spell.CoCast(Rend, !Me.CurrentTarget.HasAura("Rend"));
             await Spell.CoCast(Execute, Me.CurrentTarget.HasMyAura("Colossus Smash") || Me.HasAura(SuddenDeath) || Me.CurrentRage >= 60 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
             await Spell.CoCast(MortalStrike, Me.CurrentTarget.HealthPercent > 20 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1);
-            //await Spell.CoCast(DragonRoar, !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(DragonRoar, !Me.CurrentTarget.HasMyAura("Colossus Smash") && Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(Rend, Me.CurrentTarget.HasAuraExpired("Rend", 5) && !Me.CurrentTarget.HasMyAura("Colossus Smash"));
-            await Spell.CoCast(Whirlwind, Me.CurrentTarget.HealthPercent > 20 && (Me.CurrentRage > Me.MaxRage - 30 || Me.CurrentTarget.HasMyAura("Colossus Smash")) && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1 && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 1 && Me.CurrentTarget.Distance <= 8);
+            await Spell.CoCast(Whirlwind, Me.CurrentTarget.HealthPercent > 20 && ((Me.CurrentRage > Me.MaxRage - 30 || Me.CurrentTarget.HasMyAura("Colossus Smash")) && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 1 && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 1) && Me.CurrentTarget.Distance <= 8);
             await Spell.CoCast(HeroicThrow);
             
 
@@ -389,7 +385,7 @@ namespace SlimAI.Class.Warrior
         }
 
 
-        #region Coroutine Stormbolt Focus
+        #region Coroutine Stormbolt Focus && Shockwave
 
         private static async Task<bool> CoStormBoltFocus()
         {
@@ -397,6 +393,17 @@ namespace SlimAI.Class.Warrior
             if (SpellManager.CanCast("Storm Bolt") && KeyboardPolling.IsKeyDown(Keys.C))
             {
                 await Spell.CoCast(StormBolt, Me.FocusedUnit);
+            }
+
+            return false;
+        }
+
+        private static async Task<bool> CoShockwave()
+        {
+            KeyboardPolling.IsKeyDown(Keys.C);
+            if (SpellManager.CanCast("Shockwave") && KeyboardPolling.IsKeyDown(Keys.C) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 9) >= 1)
+            {
+                await Spell.CoCast(Shockwave);
             }
 
             return false;
@@ -1032,6 +1039,7 @@ namespace SlimAI.Class.Warrior
                           Rend = 772,
                           Siegebreaker = 176289,
                           ShatteringThrow = 64382,
+                          Shockwave = 46968,
                           SkullBanner = 114207,
                           Slam = 1464,
                           StormBolt = 107570,
