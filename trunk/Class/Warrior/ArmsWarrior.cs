@@ -401,7 +401,7 @@ namespace SlimAI.Class.Warrior
         private static async Task<bool> CoShockwave()
         {
             KeyboardPolling.IsKeyDown(Keys.C);
-            if (SpellManager.CanCast("Shockwave") && KeyboardPolling.IsKeyDown(Keys.C) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 9) >= 1)
+            if (SpellManager.CanCast("Shockwave") && KeyboardPolling.IsKeyDown(Keys.C) /*&& Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 9) >= 1*/)
             {
                 await Spell.CoCast(Shockwave);
             }

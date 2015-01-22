@@ -50,7 +50,7 @@ namespace SlimAI.Class.Paladin
             await Spell.CoCast(DivineShield, Me.HealthPercent <= 20 && SlimAI.Weave);
 
             //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }))),
-            await Spell.CoCast(FlashofLight, FlashTar, Me.HasAura("Selfless Healer", 3));
+            await Spell.CoCast(FlashofLight, FlashTarclutch, Me.HasAura("Selfless Healer", 3));
             await Spell.CoCast(SealofRighteousness, SlimAI.AOE && !Me.HasAura("Seal of Righteousness") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) >= 4);
             await Spell.CoCast(SealofTruth, !Me.HasAura("Seal of Truth") && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius,8f) < 4);
             await Spell.CoCast(ExecutionSentence, SlimAI.Burst);
@@ -152,7 +152,7 @@ namespace SlimAI.Class.Paladin
                 await Spell.CoCast(DivineShield, Me.HealthPercent <= 20 && SlimAI.Weave);
 
                 //new Action(ret => { Item.UseTrinkets(); return RunStatus.Failure; }))),
-                await Spell.CoCast(FlashofLight, FlashTar, Me.HasAura("Selfless Healer", 3));
+                await Spell.CoCast(FlashofLight, FlashTarclutch, Me.HasAura("Selfless Healer", 3));
                 await Spell.CoCast(ExecutionSentence, SlimAI.Burst);
                 //await Spell.CoCastOnGround(LightsHammer, Me.Location, Me.CurrentTarget.IsBoss);
                 await Spell.CoCast(DivineStorm, (Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2 && (Me.CurrentHolyPower == 5 || Me.HasAura("Divine Purpose"))) && SlimAI.AOE && Me.CurrentTarget.Distance <= 8);
@@ -168,6 +168,7 @@ namespace SlimAI.Class.Paladin
                 await Spell.CoCast(TemplarsVerdict);
                 await Spell.CoCast(Exorcism);
                 await Spell.CoCast(HolyPrism);
+                await Spell.CoCast(FlashofLight, FlashTarLow, Me.HasAura("Selfless Healer", 3));
 
                 return true;
             }
@@ -200,7 +201,7 @@ namespace SlimAI.Class.Paladin
             }
             #endregion
 
-            private static WoWUnit FlashTar
+            private static WoWUnit FlashTarclutch
             {
                 get
                 {
@@ -209,7 +210,22 @@ namespace SlimAI.Class.Paladin
                                   where unit.IsInMyPartyOrRaid
                                   where unit.Distance < 40
                                   where unit.InLineOfSight
-                                  where unit.HealthPercent <= 75
+                                  where unit.HealthPercent <= 35
+                                  select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
+                    return eHheal;
+                }
+            }
+
+            private static WoWUnit FlashTarLow
+            {
+                get
+                {
+                    var eHheal = (from unit in ObjectManager.GetObjectsOfTypeFast<WoWPlayer>()
+                                  where unit.IsAlive
+                                  where unit.IsInMyPartyOrRaid
+                                  where unit.Distance < 40
+                                  where unit.InLineOfSight
+                                  where unit.HealthPercent <= 60
                                   select unit).OrderByDescending(u => u.HealthPercent).LastOrDefault();
                     return eHheal;
                 }
