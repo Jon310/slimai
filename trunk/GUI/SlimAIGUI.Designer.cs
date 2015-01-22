@@ -35,12 +35,13 @@
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.Generaltab = new System.Windows.Forms.TabPage();
-            this.ClassSpecifictab = new System.Windows.Forms.TabPage();
-            this.Hotkeystab = new System.Windows.Forms.TabPage();
             this.GeneralpropertyGrid = new System.Windows.Forms.PropertyGrid();
+            this.ClassSpecifictab = new System.Windows.Forms.TabPage();
             this.ClasspropertyGrid = new System.Windows.Forms.PropertyGrid();
+            this.Hotkeystab = new System.Windows.Forms.TabPage();
             this.HotkeypropertyGrid = new System.Windows.Forms.PropertyGrid();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.showOverlayToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.Generaltab.SuspendLayout();
@@ -62,6 +63,7 @@
             // menuToolStripMenuItem
             // 
             this.menuToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.showOverlayToolStripMenuItem,
             this.saveExitToolStripMenuItem});
             this.menuToolStripMenuItem.Name = "menuToolStripMenuItem";
             this.menuToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
@@ -102,6 +104,13 @@
             this.Generaltab.Text = "General";
             this.Generaltab.UseVisualStyleBackColor = true;
             // 
+            // GeneralpropertyGrid
+            // 
+            this.GeneralpropertyGrid.Location = new System.Drawing.Point(3, 3);
+            this.GeneralpropertyGrid.Name = "GeneralpropertyGrid";
+            this.GeneralpropertyGrid.Size = new System.Drawing.Size(294, 358);
+            this.GeneralpropertyGrid.TabIndex = 0;
+            // 
             // ClassSpecifictab
             // 
             this.ClassSpecifictab.Controls.Add(this.ClasspropertyGrid);
@@ -112,6 +121,13 @@
             this.ClassSpecifictab.TabIndex = 1;
             this.ClassSpecifictab.Text = "Class Specific";
             this.ClassSpecifictab.UseVisualStyleBackColor = true;
+            // 
+            // ClasspropertyGrid
+            // 
+            this.ClasspropertyGrid.Location = new System.Drawing.Point(3, 3);
+            this.ClasspropertyGrid.Name = "ClasspropertyGrid";
+            this.ClasspropertyGrid.Size = new System.Drawing.Size(294, 358);
+            this.ClasspropertyGrid.TabIndex = 0;
             // 
             // Hotkeystab
             // 
@@ -124,26 +140,19 @@
             this.Hotkeystab.Text = "Hotkeys";
             this.Hotkeystab.UseVisualStyleBackColor = true;
             // 
-            // GeneralpropertyGrid
-            // 
-            this.GeneralpropertyGrid.Location = new System.Drawing.Point(3, 3);
-            this.GeneralpropertyGrid.Name = "GeneralpropertyGrid";
-            this.GeneralpropertyGrid.Size = new System.Drawing.Size(294, 358);
-            this.GeneralpropertyGrid.TabIndex = 0;
-            // 
-            // ClasspropertyGrid
-            // 
-            this.ClasspropertyGrid.Location = new System.Drawing.Point(3, 3);
-            this.ClasspropertyGrid.Name = "ClasspropertyGrid";
-            this.ClasspropertyGrid.Size = new System.Drawing.Size(294, 358);
-            this.ClasspropertyGrid.TabIndex = 0;
-            // 
             // HotkeypropertyGrid
             // 
             this.HotkeypropertyGrid.Location = new System.Drawing.Point(3, 3);
             this.HotkeypropertyGrid.Name = "HotkeypropertyGrid";
             this.HotkeypropertyGrid.Size = new System.Drawing.Size(294, 358);
             this.HotkeypropertyGrid.TabIndex = 0;
+            // 
+            // showOverlayToolStripMenuItem
+            // 
+            this.showOverlayToolStripMenuItem.Name = "showOverlayToolStripMenuItem";
+            this.showOverlayToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.showOverlayToolStripMenuItem.Text = "Show Overlay";
+            this.showOverlayToolStripMenuItem.Click += new System.EventHandler(this.showOverlayToolStripMenuItem_Click);
             // 
             // SlimAIGUI
             // 
@@ -155,8 +164,8 @@
             this.MainMenuStrip = this.menuStrip1;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.ShowIcon = false;
             this.Name = "SlimAIGUI";
+            this.ShowIcon = false;
             this.Text = "SlimAIGUI";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ConfigurationForm_FormClosing);
             this.Load += new System.EventHandler(this.ConfigurationForm_Load);
@@ -185,5 +194,6 @@
         private System.Windows.Forms.TabPage Hotkeystab;
         private System.Windows.Forms.PropertyGrid HotkeypropertyGrid;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.ToolStripMenuItem showOverlayToolStripMenuItem;
     }
 }

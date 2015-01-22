@@ -88,6 +88,12 @@
     <Compile Include="Class\Warrior\ArmsWarrior.cs" />
     <Compile Include="Class\Warrior\FuryWarrior.cs" />
     <Compile Include="Class\Warrior\ProtectionWarrior.cs" />
+    <Compile Include="GUI\Overlay.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Overlay.Designer.cs">
+      <DependentUpon>Overlay.cs</DependentUpon>
+    </Compile>
     <Compile Include="GUI\SlimAIGUI.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -144,6 +150,9 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <EmbeddedResource Include="GUI\Overlay.resx">
+      <DependentUpon>Overlay.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GUI\SlimAIGUI.resx">
       <DependentUpon>SlimAIGUI.cs</DependentUpon>
     </EmbeddedResource>
