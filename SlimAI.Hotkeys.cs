@@ -21,6 +21,8 @@ namespace SlimAI
         public static bool Dispell { get; set; }
         public static bool HealAll { get; set; }
 
+        public static bool ShowOverlay { get; set; }
+
         protected virtual void UnregisterHotkeys()
         {
             HotkeysManager.Unregister("PvP Toggle");
@@ -32,6 +34,7 @@ namespace SlimAI
             HotkeysManager.Unregister("Weave Toggle");
             HotkeysManager.Unregister("Dispell Toggle");
             HotkeysManager.Unregister("Heal All");
+            HotkeysManager.Unregister("Show Overlay");
         }
 
         protected virtual void RegisterHotkeys()
@@ -134,6 +137,17 @@ namespace SlimAI
                 Lua.DoString("print('Heal All Enabled: " + HealAll + "')");
             });
             HealAll = false;
+
+            HotkeysManager.Register("Show Overlay",
+            Keys.O,
+            ModifierKeys.Control,
+            o =>
+            {
+                ShowOverlay = !ShowOverlay;
+                Logging.Write("Show Overlay enabled: " + ShowOverlay);
+                Lua.DoString("print('Show Overlay Enabled: " + ShowOverlay + "')");
+            });
+            ShowOverlay = false;
         }
 
     }

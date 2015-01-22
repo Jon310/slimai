@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MainDev.RemoteASM.Handlers;
 using SlimAI.GUI;
 using SlimAI.Helpers;
 using SlimAI.Managers;
@@ -54,6 +55,10 @@ namespace SlimAI
         {
             if (!StyxWoW.IsInGame || !StyxWoW.IsInWorld)
                 return;
+
+            if (ShowOverlay)
+                Overlay.UpdateOverlayText();
+            
             if (TalentManager.Pulse())
                 return;
             UpdateContext();
@@ -75,6 +80,7 @@ namespace SlimAI
         {
             UnregisterHotkeys();
         }
+
 
         private SlimAIGUI _configForm;
         //private Main _configForm;

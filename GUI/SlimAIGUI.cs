@@ -230,5 +230,11 @@ namespace SlimAI.GUI
             else if (tabControl1.SelectedIndex == 1)
                 SetLabelColumnWidth(ClasspropertyGrid, 205);
         }
+
+        private void showOverlayToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SlimAI.ShowOverlay = true;
+            Overlay.ShowOverlay();
+        }
     }
 }
